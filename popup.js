@@ -2322,7 +2322,7 @@
               "https://*.clio.com/*",
               "https://*.redtailtechnology.com/*",
               "https://*.bullhornstaffing.com/*",
-              "https://*.app.netsuite.com/app*"
+              "https://*.app.netsuite.com/*"
             ],
             js: [
               "./c2d/index.js",
@@ -2346,7 +2346,7 @@
               "https://*.clio.com/*",
               "https://*.redtailtechnology.com/*",
               "https://*.bullhornstaffing.com/*",
-              "https://*.app.netsuite.com/app*"
+              "https://*.app.netsuite.com/*"
             ]
           }
         ],
