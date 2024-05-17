@@ -2321,7 +2321,8 @@
               "https://*.insightly.com/*",
               "https://*.clio.com/*",
               "https://*.redtailtechnology.com/*",
-              "https://*.bullhornstaffing.com/*"
+              "https://*.bullhornstaffing.com/*",
+              "https://*.app.netsuite.com/app*"
             ],
             js: [
               "./c2d/index.js",
@@ -2344,7 +2345,8 @@
               "https://*.insightly.com/*",
               "https://*.clio.com/*",
               "https://*.redtailtechnology.com/*",
-              "https://*.bullhornstaffing.com/*"
+              "https://*.bullhornstaffing.com/*",
+              "https://*.app.netsuite.com/app*"
             ]
           }
         ],
