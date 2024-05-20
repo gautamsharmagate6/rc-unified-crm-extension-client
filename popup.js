@@ -11639,27 +11639,30 @@
   var trailingSMSLogInfo = [];
   var firstTimeLogoutAbsorbed = false;
   async function checkC2DCollision() {
-    const { rcForGoogleCollisionChecked } = await chrome.storage.local.get({ rcForGoogleCollisionChecked: false });
-    const collidingC2DResponse = await fetch("chrome-extension://fddhonoimfhgiopglkiokmofecgdiedb/redirect.html");
-    if (!rcForGoogleCollisionChecked && collidingC2DResponse.status === 200) {
-      chrome.notifications.create({
-        type: "basic",
-        iconUrl: "/images/logo32.png",
-        title: `Click-to-dial may not work`,
-        message: "The RingCentral for Google Chrome extension has been detected. You may wish to customize your click-to-dial preferences for your desired behavior",
-        priority: 1,
-        buttons: [
-          {
-            title: "Configure"
+    try {
+      const { rcForGoogleCollisionChecked } = await chrome.storage.local.get({ rcForGoogleCollisionChecked: false });
+      const collidingC2DResponse = await fetch("chrome-extension://fddhonoimfhgiopglkiokmofecgdiedb/redirect.html");
+      if (!rcForGoogleCollisionChecked && collidingC2DResponse.status === 200) {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/logo32.png",
+          title: `Click-to-dial may not work`,
+          message: "The RingCentral for Google Chrome extension has been detected. You may wish to customize your click-to-dial preferences for your desired behavior",
+          priority: 1,
+          buttons: [
+            {
+              title: "Configure"
+            }
+          ]
+        });
+        chrome.notifications.onButtonClicked.addListener(
+          (notificationId, buttonIndex) => {
+            window.open("https://youtu.be/tbCOM27GUbc");
           }
-        ]
-      });
-      chrome.notifications.onButtonClicked.addListener(
-        (notificationId, buttonIndex) => {
-          window.open("https://youtu.be/tbCOM27GUbc");
-        }
-      );
-      await chrome.storage.local.set({ rcForGoogleCollisionChecked: true });
+        );
+        await chrome.storage.local.set({ rcForGoogleCollisionChecked: true });
+      }
+    } catch (e) {
     }
   }
   checkC2DCollision();
@@ -11908,12 +11911,16 @@
                   switch (platform.authType) {
                     case "oauth":
                       let authUri;
+                      let customState = "";
+                      if (!!platform.customState) {
+                        customState = platform.customState;
+                      }
                       if (platformName === "pipedrive") {
                         authUri = config.platforms.pipedrive.redirectUri;
                       } else if (platformName === "bullhorn") {
                         let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
                         if (crm_extension_bullhorn_user_urls?.oauthUrl) {
-                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                         } else {
                           const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
                           showNotification({ level: "warning", message: "Bullhorn authorize error. Please try again in 30 seconds", ttl: 3e4 });
