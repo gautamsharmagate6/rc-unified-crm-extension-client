@@ -11920,7 +11920,7 @@
                       } else if (platformName === "bullhorn") {
                         let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
                         if (crm_extension_bullhorn_user_urls?.oauthUrl) {
-                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                         } else {
                           const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
                           showNotification({ level: "warning", message: "Bullhorn authorize error. Please try again in 30 seconds", ttl: 3e4 });
@@ -11931,7 +11931,7 @@
                           }
                         }
                       } else {
-                        authUri = `${platform.authUrl}?response_type=code&client_id=${platform.clientId}${!!platform.scopes ? `&scope=${platform.scopes}` : ""}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                        authUri = `${platform.authUrl}?response_type=code&client_id=${platform.clientId}${!!platform.scopes ? `&scope=${platform.scopes}` : ""}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                       }
                       handleThirdPartyOAuthWindow(authUri);
                       break;
