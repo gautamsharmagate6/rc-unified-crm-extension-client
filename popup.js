@@ -11110,7 +11110,7 @@
             }
           };
           callFormData = {
-            activityTitle: subject ?? defaultActivityTitle,
+            activityTitle: !!subject & subject !== "" ? subject : defaultActivityTitle,
             note: note ?? ""
           };
         }
@@ -12062,14 +12062,20 @@
                 });
                 const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: config.serverUrl, phoneNumber: contactPhoneNumber });
                 let note = "";
+                let callLogSubject = "";
                 switch (data.body.triggerType) {
                   case "createLog":
                     note = await getCachedNote({ sessionId: data.body.call.sessionId });
                   case "editLog":
-                    if (!!fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logData?.note) {
-                      note = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.note;
+                    if (!!fetchedCallLogs) {
+                      if (!!fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logData?.note) {
+                        note = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.note;
+                      }
+                      if (fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logData?.subject) {
+                        callLogSubject = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.subject;
+                      }
                     }
-                    const callPage = logPage.getLogPageRender({ config, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logData?.subject, note });
+                    const callPage = logPage.getLogPageRender({ config, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
                     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                       type: "rc-adapter-update-call-log-page",
                       page: callPage
