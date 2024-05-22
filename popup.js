@@ -11948,7 +11948,11 @@
                 );
                 break;
               case "/callLogger":
-                if (data.body.triggerType !== "logForm" && data.body.triggerType && data.body.call?.to?.phoneNumber?.length > 4) {
+                if (data?.body?.toEntity?.phoneNumbers[0]?.phoneType === "extension") {
+                  showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
+                  break;
+                }
+                if (data.body.triggerType !== "logForm" && data.body.triggerType) {
                   if (data.body.triggerType === "callLogSync") {
                     if (!!data.body.call?.recording?.link) {
                       console.log("call recording updating...");
@@ -12105,6 +12109,10 @@
                 );
                 break;
               case "/messageLogger":
+                if (data?.body?.correspondentEntity?.phoneNumbers[0]?.phoneType === "extension") {
+                  showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
+                  break;
+                }
                 const { rc_messageLogger_auto_log_notify: messageAutoLogOn } = await chrome.storage.local.get({ rc_messageLogger_auto_log_notify: false });
                 const messageLogPrefId = `rc-crm-conversation-pref-${data.body.conversation.conversationId}`;
                 const existingConversationLogPref = await chrome.storage.local.get(messageLogPrefId);
