@@ -43,11 +43,11 @@
     }
   });
 
-  // src/config.json
-  var require_config = __commonJS({
-    "src/config.json"(exports, module) {
+  // src/manifest.json
+  var require_manifest = __commonJS({
+    "src/manifest.json"(exports, module) {
       module.exports = {
-        defaultCrmConfigUrl: "https://lite-http-tunnel-s52m.onrender.com/crmConfig",
+        defaultCrmManifestUrl: "https://lite-http-tunnel-s52m.onrender.com/crmManifest",
         mixpanelToken: "04acd7cb2e1867dcf98b6e8cf5ee1e1c",
         version: "0.8.14"
       };
@@ -100,9 +100,9 @@
 
   // src/sw.js
   var { isObjectEmpty } = require_util();
-  var baseConfig = require_config();
+  var baseManifest = require_manifest();
   var packageJson = require_package();
-  var config;
+  var manifest;
   var pipedriveInstallationTabId;
   var pipedriveCallbackUri;
   var cachedClickToXRequest;
@@ -141,14 +141,14 @@
       popupWindowId: popup.id
     });
     try {
-      let { customCrmConfigUrl } = await chrome.storage.local.get({ customCrmConfigUrl: null });
-      if (!!!customCrmConfigUrl || customCrmConfigUrl === "") {
-        customCrmConfigUrl = baseConfig.defaultCrmConfigUrl;
-        await chrome.storage.local.set({ customCrmConfigUrl });
+      let { customCrmManifestUrl } = await chrome.storage.local.get({ customCrmManifestUrl: null });
+      if (!!!customCrmManifestUrl || customCrmManifestUrl === "") {
+        customCrmManifestUrl = baseManifest.defaultCrmManifestUrl;
+        await chrome.storage.local.set({ customCrmManifestUrl });
       }
-      const customCrmConfigJson = await (await fetch(customCrmConfigUrl)).json();
-      if (customCrmConfigJson) {
-        await chrome.storage.local.set({ customCrmConfig: customCrmConfigJson });
+      const customCrmManifestJson = await (await fetch(customCrmManifestUrl)).json();
+      if (customCrmManifestJson) {
+        await chrome.storage.local.set({ customCrmManifest: customCrmManifestJson });
       }
     } catch (e) {
       console.error(e);
@@ -158,14 +158,14 @@
   async function registerPlatform(tabUrl) {
     const url = new URL(tabUrl);
     let hostname = url.hostname;
-    const { customCrmConfig } = await chrome.storage.local.get({ customCrmConfig: null });
-    if (!!customCrmConfig) {
-      config = customCrmConfig;
+    const { customCrmManifest } = await chrome.storage.local.get({ customCrmManifest: null });
+    if (!!customCrmManifest) {
+      manifest = customCrmManifest;
     }
     let platformName = "";
-    const platforms = Object.keys(config.platforms);
+    const platforms = Object.keys(manifest.platforms);
     for (const p of platforms) {
-      const urlRegex = new RegExp(config.platforms[p].urlIdentifier.replace("*", ".*"));
+      const urlRegex = new RegExp(manifest.platforms[p].urlIdentifier.replace("*", ".*"));
       if (urlRegex.test(url.href)) {
         platformName = p;
         break;
@@ -219,8 +219,8 @@
     }
   });
   chrome.alarms.onAlarm.addListener(async () => {
-    const { customCrmConfig } = await chrome.storage.local.get({ customCrmConfig: null });
-    config = customCrmConfig;
+    const { customCrmManifest } = await chrome.storage.local.get({ customCrmManifest: null });
+    manifest = customCrmManifest;
     const { loginWindowInfo } = await chrome.storage.local.get("loginWindowInfo");
     if (!loginWindowInfo) {
       return;
@@ -231,7 +231,7 @@
     }
     const loginWindowUrl = tabs[0].url;
     console.log("loginWindowUrl", loginWindowUrl);
-    if (loginWindowUrl.indexOf(config.redirectUri) !== 0) {
+    if (loginWindowUrl.indexOf(manifest.redirectUri) !== 0) {
       chrome.alarms.create("oauthCheck", { when: Date.now() + 3e3 });
       return;
     }

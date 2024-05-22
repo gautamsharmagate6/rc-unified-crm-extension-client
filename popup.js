@@ -342,7 +342,7 @@
   });
 
   // node_modules/axios/lib/core/AxiosError.js
-  function AxiosError(message, code, config2, request, response) {
+  function AxiosError(message, code, config, request, response) {
     Error.call(this);
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -352,7 +352,7 @@
     this.message = message;
     this.name = "AxiosError";
     code && (this.code = code);
-    config2 && (this.config = config2);
+    config && (this.config = config);
     request && (this.request = request);
     response && (this.response = response);
   }
@@ -403,14 +403,14 @@
       });
       Object.defineProperties(AxiosError, descriptors);
       Object.defineProperty(prototype, "isAxiosError", { value: true });
-      AxiosError.from = (error, code, config2, request, response, customProps) => {
+      AxiosError.from = (error, code, config, request, response, customProps) => {
         const axiosError = Object.create(prototype);
         utils_default.toFlatObject(error, axiosError, function filter2(obj) {
           return obj !== Error.prototype;
         }, (prop) => {
           return prop !== "isAxiosError";
         });
-        AxiosError.call(axiosError, error.message, code, config2, request, response);
+        AxiosError.call(axiosError, error.message, code, config, request, response);
         axiosError.cause = error;
         axiosError.name = error.name;
         customProps && Object.assign(axiosError, customProps);
@@ -1007,8 +1007,8 @@
   });
 
   // node_modules/axios/lib/cancel/CanceledError.js
-  function CanceledError(message, config2, request) {
-    AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config2, request);
+  function CanceledError(message, config, request) {
+    AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config, request);
     this.name = "CanceledError";
   }
   var CanceledError_default;
@@ -1369,32 +1369,32 @@
       listener(data);
     };
   }
-  function xhrAdapter(config2) {
+  function xhrAdapter(config) {
     return new Promise(function dispatchXhrRequest(resolve, reject) {
-      let requestData = config2.data;
-      const requestHeaders = AxiosHeaders_default.from(config2.headers).normalize();
-      const responseType = config2.responseType;
+      let requestData = config.data;
+      const requestHeaders = AxiosHeaders_default.from(config.headers).normalize();
+      const responseType = config.responseType;
       let onCanceled;
       function done() {
-        if (config2.cancelToken) {
-          config2.cancelToken.unsubscribe(onCanceled);
+        if (config.cancelToken) {
+          config.cancelToken.unsubscribe(onCanceled);
         }
-        if (config2.signal) {
-          config2.signal.removeEventListener("abort", onCanceled);
+        if (config.signal) {
+          config.signal.removeEventListener("abort", onCanceled);
         }
       }
       if (utils_default.isFormData(requestData) && browser_default.isStandardBrowserEnv) {
         requestHeaders.setContentType(false);
       }
       let request = new XMLHttpRequest();
-      if (config2.auth) {
-        const username = config2.auth.username || "";
-        const password = config2.auth.password ? unescape(encodeURIComponent(config2.auth.password)) : "";
+      if (config.auth) {
+        const username = config.auth.username || "";
+        const password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : "";
         requestHeaders.set("Authorization", "Basic " + btoa(username + ":" + password));
       }
-      const fullPath = buildFullPath(config2.baseURL, config2.url);
-      request.open(config2.method.toUpperCase(), buildURL(fullPath, config2.params, config2.paramsSerializer), true);
-      request.timeout = config2.timeout;
+      const fullPath = buildFullPath(config.baseURL, config.url);
+      request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
+      request.timeout = config.timeout;
       function onloadend() {
         if (!request) {
           return;
@@ -1408,7 +1408,7 @@
           status: request.status,
           statusText: request.statusText,
           headers: responseHeaders,
-          config: config2,
+          config,
           request
         };
         settle(function _resolve(value) {
@@ -1437,31 +1437,31 @@
         if (!request) {
           return;
         }
-        reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config2, request));
+        reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config, request));
         request = null;
       };
       request.onerror = function handleError() {
-        reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config2, request));
+        reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config, request));
         request = null;
       };
       request.ontimeout = function handleTimeout() {
-        let timeoutErrorMessage = config2.timeout ? "timeout of " + config2.timeout + "ms exceeded" : "timeout exceeded";
-        const transitional2 = config2.transitional || transitional_default;
-        if (config2.timeoutErrorMessage) {
-          timeoutErrorMessage = config2.timeoutErrorMessage;
+        let timeoutErrorMessage = config.timeout ? "timeout of " + config.timeout + "ms exceeded" : "timeout exceeded";
+        const transitional2 = config.transitional || transitional_default;
+        if (config.timeoutErrorMessage) {
+          timeoutErrorMessage = config.timeoutErrorMessage;
         }
         reject(new AxiosError_default(
           timeoutErrorMessage,
           transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-          config2,
+          config,
           request
         ));
         request = null;
       };
       if (browser_default.isStandardBrowserEnv) {
-        const xsrfValue = (config2.withCredentials || isURLSameOrigin_default(fullPath)) && config2.xsrfCookieName && cookies_default.read(config2.xsrfCookieName);
+        const xsrfValue = (config.withCredentials || isURLSameOrigin_default(fullPath)) && config.xsrfCookieName && cookies_default.read(config.xsrfCookieName);
         if (xsrfValue) {
-          requestHeaders.set(config2.xsrfHeaderName, xsrfValue);
+          requestHeaders.set(config.xsrfHeaderName, xsrfValue);
         }
       }
       requestData === void 0 && requestHeaders.setContentType(null);
@@ -1470,35 +1470,35 @@
           request.setRequestHeader(key, val);
         });
       }
-      if (!utils_default.isUndefined(config2.withCredentials)) {
-        request.withCredentials = !!config2.withCredentials;
+      if (!utils_default.isUndefined(config.withCredentials)) {
+        request.withCredentials = !!config.withCredentials;
       }
       if (responseType && responseType !== "json") {
-        request.responseType = config2.responseType;
+        request.responseType = config.responseType;
       }
-      if (typeof config2.onDownloadProgress === "function") {
-        request.addEventListener("progress", progressEventReducer(config2.onDownloadProgress, true));
+      if (typeof config.onDownloadProgress === "function") {
+        request.addEventListener("progress", progressEventReducer(config.onDownloadProgress, true));
       }
-      if (typeof config2.onUploadProgress === "function" && request.upload) {
-        request.upload.addEventListener("progress", progressEventReducer(config2.onUploadProgress));
+      if (typeof config.onUploadProgress === "function" && request.upload) {
+        request.upload.addEventListener("progress", progressEventReducer(config.onUploadProgress));
       }
-      if (config2.cancelToken || config2.signal) {
+      if (config.cancelToken || config.signal) {
         onCanceled = (cancel) => {
           if (!request) {
             return;
           }
-          reject(!cancel || cancel.type ? new CanceledError_default(null, config2, request) : cancel);
+          reject(!cancel || cancel.type ? new CanceledError_default(null, config, request) : cancel);
           request.abort();
           request = null;
         };
-        config2.cancelToken && config2.cancelToken.subscribe(onCanceled);
-        if (config2.signal) {
-          config2.signal.aborted ? onCanceled() : config2.signal.addEventListener("abort", onCanceled);
+        config.cancelToken && config.cancelToken.subscribe(onCanceled);
+        if (config.signal) {
+          config.signal.aborted ? onCanceled() : config.signal.addEventListener("abort", onCanceled);
         }
       }
       const protocol = parseProtocol(fullPath);
       if (protocol && browser_default.protocols.indexOf(protocol) === -1) {
-        reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config2));
+        reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config));
         return;
       }
       request.send(requestData || null);
@@ -1694,12 +1694,12 @@
 
   // node_modules/axios/lib/core/transformData.js
   function transformData(fns, response) {
-    const config2 = this || defaults_default;
-    const context = response || config2;
+    const config = this || defaults_default;
+    const context = response || config;
     const headers = AxiosHeaders_default.from(context.headers);
     let data = context.data;
     utils_default.forEach(fns, function transform(fn) {
-      data = fn.call(config2, data, headers.normalize(), response ? response.status : void 0);
+      data = fn.call(config, data, headers.normalize(), response ? response.status : void 0);
     });
     headers.normalize();
     return data;
@@ -1724,38 +1724,38 @@
   });
 
   // node_modules/axios/lib/core/dispatchRequest.js
-  function throwIfCancellationRequested(config2) {
-    if (config2.cancelToken) {
-      config2.cancelToken.throwIfRequested();
+  function throwIfCancellationRequested(config) {
+    if (config.cancelToken) {
+      config.cancelToken.throwIfRequested();
     }
-    if (config2.signal && config2.signal.aborted) {
+    if (config.signal && config.signal.aborted) {
       throw new CanceledError_default();
     }
   }
-  function dispatchRequest(config2) {
-    throwIfCancellationRequested(config2);
-    config2.headers = AxiosHeaders_default.from(config2.headers);
-    config2.data = transformData.call(
-      config2,
-      config2.transformRequest
+  function dispatchRequest(config) {
+    throwIfCancellationRequested(config);
+    config.headers = AxiosHeaders_default.from(config.headers);
+    config.data = transformData.call(
+      config,
+      config.transformRequest
     );
-    const adapter = config2.adapter || defaults_default.adapter;
-    return adapter(config2).then(function onAdapterResolution(response) {
-      throwIfCancellationRequested(config2);
+    const adapter = config.adapter || defaults_default.adapter;
+    return adapter(config).then(function onAdapterResolution(response) {
+      throwIfCancellationRequested(config);
       response.data = transformData.call(
-        config2,
-        config2.transformResponse,
+        config,
+        config.transformResponse,
         response
       );
       response.headers = AxiosHeaders_default.from(response.headers);
       return response;
     }, function onAdapterRejection(reason) {
       if (!isCancel(reason)) {
-        throwIfCancellationRequested(config2);
+        throwIfCancellationRequested(config);
         if (reason && reason.response) {
           reason.response.data = transformData.call(
-            config2,
-            config2.transformResponse,
+            config,
+            config.transformResponse,
             reason.response
           );
           reason.response.headers = AxiosHeaders_default.from(reason.response.headers);
@@ -1778,7 +1778,7 @@
   // node_modules/axios/lib/core/mergeConfig.js
   function mergeConfig(config1, config2) {
     config2 = config2 || {};
-    const config3 = {};
+    const config = {};
     function getMergedValue(target, source) {
       if (utils_default.isPlainObject(target) && utils_default.isPlainObject(source)) {
         return utils_default.merge(target, source);
@@ -1847,9 +1847,9 @@
     utils_default.forEach(Object.keys(config1).concat(Object.keys(config2)), function computeConfigValue(prop) {
       const merge2 = mergeMap[prop] || mergeDeepProperties;
       const configValue = merge2(prop);
-      utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config3[prop] = configValue);
+      utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config[prop] = configValue);
     });
-    return config3;
+    return config;
   }
   var init_mergeConfig = __esm({
     "node_modules/axios/lib/core/mergeConfig.js"() {
@@ -1962,15 +1962,15 @@
          *
          * @returns {Promise} The Promise to be fulfilled
          */
-        request(configOrUrl, config2) {
+        request(configOrUrl, config) {
           if (typeof configOrUrl === "string") {
-            config2 = config2 || {};
-            config2.url = configOrUrl;
+            config = config || {};
+            config.url = configOrUrl;
           } else {
-            config2 = configOrUrl || {};
+            config = configOrUrl || {};
           }
-          config2 = mergeConfig(this.defaults, config2);
-          const transitional2 = config2.transitional;
+          config = mergeConfig(this.defaults, config);
+          const transitional2 = config.transitional;
           if (transitional2 !== void 0) {
             validator_default.assertOptions(transitional2, {
               silentJSONParsing: validators2.transitional(validators2.boolean),
@@ -1978,22 +1978,22 @@
               clarifyTimeoutError: validators2.transitional(validators2.boolean)
             }, false);
           }
-          config2.method = (config2.method || this.defaults.method || "get").toLowerCase();
-          const defaultHeaders = config2.headers && utils_default.merge(
-            config2.headers.common,
-            config2.headers[config2.method]
+          config.method = (config.method || this.defaults.method || "get").toLowerCase();
+          const defaultHeaders = config.headers && utils_default.merge(
+            config.headers.common,
+            config.headers[config.method]
           );
           defaultHeaders && utils_default.forEach(
             ["delete", "get", "head", "post", "put", "patch", "common"],
             function cleanHeaderConfig(method) {
-              delete config2.headers[method];
+              delete config.headers[method];
             }
           );
-          config2.headers = new AxiosHeaders_default(config2.headers, defaultHeaders);
+          config.headers = new AxiosHeaders_default(config.headers, defaultHeaders);
           const requestInterceptorChain = [];
           let synchronousRequestInterceptors = true;
           this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-            if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config2) === false) {
+            if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config) === false) {
               return;
             }
             synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -2011,14 +2011,14 @@
             chain.unshift.apply(chain, requestInterceptorChain);
             chain.push.apply(chain, responseInterceptorChain);
             len = chain.length;
-            promise = Promise.resolve(config2);
+            promise = Promise.resolve(config);
             while (i < len) {
               promise = promise.then(chain[i++], chain[i++]);
             }
             return promise;
           }
           len = requestInterceptorChain.length;
-          let newConfig = config2;
+          let newConfig = config;
           i = 0;
           while (i < len) {
             const onFulfilled = requestInterceptorChain[i++];
@@ -2042,25 +2042,25 @@
           }
           return promise;
         }
-        getUri(config2) {
-          config2 = mergeConfig(this.defaults, config2);
-          const fullPath = buildFullPath(config2.baseURL, config2.url);
-          return buildURL(fullPath, config2.params, config2.paramsSerializer);
+        getUri(config) {
+          config = mergeConfig(this.defaults, config);
+          const fullPath = buildFullPath(config.baseURL, config.url);
+          return buildURL(fullPath, config.params, config.paramsSerializer);
         }
       };
       utils_default.forEach(["delete", "get", "head", "options"], function forEachMethodNoData2(method) {
-        Axios.prototype[method] = function(url, config2) {
-          return this.request(mergeConfig(config2 || {}, {
+        Axios.prototype[method] = function(url, config) {
+          return this.request(mergeConfig(config || {}, {
             method,
             url,
-            data: (config2 || {}).data
+            data: (config || {}).data
           }));
         };
       });
       utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData2(method) {
         function generateHTTPMethod(isForm) {
-          return function httpMethod(url, data, config2) {
-            return this.request(mergeConfig(config2 || {}, {
+          return function httpMethod(url, data, config) {
+            return this.request(mergeConfig(config || {}, {
               method,
               headers: isForm ? {
                 "Content-Type": "multipart/form-data"
@@ -2113,11 +2113,11 @@
             };
             return promise;
           };
-          executor(function cancel(message, config2, request) {
+          executor(function cancel(message, config, request) {
             if (token.reason) {
               return;
             }
-            token.reason = new CanceledError_default(message, config2, request);
+            token.reason = new CanceledError_default(message, config, request);
             resolvePromise(token.reason);
           });
         }
@@ -2295,96 +2295,12 @@
     }
   });
 
-  // public/manifest.json
+  // src/manifest.json
   var manifest_default;
   var init_manifest = __esm({
-    "public/manifest.json"() {
+    "src/manifest.json"() {
       manifest_default = {
-        name: "RingCentral CRM Extension",
-        description: "A RingCentral extension for CRM platforms",
-        version: "0.8.13",
-        permissions: [
-          "storage",
-          "alarms",
-          "tabs",
-          "background",
-          "unlimitedStorage",
-          "notifications"
-        ],
-        content_scripts: [
-          {
-            matches: [
-              "https://*.ringcentral.com/*",
-              "https://*.ngrok-free.app/*",
-              "https://lite-http-tunnel-s52m.onrender.com/*",
-              "https://*.pipedrive.com/*",
-              "https://*.insightly.com/*",
-              "https://*.clio.com/*",
-              "https://*.redtailtechnology.com/*",
-              "https://*.bullhornstaffing.com/*",
-              "https://*.app.netsuite.com/*"
-            ],
-            js: [
-              "./c2d/index.js",
-              "./content.js"
-            ],
-            all_frames: true
-          }
-        ],
-        web_accessible_resources: [
-          {
-            resources: [
-              "/embeddable/*",
-              "/c2d/*"
-            ],
-            matches: [
-              "https://*.ringcentral.com/*",
-              "https://*.ngrok-free.app/*",
-              "https://lite-http-tunnel-s52m.onrender.com/*",
-              "https://*.pipedrive.com/*",
-              "https://*.insightly.com/*",
-              "https://*.clio.com/*",
-              "https://*.redtailtechnology.com/*",
-              "https://*.bullhornstaffing.com/*",
-              "https://*.app.netsuite.com/*"
-            ]
-          }
-        ],
-        action: {
-          default_icon: {
-            "16": "/images/logo16.png",
-            "32": "/images/logo32.png",
-            "48": "/images/logo48.png",
-            "128": "/images/logo128.png"
-          }
-        },
-        background: {
-          service_worker: "sw.js"
-        },
-        options_ui: {
-          page: "options.html",
-          open_in_tab: false
-        },
-        content_security_policy: {
-          extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self' 'wasm-unsafe-eval'"
-        },
-        manifest_version: 3,
-        icons: {
-          "16": "/images/logo16.png",
-          "32": "/images/logo32.png",
-          "48": "/images/logo48.png",
-          "128": "/images/logo128.png"
-        }
-      };
-    }
-  });
-
-  // src/config.json
-  var config_default;
-  var init_config = __esm({
-    "src/config.json"() {
-      config_default = {
-        defaultCrmConfigUrl: "https://lite-http-tunnel-s52m.onrender.com/crmConfig",
+        defaultCrmManifestUrl: "https://lite-http-tunnel-s52m.onrender.com/crmManifest",
         mixpanelToken: "04acd7cb2e1867dcf98b6e8cf5ee1e1c",
         version: "0.8.14"
       };
@@ -4914,18 +4830,18 @@
         ALIAS_ID_KEY,
         EVENT_TIMERS_KEY
       ];
-      var MixpanelPersistence = function(config2) {
+      var MixpanelPersistence = function(config) {
         this["props"] = {};
         this.campaign_params_saved = false;
-        if (config2["persistence_name"]) {
-          this.name = "mp_" + config2["persistence_name"];
+        if (config["persistence_name"]) {
+          this.name = "mp_" + config["persistence_name"];
         } else {
-          this.name = "mp_" + config2["token"] + "_mixpanel";
+          this.name = "mp_" + config["token"] + "_mixpanel";
         }
-        var storage_type = config2["persistence"];
+        var storage_type = config["persistence"];
         if (storage_type !== "cookie" && storage_type !== "localStorage") {
           console2.critical("Unknown persistence type " + storage_type + "; falling back to cookie");
-          storage_type = config2["persistence"] = "cookie";
+          storage_type = config["persistence"] = "cookie";
         }
         if (storage_type === "localStorage" && _.localStorage.is_supported()) {
           this.storage = _.localStorage;
@@ -4933,8 +4849,8 @@
           this.storage = _.cookie;
         }
         this.load();
-        this.update_config(config2);
-        this.upgrade(config2);
+        this.update_config(config);
+        this.upgrade(config);
         this.save();
       };
       MixpanelPersistence.prototype.properties = function() {
@@ -4956,8 +4872,8 @@
           this["props"] = _.extend({}, entry);
         }
       };
-      MixpanelPersistence.prototype.upgrade = function(config2) {
-        var upgrade_from_old_lib = config2["upgrade"], old_cookie_name, old_cookie;
+      MixpanelPersistence.prototype.upgrade = function(config) {
+        var upgrade_from_old_lib = config["upgrade"], old_cookie_name, old_cookie;
         if (upgrade_from_old_lib) {
           old_cookie_name = "mp_super_properties";
           if (typeof upgrade_from_old_lib === "string") {
@@ -4974,8 +4890,8 @@
             );
           }
         }
-        if (!config2["cookie_name"] && config2["name"] !== "mixpanel") {
-          old_cookie_name = "mp_" + config2["token"] + "_" + config2["name"];
+        if (!config["cookie_name"] && config["name"] !== "mixpanel") {
+          old_cookie_name = "mp_" + config["token"] + "_" + config["name"];
           old_cookie = this.storage.parse(old_cookie_name);
           if (old_cookie) {
             this.storage.remove(old_cookie_name);
@@ -5067,13 +4983,13 @@
           "$initial_referring_domain": this["props"]["$initial_referring_domain"]
         });
       };
-      MixpanelPersistence.prototype.update_config = function(config2) {
-        this.default_expiry = this.expire_days = config2["cookie_expiration"];
-        this.set_disabled(config2["disable_persistence"]);
-        this.set_cookie_domain(config2["cookie_domain"]);
-        this.set_cross_site(config2["cross_site_cookie"]);
-        this.set_cross_subdomain(config2["cross_subdomain_cookie"]);
-        this.set_secure(config2["secure_cookie"]);
+      MixpanelPersistence.prototype.update_config = function(config) {
+        this.default_expiry = this.expire_days = config["cookie_expiration"];
+        this.set_disabled(config["disable_persistence"]);
+        this.set_cookie_domain(config["cookie_domain"]);
+        this.set_cross_site(config["cross_site_cookie"]);
+        this.set_cross_subdomain(config["cross_subdomain_cookie"]);
+        this.set_secure(config["secure_cookie"]);
       };
       MixpanelPersistence.prototype.set_disabled = function(disabled) {
         this.disabled = disabled;
@@ -5311,7 +5227,7 @@
       var DOM_LOADED = false;
       var MixpanelLib = function() {
       };
-      var create_mplib = function(token, config2, name) {
+      var create_mplib = function(token, config, name) {
         var instance, target = name === PRIMARY_INSTANCE_NAME ? mixpanel_master : mixpanel_master[name];
         if (target && init_type === INIT_MODULE) {
           instance = target;
@@ -5323,7 +5239,7 @@
           instance = new MixpanelLib();
         }
         instance._cached_groups = {};
-        instance._init(token, config2, name);
+        instance._init(token, config, name);
         instance["people"] = new MixpanelPeople();
         instance["people"]._init(instance);
         if (!instance.get_config("skip_first_touch_marketing")) {
@@ -5347,7 +5263,7 @@
         }
         return instance;
       };
-      MixpanelLib.prototype.init = function(token, config2, name) {
+      MixpanelLib.prototype.init = function(token, config, name) {
         if (_.isUndefined(name)) {
           this.report_error("You must name your new library: init(token, config, name)");
           return;
@@ -5356,23 +5272,23 @@
           this.report_error("You must initialize the main mixpanel object right after you include the Mixpanel js snippet");
           return;
         }
-        var instance = create_mplib(token, config2, name);
+        var instance = create_mplib(token, config, name);
         mixpanel_master[name] = instance;
         instance._loaded();
         return instance;
       };
-      MixpanelLib.prototype._init = function(token, config2, name) {
-        config2 = config2 || {};
+      MixpanelLib.prototype._init = function(token, config, name) {
+        config = config || {};
         this["__loaded"] = true;
         this["config"] = {};
         var variable_features = {};
-        if (!("api_payload_format" in config2)) {
-          var api_host = config2["api_host"] || DEFAULT_CONFIG["api_host"];
+        if (!("api_payload_format" in config)) {
+          var api_host = config["api_host"] || DEFAULT_CONFIG["api_host"];
           if (api_host.match(/\.mixpanel\.com/)) {
             variable_features["api_payload_format"] = PAYLOAD_TYPE_JSON;
           }
         }
-        this.set_config(_.extend({}, DEFAULT_CONFIG, variable_features, config2, {
+        this.set_config(_.extend({}, DEFAULT_CONFIG, variable_features, config, {
           "name": name,
           "token": token,
           "callback_fn": (name === PRIMARY_INSTANCE_NAME ? name : PRIMARY_INSTANCE_NAME + "." + name) + "._jsc"
@@ -6109,10 +6025,10 @@
       MixpanelLib.prototype.name_tag = function(name_tag) {
         this._register_single("mp_name_tag", name_tag);
       };
-      MixpanelLib.prototype.set_config = function(config2) {
-        if (_.isObject(config2)) {
-          _.extend(this["config"], config2);
-          var new_batch_size = config2["batch_size"];
+      MixpanelLib.prototype.set_config = function(config) {
+        if (_.isObject(config)) {
+          _.extend(this["config"], config);
+          var new_batch_size = config["batch_size"];
           if (new_batch_size) {
             _.each(this.request_batchers, function(batcher) {
               batcher.resetBatchSize();
@@ -6316,10 +6232,10 @@
         mixpanel_master["_"] = _;
       };
       var override_mp_init_func = function() {
-        mixpanel_master["init"] = function(token, config2, name) {
+        mixpanel_master["init"] = function(token, config, name) {
           if (name) {
             if (!mixpanel_master[name]) {
-              mixpanel_master[name] = instances[name] = create_mplib(token, config2, name);
+              mixpanel_master[name] = instances[name] = create_mplib(token, config, name);
               mixpanel_master[name]._loaded();
             }
             return mixpanel_master[name];
@@ -6328,7 +6244,7 @@
             if (instances[PRIMARY_INSTANCE_NAME]) {
               instance = instances[PRIMARY_INSTANCE_NAME];
             } else if (token) {
-              instance = create_mplib(token, config2, PRIMARY_INSTANCE_NAME);
+              instance = create_mplib(token, config, PRIMARY_INSTANCE_NAME);
               instance._loaded();
               instances[PRIMARY_INSTANCE_NAME] = instance;
             }
@@ -6397,11 +6313,10 @@
   var require_analytics = __commonJS({
     "src/lib/analytics.js"(exports) {
       init_manifest();
-      init_config();
       var import_mixpanel_browser = __toESM(require_mixpanel_cjs());
-      var useAnalytics = !!config_default.mixpanelToken;
+      var useAnalytics = !!manifest_default.mixpanelToken;
       if (useAnalytics) {
-        import_mixpanel_browser.default.init(config_default.mixpanelToken);
+        import_mixpanel_browser.default.init(manifest_default.mixpanelToken);
       }
       var appName = "RingCentral CRM Extension";
       var version = manifest_default.version;
@@ -6831,9 +6746,9 @@
           }
           return to2;
         }
-        function Moment(config2) {
-          copyConfig(this, config2);
-          this._d = new Date(config2._d != null ? config2._d.getTime() : NaN);
+        function Moment(config) {
+          copyConfig(this, config);
+          this._d = new Date(config._d != null ? config._d.getTime() : NaN);
           if (!this.isValid()) {
             this._d = /* @__PURE__ */ new Date(NaN);
           }
@@ -6897,11 +6812,11 @@
         function isFunction2(input) {
           return typeof Function !== "undefined" && input instanceof Function || Object.prototype.toString.call(input) === "[object Function]";
         }
-        function set(config2) {
+        function set(config) {
           var prop, i;
-          for (i in config2) {
-            if (hasOwnProp(config2, i)) {
-              prop = config2[i];
+          for (i in config) {
+            if (hasOwnProp(config, i)) {
+              prop = config[i];
               if (isFunction2(prop)) {
                 this[i] = prop;
               } else {
@@ -6909,7 +6824,7 @@
               }
             }
           }
-          this._config = config2;
+          this._config = config;
           this._dayOfMonthOrdinalParseLenient = new RegExp(
             (this._dayOfMonthOrdinalParse.source || this._ordinalParse.source) + "|" + /\d{1,2}/.source
           );
@@ -6936,9 +6851,9 @@
           }
           return res;
         }
-        function Locale(config2) {
-          if (config2 != null) {
-            this.set(config2);
+        function Locale(config) {
+          if (config != null) {
+            this.set(config);
           }
         }
         var keys;
@@ -7208,11 +7123,11 @@
             return isStrict && strictRegex ? strictRegex : regex;
           };
         }
-        function getParseRegexForToken(token2, config2) {
+        function getParseRegexForToken(token2, config) {
           if (!hasOwnProp(regexes, token2)) {
             return new RegExp(unescapeFormat(token2));
           }
-          return regexes[token2](config2._strict, config2._locale);
+          return regexes[token2](config._strict, config._locale);
         }
         function unescapeFormat(s) {
           return regexEscape(
@@ -7244,14 +7159,14 @@
           }
         }
         function addWeekParseToken(token2, callback) {
-          addParseToken(token2, function(input, array, config2, token3) {
-            config2._w = config2._w || {};
-            callback(input, config2._w, config2, token3);
+          addParseToken(token2, function(input, array, config, token3) {
+            config._w = config._w || {};
+            callback(input, config._w, config, token3);
           });
         }
-        function addTimeToArrayFromToken(token2, input, config2) {
+        function addTimeToArrayFromToken(token2, input, config) {
           if (input != null && hasOwnProp(tokens, token2)) {
-            tokens[token2](input, config2._a, config2, token2);
+            tokens[token2](input, config._a, config, token2);
           }
         }
         var YEAR = 0, MONTH = 1, DATE = 2, HOUR = 3, MINUTE = 4, SECOND = 5, MILLISECOND = 6, WEEK = 7, WEEKDAY = 8;
@@ -7302,12 +7217,12 @@
         addParseToken(["M", "MM"], function(input, array) {
           array[MONTH] = toInt(input) - 1;
         });
-        addParseToken(["MMM", "MMMM"], function(input, array, config2, token2) {
-          var month = config2._locale.monthsParse(input, token2, config2._strict);
+        addParseToken(["MMM", "MMMM"], function(input, array, config, token2) {
+          var month = config._locale.monthsParse(input, token2, config._strict);
           if (month != null) {
             array[MONTH] = month;
           } else {
-            getParsingFlags(config2).invalidMonth = input;
+            getParsingFlags(config).invalidMonth = input;
           }
         });
         var defaultLocaleMonths = "January_February_March_April_May_June_July_August_September_October_November_December".split(
@@ -7616,7 +7531,7 @@
         addRegexToken("WW", match1to2, match2);
         addWeekParseToken(
           ["w", "ww", "W", "WW"],
-          function(input, week, config2, token2) {
+          function(input, week, config, token2) {
             week[token2.substr(0, 1)] = toInt(input);
           }
         );
@@ -7673,15 +7588,15 @@
         addRegexToken("dddd", function(isStrict, locale2) {
           return locale2.weekdaysRegex(isStrict);
         });
-        addWeekParseToken(["dd", "ddd", "dddd"], function(input, week, config2, token2) {
-          var weekday = config2._locale.weekdaysParse(input, token2, config2._strict);
+        addWeekParseToken(["dd", "ddd", "dddd"], function(input, week, config, token2) {
+          var weekday = config._locale.weekdaysParse(input, token2, config._strict);
           if (weekday != null) {
             week.d = weekday;
           } else {
-            getParsingFlags(config2).invalidWeekday = input;
+            getParsingFlags(config).invalidWeekday = input;
           }
         });
-        addWeekParseToken(["d", "e", "E"], function(input, week, config2, token2) {
+        addWeekParseToken(["d", "e", "E"], function(input, week, config, token2) {
           week[token2] = toInt(input);
         });
         function parseWeekday(input, locale2) {
@@ -7994,37 +7909,37 @@
         addRegexToken("Hmm", match3to4);
         addRegexToken("Hmmss", match5to6);
         addParseToken(["H", "HH"], HOUR);
-        addParseToken(["k", "kk"], function(input, array, config2) {
+        addParseToken(["k", "kk"], function(input, array, config) {
           var kInput = toInt(input);
           array[HOUR] = kInput === 24 ? 0 : kInput;
         });
-        addParseToken(["a", "A"], function(input, array, config2) {
-          config2._isPm = config2._locale.isPM(input);
-          config2._meridiem = input;
+        addParseToken(["a", "A"], function(input, array, config) {
+          config._isPm = config._locale.isPM(input);
+          config._meridiem = input;
         });
-        addParseToken(["h", "hh"], function(input, array, config2) {
+        addParseToken(["h", "hh"], function(input, array, config) {
           array[HOUR] = toInt(input);
-          getParsingFlags(config2).bigHour = true;
+          getParsingFlags(config).bigHour = true;
         });
-        addParseToken("hmm", function(input, array, config2) {
+        addParseToken("hmm", function(input, array, config) {
           var pos = input.length - 2;
           array[HOUR] = toInt(input.substr(0, pos));
           array[MINUTE] = toInt(input.substr(pos));
-          getParsingFlags(config2).bigHour = true;
+          getParsingFlags(config).bigHour = true;
         });
-        addParseToken("hmmss", function(input, array, config2) {
+        addParseToken("hmmss", function(input, array, config) {
           var pos1 = input.length - 4, pos2 = input.length - 2;
           array[HOUR] = toInt(input.substr(0, pos1));
           array[MINUTE] = toInt(input.substr(pos1, 2));
           array[SECOND] = toInt(input.substr(pos2));
-          getParsingFlags(config2).bigHour = true;
+          getParsingFlags(config).bigHour = true;
         });
-        addParseToken("Hmm", function(input, array, config2) {
+        addParseToken("Hmm", function(input, array, config) {
           var pos = input.length - 2;
           array[HOUR] = toInt(input.substr(0, pos));
           array[MINUTE] = toInt(input.substr(pos));
         });
-        addParseToken("Hmmss", function(input, array, config2) {
+        addParseToken("Hmmss", function(input, array, config) {
           var pos1 = input.length - 4, pos2 = input.length - 2;
           array[HOUR] = toInt(input.substr(0, pos1));
           array[MINUTE] = toInt(input.substr(pos1, 2));
@@ -8127,36 +8042,36 @@
           }
           return globalLocale._abbr;
         }
-        function defineLocale(name, config2) {
-          if (config2 !== null) {
+        function defineLocale(name, config) {
+          if (config !== null) {
             var locale2, parentConfig = baseConfig;
-            config2.abbr = name;
+            config.abbr = name;
             if (locales[name] != null) {
               deprecateSimple(
                 "defineLocaleOverride",
                 "use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info."
               );
               parentConfig = locales[name]._config;
-            } else if (config2.parentLocale != null) {
-              if (locales[config2.parentLocale] != null) {
-                parentConfig = locales[config2.parentLocale]._config;
+            } else if (config.parentLocale != null) {
+              if (locales[config.parentLocale] != null) {
+                parentConfig = locales[config.parentLocale]._config;
               } else {
-                locale2 = loadLocale(config2.parentLocale);
+                locale2 = loadLocale(config.parentLocale);
                 if (locale2 != null) {
                   parentConfig = locale2._config;
                 } else {
-                  if (!localeFamilies[config2.parentLocale]) {
-                    localeFamilies[config2.parentLocale] = [];
+                  if (!localeFamilies[config.parentLocale]) {
+                    localeFamilies[config.parentLocale] = [];
                   }
-                  localeFamilies[config2.parentLocale].push({
+                  localeFamilies[config.parentLocale].push({
                     name,
-                    config: config2
+                    config
                   });
                   return null;
                 }
               }
             }
-            locales[name] = new Locale(mergeConfigs(parentConfig, config2));
+            locales[name] = new Locale(mergeConfigs(parentConfig, config));
             if (localeFamilies[name]) {
               localeFamilies[name].forEach(function(x) {
                 defineLocale(x.name, x.config);
@@ -8169,21 +8084,21 @@
             return null;
           }
         }
-        function updateLocale(name, config2) {
-          if (config2 != null) {
+        function updateLocale(name, config) {
+          if (config != null) {
             var locale2, tmpLocale, parentConfig = baseConfig;
             if (locales[name] != null && locales[name].parentLocale != null) {
-              locales[name].set(mergeConfigs(locales[name]._config, config2));
+              locales[name].set(mergeConfigs(locales[name]._config, config));
             } else {
               tmpLocale = loadLocale(name);
               if (tmpLocale != null) {
                 parentConfig = tmpLocale._config;
               }
-              config2 = mergeConfigs(parentConfig, config2);
+              config = mergeConfigs(parentConfig, config);
               if (tmpLocale == null) {
-                config2.abbr = name;
+                config.abbr = name;
               }
-              locale2 = new Locale(config2);
+              locale2 = new Locale(config);
               locale2.parentLocale = locales[name];
               locales[name] = locale2;
             }
@@ -8275,10 +8190,10 @@
           PDT: -7 * 60,
           PST: -8 * 60
         };
-        function configFromISO(config2) {
-          var i, l, string = config2._i, match = extendedIsoRegex.exec(string) || basicIsoRegex.exec(string), allowTime, dateFormat, timeFormat, tzFormat, isoDatesLen = isoDates.length, isoTimesLen = isoTimes.length;
+        function configFromISO(config) {
+          var i, l, string = config._i, match = extendedIsoRegex.exec(string) || basicIsoRegex.exec(string), allowTime, dateFormat, timeFormat, tzFormat, isoDatesLen = isoDates.length, isoTimesLen = isoTimes.length;
           if (match) {
-            getParsingFlags(config2).iso = true;
+            getParsingFlags(config).iso = true;
             for (i = 0, l = isoDatesLen; i < l; i++) {
               if (isoDates[i][1].exec(match[1])) {
                 dateFormat = isoDates[i][0];
@@ -8287,7 +8202,7 @@
               }
             }
             if (dateFormat == null) {
-              config2._isValid = false;
+              config._isValid = false;
               return;
             }
             if (match[3]) {
@@ -8298,26 +8213,26 @@
                 }
               }
               if (timeFormat == null) {
-                config2._isValid = false;
+                config._isValid = false;
                 return;
               }
             }
             if (!allowTime && timeFormat != null) {
-              config2._isValid = false;
+              config._isValid = false;
               return;
             }
             if (match[4]) {
               if (tzRegex.exec(match[4])) {
                 tzFormat = "Z";
               } else {
-                config2._isValid = false;
+                config._isValid = false;
                 return;
               }
             }
-            config2._f = dateFormat + (timeFormat || "") + (tzFormat || "");
-            configFromStringAndFormat(config2);
+            config._f = dateFormat + (timeFormat || "") + (tzFormat || "");
+            configFromStringAndFormat(config);
           } else {
-            config2._isValid = false;
+            config._isValid = false;
           }
         }
         function extractFromRFC2822Strings(yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr) {
@@ -8345,7 +8260,7 @@
         function preprocessRFC2822(s) {
           return s.replace(/\([^()]*\)|[\n\t]/g, " ").replace(/(\s\s+)/g, " ").replace(/^\s\s*/, "").replace(/\s\s*$/, "");
         }
-        function checkWeekday(weekdayStr, parsedInput, config2) {
+        function checkWeekday(weekdayStr, parsedInput, config) {
           if (weekdayStr) {
             var weekdayProvided = defaultLocaleWeekdaysShort.indexOf(weekdayStr), weekdayActual = new Date(
               parsedInput[0],
@@ -8353,8 +8268,8 @@
               parsedInput[2]
             ).getDay();
             if (weekdayProvided !== weekdayActual) {
-              getParsingFlags(config2).weekdayMismatch = true;
-              config2._isValid = false;
+              getParsingFlags(config).weekdayMismatch = true;
+              config._isValid = false;
               return false;
             }
           }
@@ -8370,8 +8285,8 @@
             return h * 60 + m;
           }
         }
-        function configFromRFC2822(config2) {
-          var match = rfc2822.exec(preprocessRFC2822(config2._i)), parsedArray;
+        function configFromRFC2822(config) {
+          var match = rfc2822.exec(preprocessRFC2822(config._i)), parsedArray;
           if (match) {
             parsedArray = extractFromRFC2822Strings(
               match[4],
@@ -8381,46 +8296,46 @@
               match[6],
               match[7]
             );
-            if (!checkWeekday(match[1], parsedArray, config2)) {
+            if (!checkWeekday(match[1], parsedArray, config)) {
               return;
             }
-            config2._a = parsedArray;
-            config2._tzm = calculateOffset(match[8], match[9], match[10]);
-            config2._d = createUTCDate.apply(null, config2._a);
-            config2._d.setUTCMinutes(config2._d.getUTCMinutes() - config2._tzm);
-            getParsingFlags(config2).rfc2822 = true;
+            config._a = parsedArray;
+            config._tzm = calculateOffset(match[8], match[9], match[10]);
+            config._d = createUTCDate.apply(null, config._a);
+            config._d.setUTCMinutes(config._d.getUTCMinutes() - config._tzm);
+            getParsingFlags(config).rfc2822 = true;
           } else {
-            config2._isValid = false;
+            config._isValid = false;
           }
         }
-        function configFromString(config2) {
-          var matched = aspNetJsonRegex.exec(config2._i);
+        function configFromString(config) {
+          var matched = aspNetJsonRegex.exec(config._i);
           if (matched !== null) {
-            config2._d = /* @__PURE__ */ new Date(+matched[1]);
+            config._d = /* @__PURE__ */ new Date(+matched[1]);
             return;
           }
-          configFromISO(config2);
-          if (config2._isValid === false) {
-            delete config2._isValid;
+          configFromISO(config);
+          if (config._isValid === false) {
+            delete config._isValid;
           } else {
             return;
           }
-          configFromRFC2822(config2);
-          if (config2._isValid === false) {
-            delete config2._isValid;
+          configFromRFC2822(config);
+          if (config._isValid === false) {
+            delete config._isValid;
           } else {
             return;
           }
-          if (config2._strict) {
-            config2._isValid = false;
+          if (config._strict) {
+            config._isValid = false;
           } else {
-            hooks.createFromInputFallback(config2);
+            hooks.createFromInputFallback(config);
           }
         }
         hooks.createFromInputFallback = deprecate(
           "value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.",
-          function(config2) {
-            config2._d = /* @__PURE__ */ new Date(config2._i + (config2._useUTC ? " UTC" : ""));
+          function(config) {
+            config._d = /* @__PURE__ */ new Date(config._i + (config._useUTC ? " UTC" : ""));
           }
         );
         function defaults2(a, b, c) {
@@ -8432,9 +8347,9 @@
           }
           return c;
         }
-        function currentDateArray(config2) {
+        function currentDateArray(config) {
           var nowValue = new Date(hooks.now());
-          if (config2._useUTC) {
+          if (config._useUTC) {
             return [
               nowValue.getUTCFullYear(),
               nowValue.getUTCMonth(),
@@ -8443,58 +8358,58 @@
           }
           return [nowValue.getFullYear(), nowValue.getMonth(), nowValue.getDate()];
         }
-        function configFromArray(config2) {
+        function configFromArray(config) {
           var i, date, input = [], currentDate, expectedWeekday, yearToUse;
-          if (config2._d) {
+          if (config._d) {
             return;
           }
-          currentDate = currentDateArray(config2);
-          if (config2._w && config2._a[DATE] == null && config2._a[MONTH] == null) {
-            dayOfYearFromWeekInfo(config2);
+          currentDate = currentDateArray(config);
+          if (config._w && config._a[DATE] == null && config._a[MONTH] == null) {
+            dayOfYearFromWeekInfo(config);
           }
-          if (config2._dayOfYear != null) {
-            yearToUse = defaults2(config2._a[YEAR], currentDate[YEAR]);
-            if (config2._dayOfYear > daysInYear(yearToUse) || config2._dayOfYear === 0) {
-              getParsingFlags(config2)._overflowDayOfYear = true;
+          if (config._dayOfYear != null) {
+            yearToUse = defaults2(config._a[YEAR], currentDate[YEAR]);
+            if (config._dayOfYear > daysInYear(yearToUse) || config._dayOfYear === 0) {
+              getParsingFlags(config)._overflowDayOfYear = true;
             }
-            date = createUTCDate(yearToUse, 0, config2._dayOfYear);
-            config2._a[MONTH] = date.getUTCMonth();
-            config2._a[DATE] = date.getUTCDate();
+            date = createUTCDate(yearToUse, 0, config._dayOfYear);
+            config._a[MONTH] = date.getUTCMonth();
+            config._a[DATE] = date.getUTCDate();
           }
-          for (i = 0; i < 3 && config2._a[i] == null; ++i) {
-            config2._a[i] = input[i] = currentDate[i];
+          for (i = 0; i < 3 && config._a[i] == null; ++i) {
+            config._a[i] = input[i] = currentDate[i];
           }
           for (; i < 7; i++) {
-            config2._a[i] = input[i] = config2._a[i] == null ? i === 2 ? 1 : 0 : config2._a[i];
+            config._a[i] = input[i] = config._a[i] == null ? i === 2 ? 1 : 0 : config._a[i];
           }
-          if (config2._a[HOUR] === 24 && config2._a[MINUTE] === 0 && config2._a[SECOND] === 0 && config2._a[MILLISECOND] === 0) {
-            config2._nextDay = true;
-            config2._a[HOUR] = 0;
+          if (config._a[HOUR] === 24 && config._a[MINUTE] === 0 && config._a[SECOND] === 0 && config._a[MILLISECOND] === 0) {
+            config._nextDay = true;
+            config._a[HOUR] = 0;
           }
-          config2._d = (config2._useUTC ? createUTCDate : createDate).apply(
+          config._d = (config._useUTC ? createUTCDate : createDate).apply(
             null,
             input
           );
-          expectedWeekday = config2._useUTC ? config2._d.getUTCDay() : config2._d.getDay();
-          if (config2._tzm != null) {
-            config2._d.setUTCMinutes(config2._d.getUTCMinutes() - config2._tzm);
+          expectedWeekday = config._useUTC ? config._d.getUTCDay() : config._d.getDay();
+          if (config._tzm != null) {
+            config._d.setUTCMinutes(config._d.getUTCMinutes() - config._tzm);
           }
-          if (config2._nextDay) {
-            config2._a[HOUR] = 24;
+          if (config._nextDay) {
+            config._a[HOUR] = 24;
           }
-          if (config2._w && typeof config2._w.d !== "undefined" && config2._w.d !== expectedWeekday) {
-            getParsingFlags(config2).weekdayMismatch = true;
+          if (config._w && typeof config._w.d !== "undefined" && config._w.d !== expectedWeekday) {
+            getParsingFlags(config).weekdayMismatch = true;
           }
         }
-        function dayOfYearFromWeekInfo(config2) {
+        function dayOfYearFromWeekInfo(config) {
           var w, weekYear, week, weekday, dow, doy, temp, weekdayOverflow, curWeek;
-          w = config2._w;
+          w = config._w;
           if (w.GG != null || w.W != null || w.E != null) {
             dow = 1;
             doy = 4;
             weekYear = defaults2(
               w.GG,
-              config2._a[YEAR],
+              config._a[YEAR],
               weekOfYear(createLocal(), 1, 4).year
             );
             week = defaults2(w.W, 1);
@@ -8503,10 +8418,10 @@
               weekdayOverflow = true;
             }
           } else {
-            dow = config2._locale._week.dow;
-            doy = config2._locale._week.doy;
+            dow = config._locale._week.dow;
+            doy = config._locale._week.doy;
             curWeek = weekOfYear(createLocal(), dow, doy);
-            weekYear = defaults2(w.gg, config2._a[YEAR], curWeek.year);
+            weekYear = defaults2(w.gg, config._a[YEAR], curWeek.year);
             week = defaults2(w.w, curWeek.week);
             if (w.d != null) {
               weekday = w.d;
@@ -8523,40 +8438,40 @@
             }
           }
           if (week < 1 || week > weeksInYear(weekYear, dow, doy)) {
-            getParsingFlags(config2)._overflowWeeks = true;
+            getParsingFlags(config)._overflowWeeks = true;
           } else if (weekdayOverflow != null) {
-            getParsingFlags(config2)._overflowWeekday = true;
+            getParsingFlags(config)._overflowWeekday = true;
           } else {
             temp = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy);
-            config2._a[YEAR] = temp.year;
-            config2._dayOfYear = temp.dayOfYear;
+            config._a[YEAR] = temp.year;
+            config._dayOfYear = temp.dayOfYear;
           }
         }
         hooks.ISO_8601 = function() {
         };
         hooks.RFC_2822 = function() {
         };
-        function configFromStringAndFormat(config2) {
-          if (config2._f === hooks.ISO_8601) {
-            configFromISO(config2);
+        function configFromStringAndFormat(config) {
+          if (config._f === hooks.ISO_8601) {
+            configFromISO(config);
             return;
           }
-          if (config2._f === hooks.RFC_2822) {
-            configFromRFC2822(config2);
+          if (config._f === hooks.RFC_2822) {
+            configFromRFC2822(config);
             return;
           }
-          config2._a = [];
-          getParsingFlags(config2).empty = true;
-          var string = "" + config2._i, i, parsedInput, tokens2, token2, skipped, stringLength = string.length, totalParsedInputLength = 0, era, tokenLen;
-          tokens2 = expandFormat(config2._f, config2._locale).match(formattingTokens) || [];
+          config._a = [];
+          getParsingFlags(config).empty = true;
+          var string = "" + config._i, i, parsedInput, tokens2, token2, skipped, stringLength = string.length, totalParsedInputLength = 0, era, tokenLen;
+          tokens2 = expandFormat(config._f, config._locale).match(formattingTokens) || [];
           tokenLen = tokens2.length;
           for (i = 0; i < tokenLen; i++) {
             token2 = tokens2[i];
-            parsedInput = (string.match(getParseRegexForToken(token2, config2)) || [])[0];
+            parsedInput = (string.match(getParseRegexForToken(token2, config)) || [])[0];
             if (parsedInput) {
               skipped = string.substr(0, string.indexOf(parsedInput));
               if (skipped.length > 0) {
-                getParsingFlags(config2).unusedInput.push(skipped);
+                getParsingFlags(config).unusedInput.push(skipped);
               }
               string = string.slice(
                 string.indexOf(parsedInput) + parsedInput.length
@@ -8565,35 +8480,35 @@
             }
             if (formatTokenFunctions[token2]) {
               if (parsedInput) {
-                getParsingFlags(config2).empty = false;
+                getParsingFlags(config).empty = false;
               } else {
-                getParsingFlags(config2).unusedTokens.push(token2);
+                getParsingFlags(config).unusedTokens.push(token2);
               }
-              addTimeToArrayFromToken(token2, parsedInput, config2);
-            } else if (config2._strict && !parsedInput) {
-              getParsingFlags(config2).unusedTokens.push(token2);
+              addTimeToArrayFromToken(token2, parsedInput, config);
+            } else if (config._strict && !parsedInput) {
+              getParsingFlags(config).unusedTokens.push(token2);
             }
           }
-          getParsingFlags(config2).charsLeftOver = stringLength - totalParsedInputLength;
+          getParsingFlags(config).charsLeftOver = stringLength - totalParsedInputLength;
           if (string.length > 0) {
-            getParsingFlags(config2).unusedInput.push(string);
+            getParsingFlags(config).unusedInput.push(string);
           }
-          if (config2._a[HOUR] <= 12 && getParsingFlags(config2).bigHour === true && config2._a[HOUR] > 0) {
-            getParsingFlags(config2).bigHour = void 0;
+          if (config._a[HOUR] <= 12 && getParsingFlags(config).bigHour === true && config._a[HOUR] > 0) {
+            getParsingFlags(config).bigHour = void 0;
           }
-          getParsingFlags(config2).parsedDateParts = config2._a.slice(0);
-          getParsingFlags(config2).meridiem = config2._meridiem;
-          config2._a[HOUR] = meridiemFixWrap(
-            config2._locale,
-            config2._a[HOUR],
-            config2._meridiem
+          getParsingFlags(config).parsedDateParts = config._a.slice(0);
+          getParsingFlags(config).meridiem = config._meridiem;
+          config._a[HOUR] = meridiemFixWrap(
+            config._locale,
+            config._a[HOUR],
+            config._meridiem
           );
-          era = getParsingFlags(config2).era;
+          era = getParsingFlags(config).era;
           if (era !== null) {
-            config2._a[YEAR] = config2._locale.erasConvertYear(era, config2._a[YEAR]);
+            config._a[YEAR] = config._locale.erasConvertYear(era, config._a[YEAR]);
           }
-          configFromArray(config2);
-          checkOverflow(config2);
+          configFromArray(config);
+          checkOverflow(config);
         }
         function meridiemFixWrap(locale2, hour, meridiem2) {
           var isPm;
@@ -8615,21 +8530,21 @@
             return hour;
           }
         }
-        function configFromStringAndArray(config2) {
-          var tempConfig, bestMoment, scoreToBeat, i, currentScore, validFormatFound, bestFormatIsValid = false, configfLen = config2._f.length;
+        function configFromStringAndArray(config) {
+          var tempConfig, bestMoment, scoreToBeat, i, currentScore, validFormatFound, bestFormatIsValid = false, configfLen = config._f.length;
           if (configfLen === 0) {
-            getParsingFlags(config2).invalidFormat = true;
-            config2._d = /* @__PURE__ */ new Date(NaN);
+            getParsingFlags(config).invalidFormat = true;
+            config._d = /* @__PURE__ */ new Date(NaN);
             return;
           }
           for (i = 0; i < configfLen; i++) {
             currentScore = 0;
             validFormatFound = false;
-            tempConfig = copyConfig({}, config2);
-            if (config2._useUTC != null) {
-              tempConfig._useUTC = config2._useUTC;
+            tempConfig = copyConfig({}, config);
+            if (config._useUTC != null) {
+              tempConfig._useUTC = config._useUTC;
             }
-            tempConfig._f = config2._f[i];
+            tempConfig._f = config._f[i];
             configFromStringAndFormat(tempConfig);
             if (isValid(tempConfig)) {
               validFormatFound = true;
@@ -8652,73 +8567,73 @@
               }
             }
           }
-          extend2(config2, bestMoment || tempConfig);
+          extend2(config, bestMoment || tempConfig);
         }
-        function configFromObject(config2) {
-          if (config2._d) {
+        function configFromObject(config) {
+          if (config._d) {
             return;
           }
-          var i = normalizeObjectUnits(config2._i), dayOrDate = i.day === void 0 ? i.date : i.day;
-          config2._a = map(
+          var i = normalizeObjectUnits(config._i), dayOrDate = i.day === void 0 ? i.date : i.day;
+          config._a = map(
             [i.year, i.month, dayOrDate, i.hour, i.minute, i.second, i.millisecond],
             function(obj) {
               return obj && parseInt(obj, 10);
             }
           );
-          configFromArray(config2);
+          configFromArray(config);
         }
-        function createFromConfig(config2) {
-          var res = new Moment(checkOverflow(prepareConfig(config2)));
+        function createFromConfig(config) {
+          var res = new Moment(checkOverflow(prepareConfig(config)));
           if (res._nextDay) {
             res.add(1, "d");
             res._nextDay = void 0;
           }
           return res;
         }
-        function prepareConfig(config2) {
-          var input = config2._i, format2 = config2._f;
-          config2._locale = config2._locale || getLocale(config2._l);
+        function prepareConfig(config) {
+          var input = config._i, format2 = config._f;
+          config._locale = config._locale || getLocale(config._l);
           if (input === null || format2 === void 0 && input === "") {
             return createInvalid({ nullInput: true });
           }
           if (typeof input === "string") {
-            config2._i = input = config2._locale.preparse(input);
+            config._i = input = config._locale.preparse(input);
           }
           if (isMoment(input)) {
             return new Moment(checkOverflow(input));
           } else if (isDate2(input)) {
-            config2._d = input;
+            config._d = input;
           } else if (isArray2(format2)) {
-            configFromStringAndArray(config2);
+            configFromStringAndArray(config);
           } else if (format2) {
-            configFromStringAndFormat(config2);
+            configFromStringAndFormat(config);
           } else {
-            configFromInput(config2);
+            configFromInput(config);
           }
-          if (!isValid(config2)) {
-            config2._d = null;
+          if (!isValid(config)) {
+            config._d = null;
           }
-          return config2;
+          return config;
         }
-        function configFromInput(config2) {
-          var input = config2._i;
+        function configFromInput(config) {
+          var input = config._i;
           if (isUndefined2(input)) {
-            config2._d = new Date(hooks.now());
+            config._d = new Date(hooks.now());
           } else if (isDate2(input)) {
-            config2._d = new Date(input.valueOf());
+            config._d = new Date(input.valueOf());
           } else if (typeof input === "string") {
-            configFromString(config2);
+            configFromString(config);
           } else if (isArray2(input)) {
-            config2._a = map(input.slice(0), function(obj) {
+            config._a = map(input.slice(0), function(obj) {
               return parseInt(obj, 10);
             });
-            configFromArray(config2);
+            configFromArray(config);
           } else if (isObject2(input)) {
-            configFromObject(config2);
+            configFromObject(config);
           } else if (isNumber2(input)) {
-            config2._d = new Date(input);
+            config._d = new Date(input);
           } else {
-            hooks.createFromInputFallback(config2);
+            hooks.createFromInputFallback(config);
           }
         }
         function createLocalOrUTC(input, format2, locale2, strict, isUTC) {
@@ -8874,9 +8789,9 @@
         offset("ZZ", "");
         addRegexToken("Z", matchShortOffset);
         addRegexToken("ZZ", matchShortOffset);
-        addParseToken(["Z", "ZZ"], function(input, array, config2) {
-          config2._useUTC = true;
-          config2._tzm = offsetFromString(matchShortOffset, input);
+        addParseToken(["Z", "ZZ"], function(input, array, config) {
+          config._useUTC = true;
+          config._tzm = offsetFromString(matchShortOffset, input);
         });
         var chunkOffset = /([\+\-]|\d\d)/gi;
         function offsetFromString(matcher, string) {
@@ -9638,12 +9553,12 @@
         addRegexToken("NNNNN", matchEraNarrow);
         addParseToken(
           ["N", "NN", "NNN", "NNNN", "NNNNN"],
-          function(input, array, config2, token2) {
-            var era = config2._locale.erasParse(input, token2, config2._strict);
+          function(input, array, config, token2) {
+            var era = config._locale.erasParse(input, token2, config._strict);
             if (era) {
-              getParsingFlags(config2).era = era;
+              getParsingFlags(config).era = era;
             } else {
-              getParsingFlags(config2).invalidEra = input;
+              getParsingFlags(config).invalidEra = input;
             }
           }
         );
@@ -9653,13 +9568,13 @@
         addRegexToken("yyyy", matchUnsigned);
         addRegexToken("yo", matchEraYearOrdinal);
         addParseToken(["y", "yy", "yyy", "yyyy"], YEAR);
-        addParseToken(["yo"], function(input, array, config2, token2) {
+        addParseToken(["yo"], function(input, array, config, token2) {
           var match;
-          if (config2._locale._eraYearOrdinalRegex) {
-            match = input.match(config2._locale._eraYearOrdinalRegex);
+          if (config._locale._eraYearOrdinalRegex) {
+            match = input.match(config._locale._eraYearOrdinalRegex);
           }
-          if (config2._locale.eraYearOrdinalParse) {
-            array[YEAR] = config2._locale.eraYearOrdinalParse(input, match);
+          if (config._locale.eraYearOrdinalParse) {
+            array[YEAR] = config._locale.eraYearOrdinalParse(input, match);
           } else {
             array[YEAR] = parseInt(input, 10);
           }
@@ -9850,11 +9765,11 @@
         addRegexToken("ggggg", match1to6, match6);
         addWeekParseToken(
           ["gggg", "ggggg", "GGGG", "GGGGG"],
-          function(input, week, config2, token2) {
+          function(input, week, config, token2) {
             week[token2.substr(0, 2)] = toInt(input);
           }
         );
-        addWeekParseToken(["gg", "GG"], function(input, week, config2, token2) {
+        addWeekParseToken(["gg", "GG"], function(input, week, config, token2) {
           week[token2] = hooks.parseTwoDigitYear(input);
         });
         function getSetWeekYear(input) {
@@ -9938,8 +9853,8 @@
         addUnitPriority("dayOfYear", 4);
         addRegexToken("DDD", match1to3);
         addRegexToken("DDDD", match3);
-        addParseToken(["DDD", "DDDD"], function(input, array, config2) {
-          config2._dayOfYear = toInt(input);
+        addParseToken(["DDD", "DDDD"], function(input, array, config) {
+          config._dayOfYear = toInt(input);
         });
         function getSetDayOfYear(input) {
           var dayOfYear = Math.round(
@@ -10522,11 +10437,11 @@
         addFormatToken("x", 0, 0, "valueOf");
         addRegexToken("x", matchSigned);
         addRegexToken("X", matchTimestamp);
-        addParseToken("X", function(input, array, config2) {
-          config2._d = new Date(parseFloat(input) * 1e3);
+        addParseToken("X", function(input, array, config) {
+          config._d = new Date(parseFloat(input) * 1e3);
         });
-        addParseToken("x", function(input, array, config2) {
-          config2._d = new Date(toInt(input));
+        addParseToken("x", function(input, array, config) {
+          config._d = new Date(toInt(input));
         });
         hooks.version = "2.29.4";
         setHookCallback(createLocal);
@@ -10659,8 +10574,8 @@
           return { successful: false, message: "Please go to Settings and authorize CRM platform" };
         }
       }
-      async function openLog2({ config: config2, platformName: platformName2, hostname, logId, contactType }) {
-        const logPageUrl = config2.platforms[platformName2].logPageUrl.replace("{hostname}", hostname).replaceAll("{logId}", logId).replaceAll("{contactType}", contactType);
+      async function openLog2({ manifest: manifest2, platformName: platformName2, hostname, logId, contactType }) {
+        const logPageUrl = manifest2.platforms[platformName2].logPageUrl.replace("{hostname}", hostname).replaceAll("{logId}", logId).replaceAll("{contactType}", contactType);
         window.open(logPageUrl);
       }
       async function updateLog2({ serverUrl, logType, sessionId, recordingLink, subject, note }) {
@@ -10765,15 +10680,15 @@
           return { matched: false, message: "Please go to Settings and authorize CRM platform", contactInfo: null };
         }
       }
-      async function openContactPage2({ config: config2, platformName: platformName2, phoneNumber }) {
-        const { matched: contactMatched, contactInfo } = await getContact2({ serverUrl: config2.serverUrl, phoneNumber });
+      async function openContactPage2({ manifest: manifest2, platformName: platformName2, phoneNumber }) {
+        const { matched: contactMatched, contactInfo } = await getContact2({ serverUrl: manifest2.serverUrl, phoneNumber });
         if (!contactMatched) {
           return;
         }
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         let platformInfo = await chrome.storage.local.get("platform-info");
         if (platformInfo["platform-info"].hostname === "temp") {
-          const hostnameRes = await axios_default2.get(`${config2.serverUrl}/hostname?jwtToken=${rcUnifiedCrmExtJwt}`);
+          const hostnameRes = await axios_default2.get(`${manifest2.serverUrl}/hostname?jwtToken=${rcUnifiedCrmExtJwt}`);
           platformInfo["platform-info"].hostname = hostnameRes.data;
           await chrome.storage.local.set(platformInfo);
         }
@@ -10790,7 +10705,7 @@
         }
         for (const c of contactInfo) {
           const hostname = platformInfo["platform-info"].hostname;
-          const contactPageUrl = config2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname).replaceAll("{contactId}", c.id).replaceAll("{contactType}", c.type);
+          const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname).replaceAll("{contactId}", c.id).replaceAll("{contactType}", c.type);
           window.open(contactPageUrl);
         }
       }
@@ -11073,10 +10988,10 @@
   // src/components/logPage.js
   var require_logPage = __commonJS({
     "src/components/logPage.js"(exports) {
-      function getLogPageRender({ config: config2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note }) {
-        const additionalChoiceFields = logType === "Call" ? config2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : config2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
-        const additionalCheckBoxFields = logType === "Call" ? config2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : config2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
-        const additionalInputFields = logType === "Call" ? config2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : config2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
+      function getLogPageRender({ manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note }) {
+        const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
+        const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
+        const additionalInputFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
         const contactList = contactInfo.map((c) => {
           return { const: c.id, title: c.name, type: c.type, description: c.type ? `${c.type} - ${c.id}` : "", additionalInfo: c.additionalInfo };
         });
@@ -11184,7 +11099,7 @@
               }
             };
             if (contactList[0].const === "createNewContact") {
-              if (!!config2.platforms[platformName2].contactTypes) {
+              if (!!manifest2.platforms[platformName2].contactTypes) {
                 newContactWidget.newContactType = {};
               }
               newContactWidget.newContactName = {
@@ -11223,7 +11138,7 @@
                   newContactType: {
                     title: "Contact type",
                     type: "string",
-                    oneOf: config2.platforms[platformName2].contactTypes?.map((t) => {
+                    oneOf: manifest2.platforms[platformName2].contactTypes?.map((t) => {
                       return { const: t, title: t };
                     }) ?? []
                   },
@@ -11255,7 +11170,7 @@
               },
               formData: {
                 contact: contactList[0].const,
-                newContactType: config2.platforms[platformName2].contactTypes ? config2.platforms[platformName2].contactTypes[0] : "",
+                newContactType: manifest2.platforms[platformName2].contactTypes ? manifest2.platforms[platformName2].contactTypes[0] : "",
                 newContactName: "",
                 contactType: contactList[0]?.type ?? "",
                 contactName: contactList[0]?.title ?? "",
@@ -11309,17 +11224,17 @@
         }
         return page;
       }
-      function getUpdatedLogPageRender({ config: config2, logType, platformName: platformName2, updateData }) {
+      function getUpdatedLogPageRender({ manifest: manifest2, logType, platformName: platformName2, updateData }) {
         const updatedFieldKey = updateData.keys[0];
         let page = updateData.page;
         page.formData = updateData.formData;
-        const additionalChoiceFields = logType === "Call" ? config2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : config2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
-        const additionalCheckBoxFields = logType === "Call" ? config2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : config2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
+        const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
+        const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
         switch (updatedFieldKey) {
           case "contact":
             const contact = page.schema.properties.contact.oneOf.find((c) => c.const === page.formData.contact);
             if (contact.const === "createNewContact") {
-              if (!!config2.platforms[platformName2].contactTypes) {
+              if (!!manifest2.platforms[platformName2].contactTypes) {
                 page.uiSchema.newContactType = {};
               }
               page.uiSchema.newContactName = {
@@ -11405,8 +11320,8 @@
   // src/components/authPage.js
   var require_authPage = __commonJS({
     "src/components/authPage.js"(exports) {
-      function getAuthPageRender({ config: config2, platformName: platformName2 }) {
-        const authPage2 = config2.platforms[platformName2].page.auth;
+      function getAuthPageRender({ manifest: manifest2, platformName: platformName2 }) {
+        const authPage2 = manifest2.platforms[platformName2].page.auth;
         const pageTitle = authPage2.title;
         const required = authPage2.content.filter((c) => c.required).map((c) => {
           return c.const;
@@ -11538,14 +11453,14 @@
   var require_releaseNotesPage = __commonJS({
     "src/components/releaseNotesPage.js"(exports) {
       init_axios2();
-      async function getReleaseNotesPageRender({ config: config2, platformName: platformName2, registeredVersion }) {
-        const releaseNotesResponse = await axios_default2.get(`${config2.serverUrl}/releaseNotes`);
+      async function getReleaseNotesPageRender({ manifest: manifest2, platformName: platformName2, registeredVersion }) {
+        const releaseNotesResponse = await axios_default2.get(`${manifest2.serverUrl}/releaseNotes`);
         const releaseNotes = releaseNotesResponse.data;
         const registeredVersionNumbers = registeredVersion.split(".").map((v) => parseInt(v));
-        const currentVersionNumbers = config2.version.split(".").map((v) => parseInt(v));
-        if (!!releaseNotes[config2.version] && (currentVersionNumbers[0] > registeredVersionNumbers[0] || currentVersionNumbers[0] === registeredVersionNumbers[0] && currentVersionNumbers[1] > registeredVersionNumbers[1] || currentVersionNumbers[0] === registeredVersionNumbers[0] && currentVersionNumbers[1] === registeredVersionNumbers[1] && currentVersionNumbers[2] > registeredVersionNumbers[2])) {
-          const globalNotes = releaseNotes[config2.version].global ?? [];
-          const platformNotes = releaseNotes[config2.version][platformName2] ?? [];
+        const currentVersionNumbers = manifest2.version.split(".").map((v) => parseInt(v));
+        if (!!releaseNotes[manifest2.version] && (currentVersionNumbers[0] > registeredVersionNumbers[0] || currentVersionNumbers[0] === registeredVersionNumbers[0] && currentVersionNumbers[1] > registeredVersionNumbers[1] || currentVersionNumbers[0] === registeredVersionNumbers[0] && currentVersionNumbers[1] === registeredVersionNumbers[1] && currentVersionNumbers[2] > registeredVersionNumbers[2])) {
+          const globalNotes = releaseNotes[manifest2.version].global ?? [];
+          const platformNotes = releaseNotes[manifest2.version][platformName2] ?? [];
           const allNotes = globalNotes.concat(platformNotes);
           const allTypes = allNotes.map((n) => {
             return n.type;
@@ -11582,7 +11497,7 @@
           }
           return {
             id: "releaseNotesPage",
-            title: `Release Notes (v${config2.version})`,
+            title: `Release Notes (v${manifest2.version})`,
             schema: {
               type: "object",
               properties: notesRender
@@ -11628,7 +11543,7 @@
     trackOpenFeedback
   } = require_analytics();
   window.__ON_RC_POPUP_WINDOW = 1;
-  var config = {};
+  var manifest = {};
   var registered = false;
   var crmAuthed = false;
   var platform = null;
@@ -11666,13 +11581,13 @@
     }
   }
   checkC2DCollision();
-  async function getCustomConfig() {
-    const { customCrmConfig } = await chrome.storage.local.get({ customCrmConfig: null });
-    if (!!customCrmConfig) {
-      config = customCrmConfig;
+  async function getCustomManifest() {
+    const { customCrmManifest } = await chrome.storage.local.get({ customCrmManifest: null });
+    if (!!customCrmManifest) {
+      manifest = customCrmManifest;
     }
   }
-  getCustomConfig();
+  getCustomManifest();
   window.addEventListener("message", async (e) => {
     const data = e.data;
     let noShowNotification = false;
@@ -11738,11 +11653,11 @@
               const platformInfo2 = await chrome.storage.local.get("platform-info");
               platformName = platformInfo2["platform-info"].platformName;
               platformHostname = platformInfo2["platform-info"].hostname;
-              platform = config.platforms[platformName];
+              platform = manifest.platforms[platformName];
               registered = true;
               document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                 type: "rc-adapter-register-third-party-service",
-                service: getServiceConfig(platformName)
+                service: getServiceManifest(platformName)
               }, "*");
             }
             break;
@@ -11769,7 +11684,7 @@
                 const indexDB = await openDB2(`rc-widget-storage-${extId}`, 2);
                 const rcInfo = await indexDB.get("keyvaluepairs", "dataFetcherV2-storageData");
                 const userInfoResponse = await getUserInfo({
-                  serverUrl: config.serverUrl,
+                  serverUrl: manifest.serverUrl,
                   extensionId: rcInfo.value.cachedData.extensionInfo.id,
                   accountId: rcInfo.value.cachedData.extensionInfo.account.id
                 });
@@ -11813,7 +11728,7 @@
             }
             const registeredVersionInfo = await chrome.storage.local.get("rc-crm-extension-version");
             if (!!registeredVersionInfo[["rc-crm-extension-version"]]) {
-              const releaseNotesPageRender = await releaseNotesPage.getReleaseNotesPageRender({ config, platformName, registeredVersion: registeredVersionInfo["rc-crm-extension-version"] });
+              const releaseNotesPageRender = await releaseNotesPage.getReleaseNotesPageRender({ manifest, platformName, registeredVersion: registeredVersionInfo["rc-crm-extension-version"] });
               if (!!releaseNotesPageRender) {
                 document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                   type: "rc-adapter-register-customized-page",
@@ -11827,7 +11742,7 @@
               }
             }
             await chrome.storage.local.set({
-              ["rc-crm-extension-version"]: config.version
+              ["rc-crm-extension-version"]: manifest.version
             });
             break;
           case "rc-login-popup-notify":
@@ -11866,7 +11781,7 @@
                 type: "openPopupWindow"
               });
               if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page from incoming call")?.value) {
-                openContactPage({ config, platformName, phoneNumber: data.call.direction === "Inbound" ? data.call.from.phoneNumber : data.call.to.phoneNumber });
+                openContactPage({ manifest, platformName, phoneNumber: data.call.direction === "Inbound" ? data.call.from.phoneNumber : data.call.to.phoneNumber });
               }
             }
             break;
@@ -11916,7 +11831,7 @@
                         customState = platform.customState;
                       }
                       if (platformName === "pipedrive") {
-                        authUri = config.platforms.pipedrive.redirectUri;
+                        authUri = manifest.platforms.pipedrive.redirectUri;
                       } else if (platformName === "bullhorn") {
                         let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
                         if (crm_extension_bullhorn_user_urls?.oauthUrl) {
@@ -11931,12 +11846,12 @@
                           }
                         }
                       } else {
-                        authUri = `${platform.authUrl}?response_type=code&client_id=${platform.clientId}${!!platform.scopes ? `&scope=${platform.scopes}` : ""}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                        authUri = `${platform.authUrl}?response_type=code&client_id=${platform.clientId}${!!platform.scope && platform.scope != "" ? `&${platform.scope}` : ""}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                       }
                       handleThirdPartyOAuthWindow(authUri);
                       break;
                     case "apiKey":
-                      const authPageRender = authPage.getAuthPageRender({ config, platformName });
+                      const authPageRender = authPage.getAuthPageRender({ manifest, platformName });
                       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                         type: "rc-adapter-register-customized-page",
                         page: authPageRender
@@ -11950,7 +11865,7 @@
                   }
                 } else {
                   window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                  auth.unAuthorize({ serverUrl: config.serverUrl, platformName, rcUnifiedCrmExtJwt });
+                  auth.unAuthorize({ serverUrl: manifest.serverUrl, platformName, rcUnifiedCrmExtJwt });
                   window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 }
                 responseMessage(
@@ -11992,7 +11907,7 @@
                     if (!contactPhoneNumber2.startsWith("+")) {
                       continue;
                     }
-                    const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: config.serverUrl, phoneNumber: contactPhoneNumber2 });
+                    const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber2 });
                     if (contactMatched) {
                       matchedContacts[contactPhoneNumber2] = [];
                       for (var contactInfoItem of contactInfo) {
@@ -12023,7 +11938,7 @@
                 break;
               case "/contacts/view":
                 window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                openContactPage({ config, platformName, phoneNumber: data.body.phoneNumbers[0].phoneNumber });
+                openContactPage({ manifest, platformName, phoneNumber: data.body.phoneNumbers[0].phoneNumber });
                 window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 responseMessage(
                   data.requestId,
@@ -12033,14 +11948,14 @@
                 );
                 break;
               case "/callLogger":
-                if (data.body.triggerType && data.body.call?.to?.phoneNumber?.length > 4) {
+                if (data.body.triggerType !== "logForm" && data.body.triggerType && data.body.call?.to?.phoneNumber?.length > 4) {
                   if (data.body.triggerType === "callLogSync") {
                     if (!!data.body.call?.recording?.link) {
                       console.log("call recording updating...");
                       await chrome.storage.local.set({ ["rec-link-" + data.body.call.sessionId]: { recordingLink: data.body.call.recording.link } });
                       await updateLog(
                         {
-                          serverUrl: config.serverUrl,
+                          serverUrl: manifest.serverUrl,
                           logType: "Call",
                           sessionId: data.body.call.sessionId,
                           recordingLink: data.body.call.recording.link
@@ -12051,16 +11966,18 @@
                   }
                   if (data.body.triggerType === "presenceUpdate" && data.body.call.result !== "Disconnected") {
                     break;
+                  } else {
+                    data.body.triggerType = "createLog";
                   }
                 }
                 window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
                 const contactPhoneNumber = data.body.call.direction === "Inbound" ? data.body.call.from.phoneNumber : data.body.call.to.phoneNumber;
                 const { callLogs: fetchedCallLogs } = await getLog({
-                  serverUrl: config.serverUrl,
+                  serverUrl: manifest.serverUrl,
                   logType: "Call",
                   sessionIds: data.body.call.sessionId
                 });
-                const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: config.serverUrl, phoneNumber: contactPhoneNumber });
+                const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber });
                 let note = "";
                 let callLogSubject = "";
                 switch (data.body.triggerType) {
@@ -12075,7 +11992,7 @@
                         callLogSubject = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.subject;
                       }
                     }
-                    const callPage = logPage.getLogPageRender({ config, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
+                    const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
                     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                       type: "rc-adapter-update-call-log-page",
                       page: callPage
@@ -12086,17 +12003,17 @@
                     }, "*");
                     break;
                   case "viewLog":
-                    if (config.platforms[platformName].canOpenLogPage) {
+                    if (manifest.platforms[platformName].canOpenLogPage) {
                       for (const c of callMatchedContact) {
-                        openLog({ config, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: c.type });
+                        openLog({ manifest, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: c.type });
                       }
                     } else {
-                      openContactPage({ config, platformName, phoneNumber: contactPhoneNumber });
+                      openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber });
                     }
                     break;
                   case "logForm":
                     let additionalSubmission = {};
-                    const additionalFields = config.platforms[platformName].page?.callLog?.additionalFields ?? [];
+                    const additionalFields = manifest.platforms[platformName].page?.callLog?.additionalFields ?? [];
                     for (const f of additionalFields) {
                       if (data.body.formData[f.const] != "none") {
                         additionalSubmission[f.const] = data.body.formData[f.const];
@@ -12107,7 +12024,7 @@
                         let newContactInfo = {};
                         if (data.body.formData.contact === "createNewContact") {
                           const newContactResp = await createContact({
-                            serverUrl: config.serverUrl,
+                            serverUrl: manifest.serverUrl,
                             phoneNumber: contactPhoneNumber,
                             newContactName: data.body.formData.newContactName,
                             newContactType: data.body.formData.newContactType
@@ -12116,7 +12033,7 @@
                         }
                         await addLog(
                           {
-                            serverUrl: config.serverUrl,
+                            serverUrl: manifest.serverUrl,
                             logType: "Call",
                             logInfo: data.body.call,
                             isMain: true,
@@ -12131,7 +12048,7 @@
                         break;
                       case "editLog":
                         await updateLog({
-                          serverUrl: config.serverUrl,
+                          serverUrl: manifest.serverUrl,
                           logType: "Call",
                           sessionId: data.body.call.sessionId,
                           subject: data.body.formData.activityTitle ?? "",
@@ -12154,7 +12071,7 @@
                   sessionId: data.body.call.sessionId,
                   note: data.body.formData.note ?? ""
                 });
-                const page = logPage.getUpdatedLogPageRender({ config, platformName, updateData: data.body });
+                const page = logPage.getUpdatedLogPageRender({ manifest, platformName, updateData: data.body });
                 document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                   type: "rc-adapter-update-call-log-page",
                   page
@@ -12168,7 +12085,7 @@
                 break;
               case "/callLogger/match":
                 let callLogMatchData = {};
-                const { successful, callLogs, message: getLogMessage } = await getLog({ serverUrl: config.serverUrl, logType: "Call", sessionIds: data.body.sessionIds.toString() });
+                const { successful, callLogs, message: getLogMessage } = await getLog({ serverUrl: manifest.serverUrl, logType: "Call", sessionIds: data.body.sessionIds.toString() });
                 if (successful) {
                   for (const sessionId of data.body.sessionIds) {
                     const correspondingLog = callLogs.find((l) => l.sessionId === sessionId);
@@ -12193,7 +12110,7 @@
                 const existingConversationLogPref = await chrome.storage.local.get(messageLogPrefId);
                 if (messageAutoLogOn && data.body.triggerType === "auto" && !!existingConversationLogPref[messageLogPrefId]) {
                   await addLog({
-                    serverUrl: config.serverUrl,
+                    serverUrl: manifest.serverUrl,
                     logType: "Message",
                     logInfo: data.body.conversation,
                     isMain: true,
@@ -12207,7 +12124,7 @@
                   if (data.body.redirect) {
                     window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
                     let additionalSubmission = {};
-                    const additionalFields = config.platforms[platformName].page?.messageLog?.additionalFields ?? [];
+                    const additionalFields = manifest.platforms[platformName].page?.messageLog?.additionalFields ?? [];
                     for (const f of additionalFields) {
                       if (data.body.formData[f.const] != "none") {
                         additionalSubmission[f.const] = data.body.formData[f.const];
@@ -12216,7 +12133,7 @@
                     let newContactInfo = {};
                     if (data.body.formData.contact === "createNewContact") {
                       const newContactResp = await createContact({
-                        serverUrl: config.serverUrl,
+                        serverUrl: manifest.serverUrl,
                         phoneNumber: data.body.conversation.correspondents[0].phoneNumber,
                         newContactName: data.body.formData.newContactName,
                         newContactType: data.body.formData.newContactType
@@ -12224,7 +12141,7 @@
                       newContactInfo = newContactResp.contactInfo;
                     }
                     await addLog({
-                      serverUrl: config.serverUrl,
+                      serverUrl: manifest.serverUrl,
                       logType: "Message",
                       logInfo: data.body.conversation,
                       isMain: true,
@@ -12236,7 +12153,7 @@
                     });
                     for (const trailingConversations of trailingSMSLogInfo) {
                       await addLog({
-                        serverUrl: config.serverUrl,
+                        serverUrl: manifest.serverUrl,
                         logType: "Message",
                         logInfo: trailingConversations,
                         isMain: false,
@@ -12267,11 +12184,11 @@
                   let getContactMatchResult = null;
                   if (!isTrailing) {
                     getContactMatchResult = await getContact({
-                      serverUrl: config.serverUrl,
+                      serverUrl: manifest.serverUrl,
                       phoneNumber: data.body.conversation.correspondents[0].phoneNumber
                     });
                   }
-                  const messagePage = logPage.getLogPageRender({ config, logType: "Message", triggerType: data.body.triggerType, platformName, direction: "", contactInfo: getContactMatchResult.contactInfo ?? [] });
+                  const messagePage = logPage.getLogPageRender({ manifest, logType: "Message", triggerType: data.body.triggerType, platformName, direction: "", contactInfo: getContactMatchResult.contactInfo ?? [] });
                   document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                     type: "rc-adapter-update-messages-log-page",
                     page: messagePage
@@ -12294,7 +12211,7 @@
                 );
                 break;
               case "/messageLogger/inputChanged":
-                const updatedPage = logPage.getUpdatedLogPageRender({ config, logType: "Message", platformName, updateData: data.body });
+                const updatedPage = logPage.getUpdatedLogPageRender({ manifest, logType: "Message", platformName, updateData: data.body });
                 document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                   type: "rc-adapter-update-messages-log-page",
                   page: updatedPage
@@ -12360,7 +12277,7 @@
                     break;
                   case "authPage":
                     window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                    const returnedToken = await auth.apiKeyLogin({ serverUrl: config.serverUrl, apiKey: data.body.button.formData.apiKey, apiUrl: data.body.button.formData.apiUrl, username: data.body.button.formData.username, password: data.body.button.formData.password });
+                    const returnedToken = await auth.apiKeyLogin({ serverUrl: manifest.serverUrl, apiKey: data.body.button.formData.apiKey, apiUrl: data.body.button.formData.apiUrl, username: data.body.button.formData.username, password: data.body.button.formData.password });
                     crmAuthed = !!returnedToken;
                     window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                     break;
@@ -12402,12 +12319,12 @@
           callbackUri: request.callbackUri
         }, "*");
       } else if (request.platform === "thirdParty") {
-        const returnedToken = await auth.onAuthCallback({ serverUrl: config.serverUrl, callbackUri: request.callbackUri });
+        const returnedToken = await auth.onAuthCallback({ serverUrl: manifest.serverUrl, callbackUri: request.callbackUri });
         crmAuthed = !!returnedToken;
       }
       sendResponse({ result: "ok" });
     } else if (request.type === "pipedriveCallbackUri" && !await auth.checkAuth()) {
-      await auth.onAuthCallback({ serverUrl: config.serverUrl, callbackUri: `${request.pipedriveCallbackUri}&state=platform=pipedrive` });
+      await auth.onAuthCallback({ serverUrl: manifest.serverUrl, callbackUri: `${request.pipedriveCallbackUri}&state=platform=pipedrive` });
       console.log("pipedriveAltAuthDone");
       chrome.runtime.sendMessage(
         {
@@ -12452,7 +12369,7 @@
       sendResponse({ result: "ok" });
     } else if (request.type === "insightlyAuth") {
       const returnedToken = await apiKeyLogin({
-        serverUrl: config.serverUrl,
+        serverUrl: manifest.serverUrl,
         apiKey: request.apiKey,
         apiUrl: request.apiUrl
       });
@@ -12475,7 +12392,7 @@
       oAuthUri
     });
   }
-  function getServiceConfig(serviceName) {
+  function getServiceManifest(serviceName) {
     const services = {
       name: serviceName,
       customizedPageInputChangedEventPath: "/customizedPage/inputChanged",
