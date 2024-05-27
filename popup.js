@@ -10618,12 +10618,42 @@
           return cachedNote[sessionId];
         }
       }
+      async function cacheUnresolvedLog2({ sessionId, phoneNumber, direction, contactInfo, subject, note, date }) {
+        let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
+        existingUnresolvedLogs.unresolvedLogs[sessionId] = {
+          phoneNumber,
+          direction,
+          contactInfo,
+          subject,
+          note,
+          date
+        };
+        await chrome.storage.local.set(existingUnresolvedLogs);
+        console.log(`call log cached for ${sessionId}`);
+      }
+      async function getCallLogCache2({ sessionId }) {
+        const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
+        return existingUnresolvedLogs?.unresolvedLogs[sessionId];
+      }
+      async function getAllUnresolvedLogs2() {
+        const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
+        return existingUnresolvedLogs.unresolvedLogs;
+      }
+      async function resolveCachedLog2({ sessionId }) {
+        let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
+        delete existingUnresolvedLogs.unresolvedLogs[sessionId];
+        await chrome.storage.local.set(existingUnresolvedLogs);
+      }
       exports.addLog = addLog2;
       exports.getLog = getLog2;
       exports.openLog = openLog2;
       exports.updateLog = updateLog2;
       exports.cacheCallNote = cacheCallNote2;
       exports.getCachedNote = getCachedNote2;
+      exports.cacheUnresolvedLog = cacheUnresolvedLog2;
+      exports.getCallLogCache = getCallLogCache2;
+      exports.getAllUnresolvedLogs = getAllUnresolvedLogs2;
+      exports.resolveCachedLog = resolveCachedLog2;
     }
   });
 
@@ -10985,10 +11015,34 @@
     }
   });
 
+  // src/images/outboundCallIcon.png
+  var require_outboundCallIcon = __commonJS({
+    "src/images/outboundCallIcon.png"(exports, module) {
+      module.exports = "data:image/png;base64,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";
+    }
+  });
+
+  // src/images/inboundCallIcon.png
+  var require_inboundCallIcon = __commonJS({
+    "src/images/inboundCallIcon.png"(exports, module) {
+      module.exports = "data:image/png;base64,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";
+    }
+  });
+
+  // src/images/conflictLogIcon.png
+  var require_conflictLogIcon = __commonJS({
+    "src/images/conflictLogIcon.png"(exports, module) {
+      module.exports = "data:image/png;base64,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";
+    }
+  });
+
   // src/components/logPage.js
   var require_logPage = __commonJS({
     "src/components/logPage.js"(exports) {
-      function getLogPageRender({ manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note }) {
+      var outboundCallIcon = require_outboundCallIcon();
+      var inboundCallIcon = require_inboundCallIcon();
+      var conflictLogIcon = require_conflictLogIcon();
+      function getLogPageRender({ manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note, isUnresolved }) {
         const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
         const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
         const additionalInputFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
@@ -11135,6 +11189,10 @@
                     title: "",
                     type: "string"
                   },
+                  isUnresolved: {
+                    title: "",
+                    type: "boolean"
+                  },
                   newContactType: {
                     title: "Contact type",
                     type: "string",
@@ -11162,6 +11220,9 @@
                 triggerType: {
                   "ui:widget": "hidden"
                 },
+                isUnresolved: {
+                  "ui:widget": "hidden"
+                },
                 submitButtonOptions: {
                   submitText: "Save"
                 },
@@ -11175,6 +11236,7 @@
                 contactType: contactList[0]?.type ?? "",
                 contactName: contactList[0]?.title ?? "",
                 triggerType,
+                isUnresolved: !!isUnresolved,
                 ...callFormData,
                 ...additionalFieldsValue
               }
@@ -11312,8 +11374,62 @@
         }
         return page;
       }
+      function getUnresolvedLogsPageRender({ unresolvedLogs }) {
+        const logsList = [];
+        for (const sessionId of Object.keys(unresolvedLogs)) {
+          const isMultipleContactConflit = unresolvedLogs[sessionId].contactInfo.length > 1;
+          logsList.push({
+            const: sessionId,
+            title: unresolvedLogs[sessionId].phoneNumber,
+            description: isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
+            meta: unresolvedLogs[sessionId].date,
+            icon: unresolvedLogs[sessionId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
+          });
+        }
+        return {
+          id: "unresolve",
+          // tab id, required
+          title: "Unresolve",
+          type: "tab",
+          // tab type
+          iconUri: conflictLogIcon,
+          // icon for tab, 24x24
+          activeIconUri: conflictLogIcon,
+          // icon for tab in active status, 24x24
+          priority: 11,
+          // schema and uiSchema are used to customize page, api is the same as [react-jsonschema-form](https://rjsf-team.github.io/react-jsonschema-form)
+          schema: {
+            type: "object",
+            required: [],
+            properties: {
+              "warning": {
+                "type": "string",
+                "description": "Unresolved call logs are listed below. They cannot be auto logged because of conflicts like multiple matched contacts, multiple associations etc."
+              },
+              "session": {
+                "type": "string",
+                "oneOf": logsList
+              }
+            }
+          },
+          uiSchema: {
+            warning: {
+              "ui:field": "admonition",
+              "ui:severity": "warning"
+              // "warning", "info", "error", "success"
+            },
+            session: {
+              "ui:field": "list"
+            }
+          },
+          formData: {
+            session: ""
+          }
+        };
+      }
       exports.getLogPageRender = getLogPageRender;
       exports.getUpdatedLogPageRender = getUpdatedLogPageRender;
+      exports.getUnresolvedLogsPageRender = getUnresolvedLogsPageRender;
     }
   });
 
@@ -11516,7 +11632,7 @@
   // src/popup.js
   init_axios2();
   var auth = require_auth();
-  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote } = require_log();
+  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote, cacheUnresolvedLog, getCallLogCache, getAllUnresolvedLogs, resolveCachedLog } = require_log();
   var { getContact, createContact, openContactPage } = require_contact();
   var { responseMessage, isObjectEmpty, showNotification } = require_util();
   var { getUserInfo } = require_rcAPI();
@@ -11526,6 +11642,7 @@
   var authPage = require_authPage();
   var feedbackPage = require_feedbackPage();
   var releaseNotesPage = require_releaseNotesPage();
+  var moment = require_moment();
   var {
     identify,
     reset,
@@ -11588,6 +11705,16 @@
     }
   }
   getCustomManifest();
+  async function showUnresolvedTabPage() {
+    const unresolvedLogs = await getAllUnresolvedLogs();
+    if (Object.keys(unresolvedLogs).length > 0) {
+      const unresolvedLogsPage = logPage.getUnresolvedLogsPageRender({ unresolvedLogs });
+      document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+        type: "rc-adapter-register-customized-page",
+        page: unresolvedLogsPage
+      }, "*");
+    }
+  }
   window.addEventListener("message", async (e) => {
     const data = e.data;
     let noShowNotification = false;
@@ -11698,6 +11825,7 @@
                 reset();
                 identify({ extensionId: rcUserInfo?.rcExtensionId, rcAccountId: rcUserInfo?.rcAccountId, platformName });
                 group({ rcAccountId: rcUserInfo?.rcAccountId });
+                await showUnresolvedTabPage();
               } catch (e2) {
                 reset();
                 console.error(e2);
@@ -11806,6 +11934,9 @@
           case "rc-route-changed-notify":
             if (data.path !== "/") {
               trackPage(data.path);
+              if (data.path === "/customizedTabs/unresolve") {
+                await showUnresolvedTabPage();
+              }
             }
             if (!!data.path) {
               if (data.path.startsWith("/conversations/") || data.path.startsWith("/composeText")) {
@@ -11876,6 +12007,29 @@
                 );
                 break;
               case "/customizedPage/inputChanged":
+                if (data.body.page.id === "unresolve") {
+                  const unresolvedSessionId = data.body.formData.session;
+                  const unresolvedLog = await getCallLogCache({ sessionId: unresolvedSessionId });
+                  const callPage = logPage.getLogPageRender({
+                    manifest,
+                    logType: "Call",
+                    triggerType: "createLog",
+                    platformName,
+                    direction: unresolvedLog.direction,
+                    contactInfo: unresolvedLog.contactInfo,
+                    subject: unresolvedLog.subject,
+                    note: unresolvedLog.note,
+                    isUnresolved: true
+                  });
+                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                    type: "rc-adapter-update-call-log-page",
+                    page: callPage
+                  }, "*");
+                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                    type: "rc-adapter-navigate-to",
+                    path: `/log/call/${unresolvedSessionId}`
+                  }, "*");
+                }
                 document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                   type: "rc-post-message-response",
                   responseId: data.requestId,
@@ -11948,11 +12102,12 @@
                 );
                 break;
               case "/callLogger":
+                let isAutoLog = false;
                 if (data?.body?.toEntity?.phoneNumbers[0]?.phoneType === "extension") {
                   showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
                   break;
                 }
-                if (data.body.triggerType !== "logForm" && data.body.triggerType) {
+                if (data.body.triggerType !== "logForm" && data.body.triggerType !== "createLog") {
                   if (data.body.triggerType === "callLogSync") {
                     if (!!data.body.call?.recording?.link) {
                       console.log("call recording updating...");
@@ -11968,10 +12123,11 @@
                     }
                     break;
                   }
-                  if (data.body.triggerType === "presenceUpdate" && data.body.call.result !== "Disconnected") {
-                    break;
-                  } else {
+                  if (data.body.triggerType === "presenceUpdate" && data.body.call.result === "Disconnected") {
                     data.body.triggerType = "createLog";
+                    isAutoLog = true;
+                  } else {
+                    break;
                   }
                 }
                 window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
@@ -11996,15 +12152,41 @@
                         callLogSubject = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.subject;
                       }
                     }
-                    const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-update-call-log-page",
-                      page: callPage
-                    }, "*");
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-navigate-to",
-                      path: `/log/call/${data.body.call.sessionId}`
-                    }, "*");
+                    let hasConflict = false;
+                    if (callMatchedContact.length > 1) {
+                      hasConflict = true;
+                    } else if (!!callMatchedContact[0]?.additionalInfo) {
+                      const additionalFieldsKeys = Object.keys(callMatchedContact[0].additionalInfo);
+                      for (const key of additionalFieldsKeys) {
+                        const field = callMatchedContact[0].additionalInfo[key];
+                        if (Array.isArray(field) && field.length > 1) {
+                          hasConflict = true;
+                        }
+                      }
+                    }
+                    if (isAutoLog && hasConflict) {
+                      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                      await cacheUnresolvedLog({
+                        sessionId: data.body.call.sessionId,
+                        phoneNumber: contactPhoneNumber,
+                        direction: data.body.call.direction,
+                        contactInfo: callMatchedContact ?? [],
+                        subject: callLogSubject,
+                        note,
+                        date: moment(data.body.call.startTime).format("MM/DD/YYYY")
+                      });
+                      await showUnresolvedTabPage();
+                    } else {
+                      const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
+                      document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                        type: "rc-adapter-update-call-log-page",
+                        page: callPage
+                      }, "*");
+                      document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                        type: "rc-adapter-navigate-to",
+                        path: `/log/call/${data.body.call.sessionId}`
+                      }, "*");
+                    }
                     break;
                   case "viewLog":
                     if (manifest.platforms[platformName].canOpenLogPage) {
@@ -12049,6 +12231,10 @@
                             contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                           }
                         );
+                        if (!!data.body.formData.isUnresolved) {
+                          await resolveCachedLog({ sessionId: data.body.call.sessionId });
+                          await showUnresolvedTabPage();
+                        }
                         break;
                       case "editLog":
                         await updateLog({
