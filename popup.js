@@ -10526,6 +10526,7 @@
                 if (!!existingCallRecording[recordingSessionId]) {
                   await updateLog2({ logType: "Call", sessionId: logInfo.sessionId, recordingLink: existingCallRecording[recordingSessionId].recordingLink });
                 }
+                await resolveCachedLog({ type: "Call", id: logInfo.sessionId });
               } else {
                 (0, import_util.showNotification)({ level: "warning", message: addCallLogRes.data.message, ttl: 3e3 });
               }
@@ -10540,7 +10541,7 @@
               }
               const messageLogRes = await axios_default2.post(`${serverUrl}/messageLog?jwtToken=${rcUnifiedCrmExtJwt}`, { logInfo, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, contactId, contactType, contactName });
               if (messageLogRes.data.successful) {
-                if (isMain) {
+                if (isMain & messageLogRes.data.logIds.length > 0) {
                   (0, import_util.showNotification)({ level: "success", message: "message log added", ttl: 3e3 });
                   (0, import_analytics.trackSyncMessageLog)();
                   let messageLogPrefCache = {};
@@ -10555,6 +10556,7 @@
                   await chrome.storage.local.set(messageLogPrefCache);
                 }
                 await chrome.storage.local.set({ [`rc-crm-conversation-log-${logInfo.conversationLogId}`]: { logged: true } });
+                await resolveCachedLog({ type: "Message", id: logInfo.conversationId });
               }
               break;
           }
@@ -10618,9 +10620,10 @@
           return cachedNote[sessionId];
         }
       }
-      async function cacheUnresolvedLog2({ sessionId, phoneNumber, direction, contactInfo, subject, note, date }) {
+      async function cacheUnresolvedLog2({ type, id, phoneNumber, direction, contactInfo, subject, note, date }) {
         let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        existingUnresolvedLogs.unresolvedLogs[sessionId] = {
+        existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`] = {
+          type,
           phoneNumber,
           direction,
           contactInfo,
@@ -10629,20 +10632,22 @@
           date
         };
         await chrome.storage.local.set(existingUnresolvedLogs);
-        console.log(`call log cached for ${sessionId}`);
+        console.log(`log cached for ${type}-${id}`);
       }
-      async function getCallLogCache2({ sessionId }) {
+      async function getLogCache2({ cacheId }) {
         const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        return existingUnresolvedLogs?.unresolvedLogs[sessionId];
+        return existingUnresolvedLogs?.unresolvedLogs[cacheId];
       }
       async function getAllUnresolvedLogs2() {
         const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
         return existingUnresolvedLogs.unresolvedLogs;
       }
-      async function resolveCachedLog2({ sessionId }) {
+      async function resolveCachedLog({ type, id }) {
         let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        delete existingUnresolvedLogs.unresolvedLogs[sessionId];
-        await chrome.storage.local.set(existingUnresolvedLogs);
+        if (!!existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`]) {
+          delete existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`];
+          await chrome.storage.local.set(existingUnresolvedLogs);
+        }
       }
       exports.addLog = addLog2;
       exports.getLog = getLog2;
@@ -10651,9 +10656,8 @@
       exports.cacheCallNote = cacheCallNote2;
       exports.getCachedNote = getCachedNote2;
       exports.cacheUnresolvedLog = cacheUnresolvedLog2;
-      exports.getCallLogCache = getCallLogCache2;
+      exports.getLogCache = getLogCache2;
       exports.getAllUnresolvedLogs = getAllUnresolvedLogs2;
-      exports.resolveCachedLog = resolveCachedLog2;
     }
   });
 
@@ -11376,14 +11380,15 @@
       }
       function getUnresolvedLogsPageRender({ unresolvedLogs }) {
         const logsList = [];
-        for (const sessionId of Object.keys(unresolvedLogs)) {
-          const isMultipleContactConflit = unresolvedLogs[sessionId].contactInfo.length > 1;
+        for (const cacheId of Object.keys(unresolvedLogs)) {
+          const isMultipleContactConflit = unresolvedLogs[cacheId].contactInfo.length > 1;
+          const contactName = isMultipleContactConflit ? "Multiple contacts" : unresolvedLogs[cacheId].contactInfo[0].name;
           logsList.push({
-            const: sessionId,
-            title: unresolvedLogs[sessionId].phoneNumber,
+            const: cacheId,
+            title: `${contactName} (${unresolvedLogs[cacheId].phoneNumber})`,
             description: isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
-            meta: unresolvedLogs[sessionId].date,
-            icon: unresolvedLogs[sessionId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
+            meta: unresolvedLogs[cacheId].date,
+            icon: unresolvedLogs[cacheId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
           });
         }
         return {
@@ -11392,11 +11397,12 @@
           title: "Unresolve",
           type: "tab",
           // tab type
+          hidden: Object.keys(unresolvedLogs).length === 0,
           iconUri: conflictLogIcon,
           // icon for tab, 24x24
           activeIconUri: conflictLogIcon,
           // icon for tab in active status, 24x24
-          priority: 11,
+          priority: 9,
           // schema and uiSchema are used to customize page, api is the same as [react-jsonschema-form](https://rjsf-team.github.io/react-jsonschema-form)
           schema: {
             type: "object",
@@ -11406,7 +11412,7 @@
                 "type": "string",
                 "description": "Unresolved call logs are listed below. They cannot be auto logged because of conflicts like multiple matched contacts, multiple associations etc."
               },
-              "session": {
+              "record": {
                 "type": "string",
                 "oneOf": logsList
               }
@@ -11418,12 +11424,13 @@
               "ui:severity": "warning"
               // "warning", "info", "error", "success"
             },
-            session: {
-              "ui:field": "list"
+            record: {
+              "ui:field": "list",
+              "ui:showIconAsAvatar": false
             }
           },
           formData: {
-            session: ""
+            record: ""
           }
         };
       }
@@ -11632,7 +11639,7 @@
   // src/popup.js
   init_axios2();
   var auth = require_auth();
-  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote, cacheUnresolvedLog, getCallLogCache, getAllUnresolvedLogs, resolveCachedLog } = require_log();
+  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote, cacheUnresolvedLog, getLogCache, getAllUnresolvedLogs } = require_log();
   var { getContact, createContact, openContactPage } = require_contact();
   var { responseMessage, isObjectEmpty, showNotification } = require_util();
   var { getUserInfo } = require_rcAPI();
@@ -11707,11 +11714,15 @@
   getCustomManifest();
   async function showUnresolvedTabPage() {
     const unresolvedLogs = await getAllUnresolvedLogs();
-    if (Object.keys(unresolvedLogs).length > 0) {
-      const unresolvedLogsPage = logPage.getUnresolvedLogsPageRender({ unresolvedLogs });
+    const unresolvedLogsPage = logPage.getUnresolvedLogsPageRender({ unresolvedLogs });
+    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+      type: "rc-adapter-register-customized-page",
+      page: unresolvedLogsPage
+    }, "*");
+    if (unresolvedLogsPage.hidden) {
       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-        type: "rc-adapter-register-customized-page",
-        page: unresolvedLogsPage
+        type: "rc-adapter-navigate-to",
+        path: "/dialer"
       }, "*");
     }
   }
@@ -12008,27 +12019,39 @@
                 break;
               case "/customizedPage/inputChanged":
                 if (data.body.page.id === "unresolve") {
-                  const unresolvedSessionId = data.body.formData.session;
-                  const unresolvedLog = await getCallLogCache({ sessionId: unresolvedSessionId });
-                  const callPage = logPage.getLogPageRender({
+                  const unresolvedRecordId = data.body.formData.record;
+                  const unresolvedLog = await getLogCache({ cacheId: unresolvedRecordId });
+                  const logPageRender = logPage.getLogPageRender({
                     manifest,
-                    logType: "Call",
+                    logType: unresolvedLog.type,
                     triggerType: "createLog",
                     platformName,
-                    direction: unresolvedLog.direction,
+                    direction: unresolvedLog.direction ?? "",
                     contactInfo: unresolvedLog.contactInfo,
-                    subject: unresolvedLog.subject,
-                    note: unresolvedLog.note,
+                    subject: unresolvedLog.subject ?? "",
+                    note: unresolvedLog.note ?? "",
                     isUnresolved: true
                   });
-                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                    type: "rc-adapter-update-call-log-page",
-                    page: callPage
-                  }, "*");
-                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                    type: "rc-adapter-navigate-to",
-                    path: `/log/call/${unresolvedSessionId}`
-                  }, "*");
+                  const pageId = unresolvedRecordId.split("-")[1];
+                  if (unresolvedLog.type === "Call") {
+                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                      type: "rc-adapter-update-call-log-page",
+                      page: logPageRender
+                    }, "*");
+                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                      type: "rc-adapter-navigate-to",
+                      path: `/log/call/${pageId}`
+                    }, "*");
+                  } else {
+                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                      type: "rc-adapter-update-messages-log-page",
+                      page: logPageRender
+                    }, "*");
+                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                      type: "rc-adapter-navigate-to",
+                      path: `/log/messages/${pageId}`
+                    }, "*");
+                  }
                 }
                 document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                   type: "rc-post-message-response",
@@ -12107,23 +12130,23 @@
                   showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
                   break;
                 }
-                if (data.body.triggerType !== "logForm" && data.body.triggerType !== "createLog") {
-                  if (data.body.triggerType === "callLogSync") {
-                    if (!!data.body.call?.recording?.link) {
-                      console.log("call recording updating...");
-                      await chrome.storage.local.set({ ["rec-link-" + data.body.call.sessionId]: { recordingLink: data.body.call.recording.link } });
-                      await updateLog(
-                        {
-                          serverUrl: manifest.serverUrl,
-                          logType: "Call",
-                          sessionId: data.body.call.sessionId,
-                          recordingLink: data.body.call.recording.link
-                        }
-                      );
-                    }
-                    break;
+                if (data.body.triggerType === "callLogSync") {
+                  if (!!data.body.call?.recording?.link) {
+                    console.log("call recording updating...");
+                    await chrome.storage.local.set({ ["rec-link-" + data.body.call.sessionId]: { recordingLink: data.body.call.recording.link } });
+                    await updateLog(
+                      {
+                        serverUrl: manifest.serverUrl,
+                        logType: "Call",
+                        sessionId: data.body.call.sessionId,
+                        recordingLink: data.body.call.recording.link
+                      }
+                    );
                   }
-                  if (data.body.triggerType === "presenceUpdate" && data.body.call.result === "Disconnected") {
+                  break;
+                }
+                if (data.body.triggerType === "presenceUpdate") {
+                  if (data.body.call.result === "Disconnected") {
                     data.body.triggerType = "createLog";
                     isAutoLog = true;
                   } else {
@@ -12152,30 +12175,39 @@
                         callLogSubject = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.subject;
                       }
                     }
-                    let hasConflict = false;
-                    if (callMatchedContact.length > 1) {
-                      hasConflict = true;
-                    } else if (!!callMatchedContact[0]?.additionalInfo) {
-                      const additionalFieldsKeys = Object.keys(callMatchedContact[0].additionalInfo);
-                      for (const key of additionalFieldsKeys) {
-                        const field = callMatchedContact[0].additionalInfo[key];
-                        if (Array.isArray(field) && field.length > 1) {
-                          hasConflict = true;
-                        }
+                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ contactInfo: callMatchedContact });
+                    if (isAutoLog) {
+                      if (hasConflict) {
+                        window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                        await cacheUnresolvedLog({
+                          type: "Call",
+                          id: data.body.call.sessionId,
+                          phoneNumber: contactPhoneNumber,
+                          direction: data.body.call.direction,
+                          contactInfo: callMatchedContact ?? [],
+                          subject: callLogSubject,
+                          note,
+                          date: moment(data.body.call.startTime).format("MM/DD/YYYY")
+                        });
+                        await showUnresolvedTabPage();
+                        showNotification({ level: "warning", message: "Unable to log call with unresolved conflict.", ttl: 3e3 });
+                      } else {
+                        callLogSubject = data.body.call.direction === "Inbound" ? `Inbound Call from ${callMatchedContact[0]?.name ?? ""}` : `Outbound Call to ${callMatchedContact[0]?.name ?? ""}`;
+                        await addLog(
+                          {
+                            serverUrl: manifest.serverUrl,
+                            logType: "Call",
+                            logInfo: data.body.call,
+                            isMain: true,
+                            note,
+                            subject: callLogSubject,
+                            additionalSubmission: autoSelectAdditionalSubmission,
+                            contactId: callMatchedContact[0]?.id,
+                            contactType: callMatchedContact[0]?.type,
+                            contactName: callMatchedContact[0]?.name
+                          }
+                        );
                       }
-                    }
-                    if (isAutoLog && hasConflict) {
-                      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                      await cacheUnresolvedLog({
-                        sessionId: data.body.call.sessionId,
-                        phoneNumber: contactPhoneNumber,
-                        direction: data.body.call.direction,
-                        contactInfo: callMatchedContact ?? [],
-                        subject: callLogSubject,
-                        note,
-                        date: moment(data.body.call.startTime).format("MM/DD/YYYY")
-                      });
-                      await showUnresolvedTabPage();
                     } else {
                       const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
                       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
@@ -12232,7 +12264,6 @@
                           }
                         );
                         if (!!data.body.formData.isUnresolved) {
-                          await resolveCachedLog({ sessionId: data.body.call.sessionId });
                           await showUnresolvedTabPage();
                         }
                         break;
@@ -12302,63 +12333,93 @@
                 const { rc_messageLogger_auto_log_notify: messageAutoLogOn } = await chrome.storage.local.get({ rc_messageLogger_auto_log_notify: false });
                 const messageLogPrefId = `rc-crm-conversation-pref-${data.body.conversation.conversationId}`;
                 const existingConversationLogPref = await chrome.storage.local.get(messageLogPrefId);
-                if (messageAutoLogOn && data.body.triggerType === "auto" && !!existingConversationLogPref[messageLogPrefId]) {
-                  await addLog({
-                    serverUrl: manifest.serverUrl,
-                    logType: "Message",
-                    logInfo: data.body.conversation,
-                    isMain: true,
-                    note: "",
-                    additionalSubmission: existingConversationLogPref[messageLogPrefId].additionalSubmission,
-                    contactId: existingConversationLogPref[messageLogPrefId].contact.id,
-                    contactType: existingConversationLogPref[messageLogPrefId].contact.type,
-                    contactName: existingConversationLogPref[messageLogPrefId].contact.name
-                  });
-                } else if (data.body.triggerType === "logForm") {
-                  if (data.body.redirect) {
-                    window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                    let additionalSubmission = {};
-                    const additionalFields = manifest.platforms[platformName].page?.messageLog?.additionalFields ?? [];
-                    for (const f of additionalFields) {
-                      if (data.body.formData[f.const] != "none") {
-                        additionalSubmission[f.const] = data.body.formData[f.const];
-                      }
-                    }
-                    let newContactInfo = {};
-                    if (data.body.formData.contact === "createNewContact") {
-                      const newContactResp = await createContact({
-                        serverUrl: manifest.serverUrl,
-                        phoneNumber: data.body.conversation.correspondents[0].phoneNumber,
-                        newContactName: data.body.formData.newContactName,
-                        newContactType: data.body.formData.newContactType
-                      });
-                      newContactInfo = newContactResp.contactInfo;
-                    }
+                let getContactMatchResult = null;
+                window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
+                if (messageAutoLogOn && data.body.triggerType === "auto") {
+                  if (!!existingConversationLogPref[messageLogPrefId]) {
                     await addLog({
                       serverUrl: manifest.serverUrl,
                       logType: "Message",
                       logInfo: data.body.conversation,
                       isMain: true,
                       note: "",
+                      additionalSubmission: existingConversationLogPref[messageLogPrefId].additionalSubmission,
+                      contactId: existingConversationLogPref[messageLogPrefId].contact.id,
+                      contactType: existingConversationLogPref[messageLogPrefId].contact.type,
+                      contactName: existingConversationLogPref[messageLogPrefId].contact.name
+                    });
+                  } else {
+                    getContactMatchResult = (await getContact({
+                      serverUrl: manifest.serverUrl,
+                      phoneNumber: data.body.conversation.correspondents[0].phoneNumber
+                    })).contactInfo;
+                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ contactInfo: getContactMatchResult });
+                    if (hasConflict) {
+                      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                      await cacheUnresolvedLog({
+                        type: "Message",
+                        id: data.body.conversation.conversationId,
+                        direction: "",
+                        contactInfo: getContactMatchResult ?? [],
+                        date: moment(data.body.conversation.messages[0].creationTime).format("MM/DD/YYYY")
+                      });
+                      await showUnresolvedTabPage();
+                      showNotification({ level: "warning", message: "Unable to log message with unresolved conflict.", ttl: 3e3 });
+                    } else {
+                      await addLog({
+                        serverUrl: manifest.serverUrl,
+                        logType: "Message",
+                        logInfo: data.body.conversation,
+                        isMain: true,
+                        note: "",
+                        additionalSubmission: autoSelectAdditionalSubmission,
+                        contactId: getContactMatchResult[0]?.id,
+                        contactType: getContactMatchResult[0]?.type,
+                        contactName: getContactMatchResult[0]?.name
+                      });
+                    }
+                  }
+                } else if (data.body.triggerType === "logForm") {
+                  let additionalSubmission = {};
+                  const additionalFields = manifest.platforms[platformName].page?.messageLog?.additionalFields ?? [];
+                  for (const f of additionalFields) {
+                    if (data.body.formData[f.const] != "none") {
+                      additionalSubmission[f.const] = data.body.formData[f.const];
+                    }
+                  }
+                  let newContactInfo = {};
+                  if (data.body.formData.contact === "createNewContact") {
+                    const newContactResp = await createContact({
+                      serverUrl: manifest.serverUrl,
+                      phoneNumber: data.body.conversation.correspondents[0].phoneNumber,
+                      newContactName: data.body.formData.newContactName,
+                      newContactType: data.body.formData.newContactType
+                    });
+                    newContactInfo = newContactResp.contactInfo;
+                  }
+                  await addLog({
+                    serverUrl: manifest.serverUrl,
+                    logType: "Message",
+                    logInfo: data.body.conversation,
+                    isMain: true,
+                    note: "",
+                    additionalSubmission,
+                    contactId: newContactInfo?.id ?? data.body.formData.contact,
+                    contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
+                    contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
+                  });
+                  for (const trailingConversations of trailingSMSLogInfo) {
+                    await addLog({
+                      serverUrl: manifest.serverUrl,
+                      logType: "Message",
+                      logInfo: trailingConversations,
+                      isMain: false,
+                      note: "",
                       additionalSubmission,
                       contactId: newContactInfo?.id ?? data.body.formData.contact,
                       contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
                       contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                     });
-                    for (const trailingConversations of trailingSMSLogInfo) {
-                      await addLog({
-                        serverUrl: manifest.serverUrl,
-                        logType: "Message",
-                        logInfo: trailingConversations,
-                        isMain: false,
-                        note: "",
-                        additionalSubmission,
-                        contactId: newContactInfo?.id ?? data.body.formData.contact,
-                        contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
-                        contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
-                      });
-                    }
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                   }
                 } else {
                   if (!messageAutoLogOn && data.body.triggerType === "auto") {
@@ -12375,14 +12436,20 @@
                     trailingSMSLogInfo = [];
                   }
                   window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                  let getContactMatchResult = null;
                   if (!isTrailing) {
                     getContactMatchResult = await getContact({
                       serverUrl: manifest.serverUrl,
                       phoneNumber: data.body.conversation.correspondents[0].phoneNumber
                     });
                   }
-                  const messagePage = logPage.getLogPageRender({ manifest, logType: "Message", triggerType: data.body.triggerType, platformName, direction: "", contactInfo: getContactMatchResult.contactInfo ?? [] });
+                  const messagePage = logPage.getLogPageRender({
+                    manifest,
+                    logType: "Message",
+                    triggerType: data.body.triggerType,
+                    platformName,
+                    direction: "",
+                    contactInfo: getContactMatchResult.contactInfo ?? []
+                  });
                   document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                     type: "rc-adapter-update-messages-log-page",
                     page: messagePage
@@ -12395,8 +12462,8 @@
                   if (!isTrailing) {
                     leadingSMSCallReady = true;
                   }
-                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 }
+                window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 responseMessage(
                   data.requestId,
                   {
@@ -12496,6 +12563,7 @@
         }
       }
     } catch (e2) {
+      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
       console.log(e2);
       if (e2.response && e2.response.data && !noShowNotification && typeof e2.response.data === "string") {
         showNotification({ level: "warning", message: e2.response.data, ttl: 5e3 });
@@ -12505,6 +12573,26 @@
       window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
     }
   });
+  function getLogConflictInfo({ contactInfo }) {
+    let hasConflict = false;
+    let autoSelectAdditionalSubmission = {};
+    if (contactInfo.length > 1) {
+      hasConflict = true;
+    } else if (!!contactInfo[0]?.additionalInfo) {
+      const additionalFieldsKeys = Object.keys(contactInfo[0].additionalInfo);
+      for (const key of additionalFieldsKeys) {
+        const field = contactInfo[0].additionalInfo[key];
+        if (Array.isArray(field)) {
+          if (field.length > 1) {
+            hasConflict = true;
+          } else {
+            autoSelectAdditionalSubmission[key] = field[0].const;
+          }
+        }
+      }
+    }
+    return { hasConflict, autoSelectAdditionalSubmission };
+  }
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if (request.type === "oauthCallBack") {
       if (request.platform === "rc") {
@@ -12608,18 +12696,14 @@
       callLoggerPath: "/callLogger",
       callLogPageInputChangedEventPath: "/callLogger/inputChanged",
       callLogEntityMatcherPath: "/callLogger/match",
-      callLoggerAutoSettingLabel: "Auto pop up call logging page after call",
+      callLoggerAutoSettingLabel: "Auto log call",
       messageLoggerPath: "/messageLogger",
       messagesLogPageInputChangedEventPath: "/messageLogger/inputChanged",
       messageLogEntityMatcherPath: "/messageLogger/match",
-      messageLoggerAutoSettingLabel: "Auto pop up SMS logging page",
+      messageLoggerAutoSettingLabel: "Auto log SMS",
       feedbackPath: "/feedback",
       settingsPath: "/settings",
       settings: [
-        {
-          name: "Auto log with countdown",
-          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto log with countdown")?.value ?? false)
-        },
         {
           name: "Open contact web page from incoming call",
           value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Open contact web page from incoming call")?.value ?? false)
