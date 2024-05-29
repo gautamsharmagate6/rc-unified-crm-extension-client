@@ -140,19 +140,6 @@
     await chrome.storage.local.set({
       popupWindowId: popup.id
     });
-    try {
-      let { customCrmManifestUrl } = await chrome.storage.local.get({ customCrmManifestUrl: null });
-      if (!!!customCrmManifestUrl || customCrmManifestUrl === "") {
-        customCrmManifestUrl = baseManifest.defaultCrmManifestUrl;
-        await chrome.storage.local.set({ customCrmManifestUrl });
-      }
-      const customCrmManifestJson = await (await fetch(customCrmManifestUrl)).json();
-      if (customCrmManifestJson) {
-        await chrome.storage.local.set({ customCrmManifest: customCrmManifestJson });
-      }
-    } catch (e) {
-      console.error(e);
-    }
     return false;
   }
   async function registerPlatform(tabUrl) {
@@ -244,6 +231,23 @@
     await chrome.windows.remove(loginWindowInfo.id);
     await chrome.storage.local.remove("loginWindowInfo");
   });
+  chrome.runtime.onInstalled.addListener(
+    async () => {
+      try {
+        let { customCrmManifestUrl } = await chrome.storage.local.get({ customCrmManifestUrl: null });
+        if (!!!customCrmManifestUrl || customCrmManifestUrl === "") {
+          customCrmManifestUrl = baseManifest.defaultCrmManifestUrl;
+          await chrome.storage.local.set({ customCrmManifestUrl });
+        }
+        const customCrmManifestJson = await (await fetch(customCrmManifestUrl)).json();
+        if (customCrmManifestJson) {
+          await chrome.storage.local.set({ customCrmManifest: customCrmManifestJson });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  );
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
     if (request.type === "openPopupWindow") {
