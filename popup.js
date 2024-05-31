@@ -10519,7 +10519,7 @@
                 sessionIds: [logInfo.sessionId]
               }, "*");
               if (addCallLogRes.data.successful) {
-                (0, import_util.showNotification)({ level: "success", message: "call log added", ttl: 3e3 });
+                (0, import_util.showNotification)({ level: "success", message: "Call log added", ttl: 3e3 });
                 (0, import_analytics.trackSyncCallLog)({ hasNote: note !== "" });
                 const recordingSessionId = `rec-link-${logInfo.sessionId}`;
                 const existingCallRecording = await chrome.storage.local.get(recordingSessionId);
@@ -10542,7 +10542,7 @@
               const messageLogRes = await axios_default2.post(`${serverUrl}/messageLog?jwtToken=${rcUnifiedCrmExtJwt}`, { logInfo, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, contactId, contactType, contactName });
               if (messageLogRes.data.successful) {
                 if (isMain & messageLogRes.data.logIds.length > 0) {
-                  (0, import_util.showNotification)({ level: "success", message: "message log added", ttl: 3e3 });
+                  (0, import_util.showNotification)({ level: "success", message: "Message log added", ttl: 3e3 });
                   (0, import_analytics.trackSyncMessageLog)();
                   let messageLogPrefCache = {};
                   messageLogPrefCache[`rc-crm-conversation-pref-${logInfo.conversationId}`] = {
@@ -10601,7 +10601,7 @@
                   }
                   console.log("call recording update done");
                 } else {
-                  (0, import_util.showNotification)({ level: "success", message: "call log updated", ttl: 3e3 });
+                  (0, import_util.showNotification)({ level: "success", message: "Call log updated", ttl: 3e3 });
                 }
               }
           }
@@ -12309,7 +12309,7 @@
                 break;
               case "/callLogger/match":
                 let callLogMatchData = {};
-                const { successful, callLogs, message: getLogMessage } = await getLog({ serverUrl: manifest.serverUrl, logType: "Call", sessionIds: data.body.sessionIds.toString() });
+                const { successful, callLogs } = await getLog({ serverUrl: manifest.serverUrl, logType: "Call", sessionIds: data.body.sessionIds.toString() });
                 if (successful) {
                   for (const sessionId of data.body.sessionIds) {
                     const correspondingLog = callLogs.find((l) => l.sessionId === sessionId);
@@ -12318,7 +12318,7 @@
                     }
                   }
                 } else {
-                  showNotification({ level: "warning", message: getLogMessage, ttl: 3e3 });
+                  showNotification({ level: "warning", message: "Cannot find call log", ttl: 3e3 });
                   break;
                 }
                 responseMessage(
