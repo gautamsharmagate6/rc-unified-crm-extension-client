@@ -12127,9 +12127,12 @@
               case "/callLogger":
                 let isAutoLog = false;
                 const callAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto pop up call log page")?.value;
-                if (data?.body?.toEntity?.phoneNumbers[0]?.phoneType === "extension") {
-                  showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
-                  break;
+                if (!!data?.body?.toEntity?.phoneNumbers && data.body.toEntity.phoneNumbers.length > 1) {
+                  data.body.toEntity.phoneNumbers = data.body.toEntity.phoneNumbers.filter((p) => p.phoneType !== "extension");
+                  if (data.body.toEntity.phoneNumbers.length === 0) {
+                    showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
+                    break;
+                  }
                 }
                 if (data.body.triggerType === "callLogSync") {
                   if (!!data.body.call?.recording?.link) {
@@ -12176,7 +12179,7 @@
                         callLogSubject = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.subject;
                       }
                     }
-                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ contactInfo: callMatchedContact });
+                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ isAutoLog, contactInfo: callMatchedContact });
                     if (isAutoLog && !callAutoPopup) {
                       if (hasConflict) {
                         window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
@@ -12329,9 +12332,12 @@
                 );
                 break;
               case "/messageLogger":
-                if (data?.body?.correspondentEntity?.phoneNumbers[0]?.phoneType === "extension") {
-                  showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
-                  break;
+                if (!!data?.body?.correspondentEntity?.phoneNumbers && data?.body?.correspondentEntity?.phoneNumbers.length > 1) {
+                  data.body.correspondentEntity.phoneNumbers = data.body.correspondentEntity.phoneNumbers.filter((p) => p.phoneType !== "extension");
+                  if (data.body.correspondentEntity.phoneNumbers.length === 0) {
+                    showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
+                    break;
+                  }
                 }
                 const { rc_messageLogger_auto_log_notify: messageAutoLogOn } = await chrome.storage.local.get({ rc_messageLogger_auto_log_notify: false });
                 const messageAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto pop up message log page")?.value;
@@ -12357,7 +12363,7 @@
                       serverUrl: manifest.serverUrl,
                       phoneNumber: data.body.conversation.correspondents[0].phoneNumber
                     })).contactInfo;
-                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ contactInfo: getContactMatchResult });
+                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ isAutoLog: messageAutoLogOn, contactInfo: getContactMatchResult });
                     if (hasConflict) {
                       window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                       await cacheUnresolvedLog({
@@ -12577,7 +12583,10 @@
       window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
     }
   });
-  function getLogConflictInfo({ contactInfo }) {
+  function getLogConflictInfo({ isAutoLog, contactInfo }) {
+    if (!isAutoLog) {
+      return { hasConflict: false, autoSelectAdditionalSubmission: {} };
+    }
     let hasConflict = false;
     let autoSelectAdditionalSubmission = {};
     if (contactInfo.length > 1) {
