@@ -11444,7 +11444,7 @@
   var require_authPage = __commonJS({
     "src/components/authPage.js"(exports) {
       function getAuthPageRender({ manifest: manifest2, platformName: platformName2 }) {
-        const authPage2 = manifest2.platforms[platformName2].page.auth;
+        const authPage2 = manifest2.platforms[platformName2].auth.apiKey.page;
         const pageTitle = authPage2.title;
         const required = authPage2.content.filter((c) => c.required).map((c) => {
           return c.const;
@@ -11965,30 +11965,30 @@
                 const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
                 crmAuthed = !!rcUnifiedCrmExtJwt;
                 if (!rcUnifiedCrmExtJwt) {
-                  switch (platform.authType) {
+                  switch (platform.auth.type) {
                     case "oauth":
                       let authUri;
                       let customState = "";
-                      if (!!platform.customState) {
-                        customState = platform.customState;
+                      if (!!platform.auth.oauth.customState) {
+                        customState = platform.auth.oauth.customState;
                       }
                       if (platformName === "pipedrive") {
                         authUri = manifest.platforms.pipedrive.redirectUri;
                       } else if (platformName === "bullhorn") {
                         let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
                         if (crm_extension_bullhorn_user_urls?.oauthUrl) {
-                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.auth.oauth.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                         } else {
                           const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
                           showNotification({ level: "warning", message: "Bullhorn authorize error. Please try again in 30 seconds", ttl: 3e4 });
                           const { data: crm_extension_bullhorn_user_urls2 } = await axios_default2.get(`https://rest.bullhornstaffing.com/rest-services/loginInfo?username=${crm_extension_bullhornUsername}`);
                           await chrome.storage.local.set({ crm_extension_bullhorn_user_urls: crm_extension_bullhorn_user_urls2 });
                           if (crm_extension_bullhorn_user_urls2?.oauthUrl) {
-                            authUri = `${crm_extension_bullhorn_user_urls2.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                            authUri = `${crm_extension_bullhorn_user_urls2.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.auth.oauth.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                           }
                         }
                       } else {
-                        authUri = `${platform.authUrl}?response_type=code&client_id=${platform.clientId}${!!platform.scope && platform.scope != "" ? `&${platform.scope}` : ""}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                        authUri = `${platform.auth.oauth.authUrl}?response_type=code&client_id=${platform.auth.oauth.clientId}${!!platform.auth.oauth.scope && platform.auth.oauth.scope != "" ? `&${platform.auth.oauth.scope}` : ""}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                       }
                       handleThirdPartyOAuthWindow(authUri);
                       break;
