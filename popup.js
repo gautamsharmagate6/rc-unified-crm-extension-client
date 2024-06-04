@@ -10532,7 +10532,7 @@
               }
               break;
             case "Message":
-              if ((0, import_moment.default)(logInfo.date).diff(/* @__PURE__ */ new Date(), "days") < -1) {
+              if ((0, import_moment.default)(logInfo.date).diff(/* @__PURE__ */ new Date(), "days") <= -1) {
                 const isLogged = await chrome.storage.local.get(`rc-crm-conversation-log-${logInfo.conversationLogId}`);
                 if (isLogged[`rc-crm-conversation-log-${logInfo.conversationLogId}`]?.logged) {
                   console.log(`skipping logged conversation on date ${logInfo.date}`);
@@ -12387,46 +12387,48 @@
                     }
                   }
                 } else if (data.body.triggerType === "logForm") {
-                  let additionalSubmission = {};
-                  const additionalFields = manifest.platforms[platformName].page?.messageLog?.additionalFields ?? [];
-                  for (const f of additionalFields) {
-                    if (data.body.formData[f.const] != "none") {
-                      additionalSubmission[f.const] = data.body.formData[f.const];
+                  if (data.body.redirect) {
+                    let additionalSubmission = {};
+                    const additionalFields = manifest.platforms[platformName].page?.messageLog?.additionalFields ?? [];
+                    for (const f of additionalFields) {
+                      if (data.body.formData[f.const] != "none") {
+                        additionalSubmission[f.const] = data.body.formData[f.const];
+                      }
                     }
-                  }
-                  let newContactInfo = {};
-                  if (data.body.formData.contact === "createNewContact") {
-                    const newContactResp = await createContact({
-                      serverUrl: manifest.serverUrl,
-                      phoneNumber: data.body.conversation.correspondents[0].phoneNumber,
-                      newContactName: data.body.formData.newContactName,
-                      newContactType: data.body.formData.newContactType
-                    });
-                    newContactInfo = newContactResp.contactInfo;
-                  }
-                  await addLog({
-                    serverUrl: manifest.serverUrl,
-                    logType: "Message",
-                    logInfo: data.body.conversation,
-                    isMain: true,
-                    note: "",
-                    additionalSubmission,
-                    contactId: newContactInfo?.id ?? data.body.formData.contact,
-                    contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
-                    contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
-                  });
-                  for (const trailingConversations of trailingSMSLogInfo) {
+                    let newContactInfo = {};
+                    if (data.body.formData.contact === "createNewContact") {
+                      const newContactResp = await createContact({
+                        serverUrl: manifest.serverUrl,
+                        phoneNumber: data.body.conversation.correspondents[0].phoneNumber,
+                        newContactName: data.body.formData.newContactName,
+                        newContactType: data.body.formData.newContactType
+                      });
+                      newContactInfo = newContactResp.contactInfo;
+                    }
                     await addLog({
                       serverUrl: manifest.serverUrl,
                       logType: "Message",
-                      logInfo: trailingConversations,
-                      isMain: false,
+                      logInfo: data.body.conversation,
+                      isMain: true,
                       note: "",
                       additionalSubmission,
                       contactId: newContactInfo?.id ?? data.body.formData.contact,
                       contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
                       contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                     });
+                    for (const trailingConversations of trailingSMSLogInfo) {
+                      await addLog({
+                        serverUrl: manifest.serverUrl,
+                        logType: "Message",
+                        logInfo: trailingConversations,
+                        isMain: false,
+                        note: "",
+                        additionalSubmission,
+                        contactId: newContactInfo?.id ?? data.body.formData.contact,
+                        contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
+                        contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
+                      });
+                    }
                   }
                 } else {
                   if (!messageAutoLogOn && data.body.triggerType === "auto") {
