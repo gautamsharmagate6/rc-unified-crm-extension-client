@@ -12444,6 +12444,7 @@
                         contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                       });
                     }
+                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                   }
                 } else {
                   if (!messageAutoLogOn && data.body.triggerType === "auto") {
@@ -12486,8 +12487,8 @@
                   if (!isTrailing) {
                     leadingSMSCallReady = true;
                   }
+                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 }
-                window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 responseMessage(
                   data.requestId,
                   {
