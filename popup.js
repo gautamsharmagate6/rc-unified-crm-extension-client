@@ -12238,8 +12238,13 @@
                   case "viewLog":
                     window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
                     if (manifest.platforms[platformName].canOpenLogPage) {
-                      for (const c of callMatchedContact) {
-                        openLog({ manifest, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: c.type });
+                      const uniqueContactTypes = [...new Set(callMatchedContact.map((c) => c.type))];
+                      if (uniqueContactTypes.length === 1) {
+                        openLog({ manifest, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: uniqueContactTypes[0] });
+                      } else {
+                        for (const c of callMatchedContact) {
+                          openLog({ manifest, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: c.type });
+                        }
                       }
                     } else {
                       await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber });
