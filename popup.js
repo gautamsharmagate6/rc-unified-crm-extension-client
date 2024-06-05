@@ -10532,7 +10532,7 @@
               }
               break;
             case "Message":
-              if ((0, import_moment.default)(logInfo.date).diff(/* @__PURE__ */ new Date(), "days") <= -1) {
+              if ((0, import_moment.default)(logInfo.creationTime).isSame(/* @__PURE__ */ new Date(), "day")) {
                 const isLogged = await chrome.storage.local.get(`rc-crm-conversation-log-${logInfo.conversationLogId}`);
                 if (isLogged[`rc-crm-conversation-log-${logInfo.conversationLogId}`]?.logged) {
                   console.log(`skipping logged conversation on date ${logInfo.date}`);
