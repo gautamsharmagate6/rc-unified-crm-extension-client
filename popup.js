@@ -10730,6 +10730,9 @@
           const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
           if (crm_extension_bullhorn_user_urls?.atsUrl) {
             for (const c of contactInfo) {
+              if (c.isNewContact) {
+                continue;
+              }
               const newTab = window.open(`${crm_extension_bullhorn_user_urls.atsUrl}/BullhornStaffing/OpenWindow.cfm?Entity=${c.type}&id=${c.id}&view=Overview`, "_blank", "popup");
               newTab.blur();
               window.focus();
@@ -10738,6 +10741,9 @@
           return;
         }
         for (const c of contactInfo) {
+          if (c.isNewContact) {
+            continue;
+          }
           const hostname = platformInfo["platform-info"].hostname;
           const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname).replaceAll("{contactId}", c.id).replaceAll("{contactType}", c.type);
           window.open(contactPageUrl);
@@ -11051,13 +11057,9 @@
         const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
         const additionalInputFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
         const contactList = contactInfo.map((c) => {
-          return { const: c.id, title: c.name, type: c.type, description: c.type ? `${c.type} - ${c.id}` : "", additionalInfo: c.additionalInfo };
+          return { const: c.id, title: c.name, type: c.type, description: c.type ? `${c.type} - ${c.id}` : "", additionalInfo: c.additionalInfo, isNewContact: !!c.isNewContact };
         });
         const defaultActivityTitle = direction === "Inbound" ? `Inbound ${logType} from ${contactList[0]?.title ?? ""}` : `Outbound ${logType} to ${contactList[0]?.title ?? ""}`;
-        contactList.push({
-          const: "createNewContact",
-          title: "Create new contact..."
-        });
         let callSchemas = {};
         let callUISchemas = {};
         let callFormData = {};
@@ -11156,7 +11158,7 @@
                 "ui:widget": "hidden"
               }
             };
-            if (contactList[0].const === "createNewContact") {
+            if (contactList[0].isNewContact) {
               if (!!manifest2.platforms[platformName2].contactTypes) {
                 newContactWidget.newContactType = {};
               }
@@ -11299,7 +11301,7 @@
         switch (updatedFieldKey) {
           case "contact":
             const contact = page.schema.properties.contact.oneOf.find((c) => c.const === page.formData.contact);
-            if (contact.const === "createNewContact") {
+            if (contact.isNewContact) {
               if (!!manifest2.platforms[platformName2].contactTypes) {
                 page.uiSchema.newContactType = {};
               }
@@ -12169,6 +12171,11 @@
                   sessionIds: data.body.call.sessionId
                 });
                 const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber });
+                if (!callContactMatched) {
+                  showNotification({ level: "warning", message: callLogContactMatchMessage, ttl: 3e3 });
+                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                  break;
+                }
                 let note = "";
                 let callLogSubject = "";
                 switch (data.body.triggerType) {
