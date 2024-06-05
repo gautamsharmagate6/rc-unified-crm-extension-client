@@ -12090,6 +12090,9 @@
                     if (contactMatched) {
                       matchedContacts[contactPhoneNumber2] = [];
                       for (var contactInfoItem of contactInfo) {
+                        if (contactInfoItem.isNewContact) {
+                          continue;
+                        }
                         matchedContacts[contactPhoneNumber2].push({
                           id: contactInfoItem.id,
                           type: platformName,
