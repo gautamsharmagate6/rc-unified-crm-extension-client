@@ -11724,7 +11724,7 @@
     if (unresolvedLogsPage.hidden) {
       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
         type: "rc-adapter-navigate-to",
-        path: "/dialer"
+        path: "goBack"
       }, "*");
     }
   }
@@ -12640,6 +12640,7 @@
           type: "rc-adapter-authorization-code",
           callbackUri: request.callbackUri
         }, "*");
+        await chrome.storage.local.remove("rcUnifiedCrmExtJwt");
       } else if (request.platform === "thirdParty") {
         const returnedToken = await auth.onAuthCallback({ serverUrl: manifest.serverUrl, callbackUri: request.callbackUri });
         crmAuthed = !!returnedToken;
