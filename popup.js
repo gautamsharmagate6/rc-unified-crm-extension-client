@@ -11347,7 +11347,7 @@
                 oneOf: [...contact.additionalInfo[f.const], { const: "none", title: "None" }],
                 associationField: f.contactDependent
               };
-              additionalFieldsValue[f.const] = contact.additionalInfo[f.const][0].const;
+              additionalFieldsValue[f.const] = f.contactDependent ? contact.additionalInfo[f.const][0].const : page.formData[f.const];
             }
             for (const f of additionalCheckBoxFields) {
               if (f.contactDependent && !contact?.additionalInfo?.hasOwnProperty(f.const)) {
@@ -11358,7 +11358,7 @@
                 type: "boolean",
                 associationField: f.contactDependent
               };
-              additionalFieldsValue[f.const] = f.defaultValue;
+              additionalFieldsValue[f.const] = f.contactDependent ? f.defaultValue : page.formData[f.const];
             }
             page.schema.properties = {
               ...page.schema.properties,
@@ -12228,6 +12228,12 @@
                       }
                     } else {
                       const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
+                      if (platformName === "bullhorn") {
+                        const { bullhornDefaultActionCode } = await chrome.storage.local.get({ bullhornDefaultActionCode: null });
+                        if (!!bullhornDefaultActionCode && callPage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
+                          callPage.formData.noteActions = bullhornDefaultActionCode;
+                        }
+                      }
                       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                         type: "rc-adapter-update-call-log-page",
                         page: callPage
@@ -12475,6 +12481,12 @@
                     direction: "",
                     contactInfo: getContactMatchResult.contactInfo ?? []
                   });
+                  if (platformName === "bullhorn") {
+                    const { bullhornDefaultActionCode } = await chrome.storage.local.get({ bullhornDefaultActionCode: null });
+                    if (!!bullhornDefaultActionCode && messagePage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
+                      messagePage.formData.noteActions = bullhornDefaultActionCode;
+                    }
+                  }
                   document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                     type: "rc-adapter-update-messages-log-page",
                     page: messagePage
