@@ -11797,7 +11797,7 @@
               registered = true;
               document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                 type: "rc-adapter-register-third-party-service",
-                service: getServiceManifest(platform.displayName)
+                service: getServiceManifest(platform.name)
               }, "*");
             }
             break;
