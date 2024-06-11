@@ -10530,6 +10530,7 @@
               } else {
                 (0, import_util.showNotification)({ level: "warning", message: addCallLogRes.data.message, ttl: 3e3 });
               }
+              await chrome.storage.local.set({ [`rc-crm-call-log-${logInfo.sessionId}`]: { contact: { id: contactId } } });
               break;
             case "Message":
               if (!(0, import_moment.default)(logInfo.creationTime).isSame(/* @__PURE__ */ new Date(), "day")) {
@@ -11052,7 +11053,7 @@
       var outboundCallIcon = require_outboundCallIcon();
       var inboundCallIcon = require_inboundCallIcon();
       var conflictLogIcon = require_conflictLogIcon();
-      function getLogPageRender({ manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note, isUnresolved }) {
+      function getLogPageRender({ manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note, loggedContactId, isUnresolved }) {
         const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
         const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
         const additionalInputFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
@@ -11282,7 +11283,7 @@
                 }
               },
               formData: {
-                contact: contactList[0].const,
+                contact: loggedContactId ?? contactList[0].const,
                 activityTitle: subject ?? "",
                 triggerType,
                 note: note ?? ""
@@ -12065,10 +12066,10 @@
                 noShowNotification = true;
                 let matchedContacts = {};
                 const { tempContactMatchTask } = await chrome.storage.local.get({ tempContactMatchTask: null });
-                if (data.body.phoneNumbers.length === 1 && !!tempContactMatchTask) {
+                if (data.body.phoneNumbers.length === 1 && !!tempContactMatchTask && tempContactMatchTask.phoneNumber === data.body.phoneNumbers[0]) {
                   matchedContacts[tempContactMatchTask.phoneNumber] = [
                     {
-                      id: tempContactMatchTask.id,
+                      id: tempContactMatchTask.contactId,
                       type: platformName,
                       name: tempContactMatchTask.contactName,
                       phoneNumbers: [
@@ -12081,33 +12082,34 @@
                     }
                   ];
                   await chrome.storage.local.remove("tempContactMatchTask");
-                } else {
-                  for (const contactPhoneNumber2 of data.body.phoneNumbers) {
-                    if (!contactPhoneNumber2.startsWith("+")) {
-                      continue;
-                    }
-                    const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber2 });
-                    if (contactMatched) {
+                }
+                for (const contactPhoneNumber2 of data.body.phoneNumbers) {
+                  if (!contactPhoneNumber2.startsWith("+")) {
+                    continue;
+                  }
+                  const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber2 });
+                  if (contactMatched) {
+                    if (!!!matchedContacts[contactPhoneNumber2]) {
                       matchedContacts[contactPhoneNumber2] = [];
-                      for (var contactInfoItem of contactInfo) {
-                        if (contactInfoItem.isNewContact) {
-                          continue;
-                        }
-                        matchedContacts[contactPhoneNumber2].push({
-                          id: contactInfoItem.id,
-                          type: platformName,
-                          name: contactInfoItem.name,
-                          phoneNumbers: [
-                            {
-                              phoneNumber: contactPhoneNumber2,
-                              phoneType: "direct"
-                            }
-                          ],
-                          entityType: platformName,
-                          contactType: contactInfoItem.type,
-                          additionalInfo: contactInfoItem.additionalInfo
-                        });
+                    }
+                    for (var contactInfoItem of contactInfo) {
+                      if (contactInfoItem.isNewContact) {
+                        continue;
                       }
+                      matchedContacts[contactPhoneNumber2].push({
+                        id: contactInfoItem.id,
+                        type: platformName,
+                        name: contactInfoItem.name,
+                        phoneNumbers: [
+                          {
+                            phoneNumber: contactPhoneNumber2,
+                            phoneType: "direct"
+                          }
+                        ],
+                        entityType: platformName,
+                        contactType: contactInfoItem.type,
+                        additionalInfo: contactInfoItem.additionalInfo
+                      });
                     }
                   }
                 }
@@ -12227,7 +12229,12 @@
                         );
                       }
                     } else {
-                      const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note });
+                      let loggedContactId = null;
+                      const existingCallLogRecord = await chrome.storage.local.get(`rc-crm-call-log-${data.body.call.sessionId}`);
+                      if (!!existingCallLogRecord[`rc-crm-call-log-${data.body.call.sessionId}`]) {
+                        loggedContactId = existingCallLogRecord[`rc-crm-call-log-${data.body.call.sessionId}`].contact.id;
+                      }
+                      const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note, loggedContactId });
                       if (platformName === "bullhorn") {
                         const { bullhornDefaultActionCode } = await chrome.storage.local.get({ bullhornDefaultActionCode: null });
                         if (!!bullhornDefaultActionCode && callPage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
@@ -12342,7 +12349,12 @@
                   for (const sessionId of data.body.sessionIds) {
                     const correspondingLog = callLogs.find((l) => l.sessionId === sessionId);
                     if (!!correspondingLog?.matched) {
-                      callLogMatchData[sessionId] = [{ id: sessionId, note: "" }];
+                      const existingCallLogRecord = await chrome.storage.local.get(`rc-crm-call-log-${sessionId}`);
+                      if (!!existingCallLogRecord[`rc-crm-call-log-${sessionId}`]) {
+                        callLogMatchData[sessionId] = [{ id: sessionId, note: "", contact: { id: existingCallLogRecord[`rc-crm-call-log-${sessionId}`].contact?.id } }];
+                      } else {
+                        callLogMatchData[sessionId] = [{ id: sessionId, note: "" }];
+                      }
                     }
                   }
                 } else {
