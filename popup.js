@@ -10526,7 +10526,7 @@
                 if (!!existingCallRecording[recordingSessionId]) {
                   await updateLog2({ logType: "Call", sessionId: logInfo.sessionId, recordingLink: existingCallRecording[recordingSessionId].recordingLink });
                 }
-                await resolveCachedLog({ type: "Call", id: logInfo.sessionId });
+                await resolveCachedLog2({ type: "Call", id: logInfo.sessionId });
               } else {
                 (0, import_util.showNotification)({ level: "warning", message: addCallLogRes.data.message, ttl: 3e3 });
               }
@@ -10557,7 +10557,7 @@
                   await chrome.storage.local.set(messageLogPrefCache);
                 }
                 await chrome.storage.local.set({ [`rc-crm-conversation-log-${logInfo.conversationLogId}`]: { logged: true } });
-                await resolveCachedLog({ type: "Message", id: logInfo.conversationId });
+                await resolveCachedLog2({ type: "Message", id: logInfo.conversationId });
               }
               break;
           }
@@ -10643,7 +10643,7 @@
         const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
         return existingUnresolvedLogs.unresolvedLogs;
       }
-      async function resolveCachedLog({ type, id }) {
+      async function resolveCachedLog2({ type, id }) {
         let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
         if (!!existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`]) {
           delete existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`];
@@ -10659,6 +10659,7 @@
       exports.cacheUnresolvedLog = cacheUnresolvedLog2;
       exports.getLogCache = getLogCache2;
       exports.getAllUnresolvedLogs = getAllUnresolvedLogs2;
+      exports.resolveCachedLog = resolveCachedLog2;
     }
   });
 
@@ -11053,7 +11054,7 @@
       var outboundCallIcon = require_outboundCallIcon();
       var inboundCallIcon = require_inboundCallIcon();
       var conflictLogIcon = require_conflictLogIcon();
-      function getLogPageRender({ manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note, loggedContactId, isUnresolved }) {
+      function getLogPageRender({ id, manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note, loggedContactId, isUnresolved }) {
         const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
         const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
         const additionalInputFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
@@ -11175,6 +11176,9 @@
                 required: requiredFieldNames,
                 properties: {
                   ...warningField,
+                  id: {
+                    type: "string"
+                  },
                   contact: {
                     title: "Contact",
                     type: "string",
@@ -11208,10 +11212,17 @@
                     }) ?? []
                   },
                   ...callSchemas,
-                  ...additionalFields
+                  ...additionalFields,
+                  deleteUnresolveButton: {
+                    "type": "string",
+                    "title": "Delete"
+                  }
                 }
               },
               uiSchema: {
+                id: {
+                  "ui:widget": "hidden"
+                },
                 warning: {
                   "ui:field": "admonition",
                   // or typography to show raw text
@@ -11233,10 +11244,19 @@
                 submitButtonOptions: {
                   submitText: "Save"
                 },
+                deleteUnresolveButton: {
+                  "ui:field": "button",
+                  "ui:variant": "contained",
+                  // "text", "outlined", "contained", "plain"
+                  "ui:fullWidth": true,
+                  "ui:color": "danger.b03",
+                  "ui:widget": isUnresolved ? "show" : "hidden"
+                },
                 ...callUISchemas,
                 ...newContactWidget
               },
               formData: {
+                id,
                 contact: contactList[0].const,
                 newContactType: manifest2.platforms[platformName2].contactTypes ? manifest2.platforms[platformName2].contactTypes[0] : "",
                 newContactName: "",
@@ -11257,6 +11277,9 @@
                 type: "object",
                 required: ["activityTitle"],
                 properties: {
+                  id: {
+                    type: "string"
+                  },
                   contact: {
                     title: "Contact",
                     type: "string",
@@ -11274,6 +11297,9 @@
                 }
               },
               uiSchema: {
+                id: {
+                  "ui:widget": "hidden"
+                },
                 note: {
                   "ui:placeholder": "Enter note...",
                   "ui:widget": "textarea"
@@ -11283,6 +11309,7 @@
                 }
               },
               formData: {
+                id,
                 contact: loggedContactId ?? contactList[0].const,
                 activityTitle: subject ?? "",
                 triggerType,
@@ -11642,7 +11669,7 @@
   // src/popup.js
   init_axios2();
   var auth = require_auth();
-  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote, cacheUnresolvedLog, getLogCache, getAllUnresolvedLogs } = require_log();
+  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote, cacheUnresolvedLog, getLogCache, getAllUnresolvedLogs, resolveCachedLog } = require_log();
   var { getContact, createContact, openContactPage } = require_contact();
   var { responseMessage, isObjectEmpty, showNotification } = require_util();
   var { getUserInfo } = require_rcAPI();
@@ -12024,7 +12051,9 @@
                 if (data.body.page.id === "unresolve") {
                   const unresolvedRecordId = data.body.formData.record;
                   const unresolvedLog = await getLogCache({ cacheId: unresolvedRecordId });
+                  const pageId = unresolvedRecordId.split("-")[1];
                   const logPageRender = logPage.getLogPageRender({
+                    id: pageId,
                     manifest,
                     logType: unresolvedLog.type,
                     triggerType: "createLog",
@@ -12035,7 +12064,6 @@
                     note: unresolvedLog.note ?? "",
                     isUnresolved: true
                   });
-                  const pageId = unresolvedRecordId.split("-")[1];
                   if (unresolvedLog.type === "Call") {
                     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                       type: "rc-adapter-update-call-log-page",
@@ -12234,7 +12262,7 @@
                       if (!!existingCallLogRecord[`rc-crm-call-log-${data.body.call.sessionId}`]) {
                         loggedContactId = existingCallLogRecord[`rc-crm-call-log-${data.body.call.sessionId}`].contact.id;
                       }
-                      const callPage = logPage.getLogPageRender({ manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note, loggedContactId });
+                      const callPage = logPage.getLogPageRender({ id: data.body.call.sessionId, manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note, loggedContactId });
                       if (platformName === "bullhorn") {
                         const { bullhornDefaultActionCode } = await chrome.storage.local.get({ bullhornDefaultActionCode: null });
                         if (!!bullhornDefaultActionCode && callPage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
@@ -12486,6 +12514,7 @@
                     });
                   }
                   const messagePage = logPage.getLogPageRender({
+                    id: data.body.conversation.conversationId,
                     manifest,
                     logType: "Message",
                     triggerType: data.body.triggerType,
@@ -12600,6 +12629,14 @@
                       type: "rc-adapter-navigate-to",
                       path: "goBack"
                     }, "*");
+                    break;
+                  case "deleteUnresolveButton":
+                    await resolveCachedLog({ type: "Call", id: data.body.button.formData.id });
+                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
+                      type: "rc-adapter-navigate-to",
+                      path: "goBack"
+                    }, "*");
+                    await showUnresolvedTabPage();
                     break;
                 }
                 break;
