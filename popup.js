@@ -10716,11 +10716,7 @@
           return { matched: false, message: "Please go to Settings and authorize CRM platform", contactInfo: null };
         }
       }
-      async function openContactPage2({ manifest: manifest2, platformName: platformName2, phoneNumber }) {
-        const { matched: contactMatched, contactInfo } = await getContact2({ serverUrl: manifest2.serverUrl, phoneNumber });
-        if (!contactMatched) {
-          return;
-        }
+      async function openContactPage2({ manifest: manifest2, platformName: platformName2, phoneNumber, contactId, contactType }) {
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         let platformInfo = await chrome.storage.local.get("platform-info");
         if (platformInfo["platform-info"].hostname === "temp") {
@@ -10728,27 +10724,37 @@
           platformInfo["platform-info"].hostname = hostnameRes.data;
           await chrome.storage.local.set(platformInfo);
         }
-        if (platformName2 === "bullhorn") {
-          const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
-          if (crm_extension_bullhorn_user_urls?.atsUrl) {
-            for (const c of contactInfo) {
-              if (c.isNewContact) {
-                continue;
-              }
-              const newTab = window.open(`${crm_extension_bullhorn_user_urls.atsUrl}/BullhornStaffing/OpenWindow.cfm?Entity=${c.type}&id=${c.id}&view=Overview`, "_blank", "popup");
-              newTab.blur();
-              window.focus();
-            }
-          }
-          return;
-        }
-        for (const c of contactInfo) {
-          if (c.isNewContact) {
-            continue;
-          }
-          const hostname = platformInfo["platform-info"].hostname;
-          const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname).replaceAll("{contactId}", c.id).replaceAll("{contactType}", c.type);
+        const hostname = platformInfo["platform-info"].hostname;
+        if (!!contactId) {
+          const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname).replaceAll("{contactId}", contactId).replaceAll("{contactType}", contactType);
           window.open(contactPageUrl);
+        } else {
+          const { matched: contactMatched, contactInfo } = await getContact2({ serverUrl: manifest2.serverUrl, phoneNumber });
+          if (!contactMatched) {
+            return;
+          }
+          if (platformName2 === "bullhorn") {
+            const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
+            if (crm_extension_bullhorn_user_urls?.atsUrl) {
+              for (const c of contactInfo) {
+                if (c.isNewContact) {
+                  continue;
+                }
+                const newTab = window.open(`${crm_extension_bullhorn_user_urls.atsUrl}/BullhornStaffing/OpenWindow.cfm?Entity=${c.type}&id=${c.id}&view=Overview`, "_blank", "popup");
+                newTab.blur();
+                window.focus();
+              }
+            }
+            return;
+          }
+          for (const c of contactInfo) {
+            if (c.isNewContact) {
+              continue;
+            }
+            const hostname2 = platformInfo["platform-info"].hostname;
+            const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname2).replaceAll("{contactId}", c.id).replaceAll("{contactType}", c.type);
+            window.open(contactPageUrl);
+          }
         }
       }
       exports.getContact = getContact2;
@@ -12145,7 +12151,7 @@
                 break;
               case "/contacts/view":
                 window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                await openContactPage({ manifest, platformName, phoneNumber: data.body.phoneNumbers[0].phoneNumber });
+                await openContactPage({ manifest, platformName, phoneNumber: data.body.phoneNumbers[0].phoneNumber, contactId: data.body.id, contactType: data.body.contactType });
                 window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 responseMessage(
                   data.requestId,
@@ -12277,7 +12283,7 @@
                   case "viewLog":
                     window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
                     if (manifest.platforms[platformName].canOpenLogPage) {
-                      const uniqueContactTypes = [...new Set(callMatchedContact.map((c) => c.type))];
+                      const uniqueContactTypes = [...new Set(callMatchedContact.map((c) => c.type))].filter((u) => !!u);
                       if (uniqueContactTypes.length === 1) {
                         openLog({ manifest, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: uniqueContactTypes[0] });
                       } else {
@@ -12286,7 +12292,8 @@
                         }
                       }
                     } else {
-                      await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber });
+                      const matchedEntity = data.body.call.direction === "Inbound" ? data.body.fromEntity : data.body.toEntity;
+                      await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: matchedEntity.id, contactType: matchedEntity.contactType });
                     }
                     window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                     break;
