@@ -11213,9 +11213,9 @@
                   },
                   ...callSchemas,
                   ...additionalFields,
-                  deleteUnresolveButton: {
+                  removeUnresolveButton: {
                     "type": "string",
-                    "title": "Delete"
+                    "title": "Remove from unresolved list"
                   }
                 }
               },
@@ -11244,7 +11244,7 @@
                 submitButtonOptions: {
                   submitText: "Save"
                 },
-                deleteUnresolveButton: {
+                removeUnresolveButton: {
                   "ui:field": "button",
                   "ui:variant": "contained",
                   // "text", "outlined", "contained", "plain"
@@ -11412,11 +11412,12 @@
         const logsList = [];
         for (const cacheId of Object.keys(unresolvedLogs)) {
           const isMultipleContactConflit = unresolvedLogs[cacheId].contactInfo.length > 1;
+          const isNoContact = unresolvedLogs[cacheId].contactInfo.length === 1;
           const contactName = isMultipleContactConflit ? "Multiple contacts" : unresolvedLogs[cacheId].contactInfo[0].name;
           logsList.push({
             const: cacheId,
             title: `${contactName} (${unresolvedLogs[cacheId].phoneNumber})`,
-            description: isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
+            description: isNoContact ? "Missing: No matched contact" : isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
             meta: unresolvedLogs[cacheId].date,
             icon: unresolvedLogs[cacheId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
           });
@@ -12630,7 +12631,7 @@
                       path: "goBack"
                     }, "*");
                     break;
-                  case "deleteUnresolveButton":
+                  case "removeUnresolveButton":
                     await resolveCachedLog({ type: "Call", id: data.body.button.formData.id });
                     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                       type: "rc-adapter-navigate-to",
