@@ -10709,7 +10709,7 @@
             type: "rc-adapter-trigger-contact-match",
             phoneNumbers: [phoneNumber]
           }, "*");
-          await chrome.storage.local.set({ tempContactMatchTask: { contactId: contactRes.data.contact.id, phoneNumber, contactName: newContactName } });
+          await chrome.storage.local.set({ tempContactMatchTask: { contactId: contactRes.data.contact.id, phoneNumber, contactName: newContactName, contactType: newContactType } });
           import_analytics.default.createNewContact();
           return { matched: contactRes.data.successful, contactInfo: contactRes.data.contact };
         } else {
@@ -12120,38 +12120,40 @@
                           phoneType: "direct"
                         }
                       ],
-                      entityType: platformName
+                      entityType: platformName,
+                      contactType: tempContactMatchTask.contactType
                     }
                   ];
                   await chrome.storage.local.remove("tempContactMatchTask");
-                }
-                for (const contactPhoneNumber2 of data.body.phoneNumbers) {
-                  if (!contactPhoneNumber2.startsWith("+")) {
-                    continue;
-                  }
-                  const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber2 });
-                  if (contactMatched) {
-                    if (!!!matchedContacts[contactPhoneNumber2]) {
-                      matchedContacts[contactPhoneNumber2] = [];
+                } else {
+                  for (const contactPhoneNumber2 of data.body.phoneNumbers) {
+                    if (!contactPhoneNumber2.startsWith("+")) {
+                      continue;
                     }
-                    for (var contactInfoItem of contactInfo) {
-                      if (contactInfoItem.isNewContact) {
-                        continue;
+                    const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber2 });
+                    if (contactMatched) {
+                      if (!!!matchedContacts[contactPhoneNumber2]) {
+                        matchedContacts[contactPhoneNumber2] = [];
                       }
-                      matchedContacts[contactPhoneNumber2].push({
-                        id: contactInfoItem.id,
-                        type: platformName,
-                        name: contactInfoItem.name,
-                        phoneNumbers: [
-                          {
-                            phoneNumber: contactPhoneNumber2,
-                            phoneType: "direct"
-                          }
-                        ],
-                        entityType: platformName,
-                        contactType: contactInfoItem.type,
-                        additionalInfo: contactInfoItem.additionalInfo
-                      });
+                      for (var contactInfoItem of contactInfo) {
+                        if (contactInfoItem.isNewContact) {
+                          continue;
+                        }
+                        matchedContacts[contactPhoneNumber2].push({
+                          id: contactInfoItem.id,
+                          type: platformName,
+                          name: contactInfoItem.name,
+                          phoneNumbers: [
+                            {
+                              phoneNumber: contactPhoneNumber2,
+                              phoneType: "direct"
+                            }
+                          ],
+                          entityType: platformName,
+                          contactType: contactInfoItem.type,
+                          additionalInfo: contactInfoItem.additionalInfo
+                        });
+                      }
                     }
                   }
                 }
