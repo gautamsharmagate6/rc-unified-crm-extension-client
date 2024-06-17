@@ -12450,7 +12450,6 @@
                     })).contactInfo;
                     const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ isAutoLog: messageAutoLogOn, contactInfo: getContactMatchResult });
                     if (hasConflict) {
-                      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                       await cacheUnresolvedLog({
                         type: "Message",
                         id: data.body.conversation.conversationId,
@@ -12517,7 +12516,6 @@
                         contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                       });
                     }
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                   }
                 } else {
                   if (!messageAutoLogOn && data.body.triggerType === "auto") {
@@ -12533,7 +12531,6 @@
                     leadingSMSCallReady = false;
                     trailingSMSLogInfo = [];
                   }
-                  window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
                   if (!isTrailing) {
                     getContactMatchResult = await getContact({
                       serverUrl: manifest.serverUrl,
@@ -12567,8 +12564,8 @@
                   if (!isTrailing) {
                     leadingSMSCallReady = true;
                   }
-                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 }
+                window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 responseMessage(
                   data.requestId,
                   {
