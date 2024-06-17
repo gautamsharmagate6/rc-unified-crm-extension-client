@@ -12109,7 +12109,10 @@
                 let matchedContacts = {};
                 const { tempContactMatchTask } = await chrome.storage.local.get({ tempContactMatchTask: null });
                 if (data.body.phoneNumbers.length === 1 && !!tempContactMatchTask && tempContactMatchTask.phoneNumber === data.body.phoneNumbers[0]) {
+                  const cachedMatching = document.querySelector("#rc-widget-adapter-frame").contentWindow.phone.contactMatcher.data[tempContactMatchTask.phoneNumber];
+                  const platformContactMatching = !!cachedMatching ? cachedMatching[platformName]?.data : [];
                   matchedContacts[tempContactMatchTask.phoneNumber] = [
+                    ...platformContactMatching,
                     {
                       id: tempContactMatchTask.contactId,
                       type: platformName,
