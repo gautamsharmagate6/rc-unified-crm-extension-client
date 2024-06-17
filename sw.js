@@ -47,7 +47,7 @@
   var require_manifest = __commonJS({
     "src/manifest.json"(exports, module) {
       module.exports = {
-        defaultCrmManifestUrl: "https://lite-http-tunnel-s52m.onrender.com/crmManifest",
+        defaultCrmManifestUrl: "https://unified-crm-extension-test.labs.ringcentral.com/crmManifest",
         mixpanelToken: "0c3618bcd33665a15a979a972bac380f",
         version: "0.8.14"
       };
