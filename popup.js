@@ -11220,6 +11220,10 @@
                     title: "",
                     type: "boolean"
                   },
+                  logType: {
+                    title: "",
+                    type: "string"
+                  },
                   newContactType: {
                     title: "Contact type",
                     type: "string",
@@ -11254,6 +11258,9 @@
                 triggerType: {
                   "ui:widget": "hidden"
                 },
+                logType: {
+                  "ui:widget": "hidden"
+                },
                 isUnresolved: {
                   "ui:widget": "hidden"
                 },
@@ -11279,6 +11286,7 @@
                 contactType: contactList[0]?.type ?? "",
                 contactName: contactList[0]?.title ?? "",
                 triggerType,
+                logType,
                 isUnresolved: !!isUnresolved,
                 ...callFormData,
                 ...additionalFieldsValue
@@ -11432,7 +11440,7 @@
           const contactName = isMultipleContactConflit ? "Multiple contacts" : unresolvedLogs[cacheId].contactInfo[0].name;
           logsList.push({
             const: cacheId,
-            title: `${contactName} (${unresolvedLogs[cacheId].phoneNumber})`,
+            title: `${contactName} (${unresolvedLogs[cacheId]?.phoneNumber ?? unresolvedLogs[cacheId].contactInfo[0].phone})`,
             description: isNoContact ? "Missing: No matched contact" : isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
             meta: unresolvedLogs[cacheId].date,
             icon: unresolvedLogs[cacheId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
@@ -12181,7 +12189,7 @@
                 break;
               case "/callLogger":
                 let isAutoLog = false;
-                const callAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto pop up call log page")?.value;
+                const callAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto log call - only pop up log page")?.value;
                 if (data.body.call.direction === "Inbound") {
                   if (!!data?.body?.call?.from?.extensionNumber) {
                     showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
@@ -12237,6 +12245,9 @@
                           newContactType: data.body.formData.newContactType
                         });
                         newContactInfo = newContactResp.contactInfo;
+                        if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
+                          await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
+                        }
                       }
                       await addLog(
                         {
@@ -12425,7 +12436,7 @@
                   break;
                 }
                 const { rc_messageLogger_auto_log_notify: messageAutoLogOn } = await chrome.storage.local.get({ rc_messageLogger_auto_log_notify: false });
-                const messageAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto pop up message log page")?.value;
+                const messageAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto log SMS - only pop up log page")?.value;
                 const messageLogPrefId = `rc-crm-conversation-pref-${data.body.conversation.conversationId}`;
                 const existingConversationLogPref = await chrome.storage.local.get(messageLogPrefId);
                 let getContactMatchResult = null;
@@ -12491,6 +12502,9 @@
                         newContactType: data.body.formData.newContactType
                       });
                       newContactInfo = newContactResp.contactInfo;
+                      if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
+                        await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
+                      }
                     }
                     await addLog({
                       serverUrl: manifest.serverUrl,
@@ -12657,7 +12671,7 @@
                     }, "*");
                     break;
                   case "removeUnresolveButton":
-                    await resolveCachedLog({ type: "Call", id: data.body.button.formData.id });
+                    await resolveCachedLog({ type: data.body.button.formData.logType, id: data.body.button.formData.id });
                     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                       type: "rc-adapter-navigate-to",
                       path: "goBack"
@@ -12824,11 +12838,11 @@
       settings: [
         {
           name: "Auto log call - only pop up log page",
-          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto pop up call log page")?.value ?? false)
+          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto log call - only pop up log page")?.value ?? false)
         },
         {
           name: "Auto log SMS - only pop up log page",
-          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto pop up message log page")?.value ?? false)
+          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto log SMS - only pop up log page")?.value ?? false)
         },
         {
           name: "Open contact web page from incoming call",
