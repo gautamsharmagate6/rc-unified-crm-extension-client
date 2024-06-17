@@ -48,7 +48,7 @@
     "src/manifest.json"(exports, module) {
       module.exports = {
         defaultCrmManifestUrl: "https://lite-http-tunnel-s52m.onrender.com/crmManifest",
-        mixpanelToken: "04acd7cb2e1867dcf98b6e8cf5ee1e1c",
+        mixpanelToken: "0c3618bcd33665a15a979a972bac380f",
         version: "0.8.14"
       };
     }
