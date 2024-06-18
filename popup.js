@@ -11111,6 +11111,7 @@
         switch (triggerType) {
           case "createLog":
           case "manual":
+          case "auto":
             let additionalFields = {};
             let additionalFieldsValue = {};
             for (const f of additionalChoiceFields) {
@@ -12533,7 +12534,8 @@
                     await showUnresolvedTabPage();
                   }
                 } else {
-                  if (!messageAutoLogOn && data.body.triggerType === "auto") {
+                  if (!messageAutoLogOn && data.body.triggerType === "auto" || data.body.redirect != void 0 && data.body.prefill != void 0 && !data.body.redirect && !data.body.prefill) {
+                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                     break;
                   }
                   const isTrailing = !data.body.redirect && data.body.triggerType !== "auto";
