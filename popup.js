@@ -12503,7 +12503,7 @@
                       });
                       newContactInfo = newContactResp.contactInfo;
                       if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
-                        await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
+                        await openContactPage({ manifest, platformName, phoneNumber: data.body.conversation.correspondents[0].phoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
                       }
                     }
                     await addLog({
@@ -12530,6 +12530,7 @@
                         contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                       });
                     }
+                    await showUnresolvedTabPage();
                   }
                 } else {
                   if (!messageAutoLogOn && data.body.triggerType === "auto") {
