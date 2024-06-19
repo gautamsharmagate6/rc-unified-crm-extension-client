@@ -11729,6 +11729,7 @@
   var leadingSMSCallReady = false;
   var trailingSMSLogInfo = [];
   var firstTimeLogoutAbsorbed = false;
+  var autoPopupMainConverastionId = null;
   axios_default2.defaults.timeout = 3e4;
   async function checkC2DCollision() {
     try {
@@ -11998,6 +11999,9 @@
             trackEditSettings({ changedItem: "auto-message-log", status: data.autoLog });
             break;
           case "rc-route-changed-notify":
+            if (!data.path.startsWith("/log/message")) {
+              autoPopupMainConverastionId = null;
+            }
             if (data.path !== "/") {
               trackPage(data.path);
               if (data.path === "/customizedTabs/unresolve") {
@@ -12426,6 +12430,9 @@
                 );
                 break;
               case "/messageLogger":
+                if (!!!autoPopupMainConverastionId) {
+                  autoPopupMainConverastionId = data.body.conversation.conversationId;
+                }
                 if (!!data?.body?.conversation?.correspondents[0]?.extensionNumber) {
                   showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
                   break;
@@ -12562,6 +12569,10 @@
                     if (!!bullhornDefaultActionCode && messagePage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
                       messagePage.formData.noteActions = bullhornDefaultActionCode;
                     }
+                  }
+                  if (messageAutoLogOn && data.body.triggerType === "auto" && messageAutoPopup && data.body.conversation.conversationId != autoPopupMainConverastionId) {
+                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                    break;
                   }
                   document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                     type: "rc-adapter-update-messages-log-page",
