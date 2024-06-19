@@ -6492,7 +6492,7 @@
             }
           });
           setAuth(true);
-          (0, import_util.showNotification)({ level: "success", message: "Successfully authorized.", ttl: 3e3 });
+          (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully authorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
           await chrome.storage.local.set({
             ["rcUnifiedCrmExtJwt"]: res.data.jwtToken
           });
@@ -6525,7 +6525,7 @@
         const crmUserInfo = { name: res.data.name };
         await chrome.storage.local.set({ crmUserInfo });
         setAuth(true, crmUserInfo.name);
-        (0, import_util.showNotification)({ level: "success", message: "Successfully authorized.", ttl: 3e3 });
+        (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully authorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
         await chrome.storage.local.set({
           ["rcUnifiedCrmExtJwt"]: res.data.jwtToken
         });
@@ -6534,11 +6534,12 @@
       }
       async function unAuthorize({ serverUrl, platformName: platformName2, rcUnifiedCrmExtJwt }) {
         try {
-          await axios_default2.post(`${serverUrl}/unAuthorize?jwtToken=${rcUnifiedCrmExtJwt}`);
+          const res = await axios_default2.post(`${serverUrl}/unAuthorize?jwtToken=${rcUnifiedCrmExtJwt}`);
           if (platformName2 === "bullhorn") {
             await chrome.storage.local.remove("crm_extension_bullhornUsername");
             await chrome.storage.local.remove("crm_extension_bullhorn_user_urls");
           }
+          (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully unauthorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
           (0, import_analytics.trackCrmLogout)();
         } catch (e) {
           console.log(e);
@@ -10519,7 +10520,6 @@
                 sessionIds: [logInfo.sessionId]
               }, "*");
               if (addCallLogRes.data.successful) {
-                (0, import_util.showNotification)({ level: "success", message: "Call log added", ttl: 3e3 });
                 (0, import_analytics.trackSyncCallLog)({ hasNote: note !== "" });
                 const recordingSessionId = `rec-link-${logInfo.sessionId}`;
                 const existingCallRecording = await chrome.storage.local.get(recordingSessionId);
@@ -10527,9 +10527,8 @@
                   await updateLog2({ logType: "Call", sessionId: logInfo.sessionId, recordingLink: existingCallRecording[recordingSessionId].recordingLink });
                 }
                 await resolveCachedLog2({ type: "Call", id: logInfo.sessionId });
-              } else {
-                (0, import_util.showNotification)({ level: "warning", message: addCallLogRes.data.message, ttl: 3e3 });
               }
+              (0, import_util.showNotification)({ level: addCallLogRes.data.returnMessage?.messageType ?? "success", message: addCallLogRes.data.returnMessage?.message ?? "Call log added", ttl: addCallLogRes.data.returnMessage?.ttl ?? 3e3 });
               await chrome.storage.local.set({ [`rc-crm-call-log-${logInfo.sessionId}`]: { contact: { id: contactId } } });
               break;
             case "Message":
@@ -10543,7 +10542,6 @@
               const messageLogRes = await axios_default2.post(`${serverUrl}/messageLog?jwtToken=${rcUnifiedCrmExtJwt}`, { logInfo, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, contactId, contactType, contactName });
               if (messageLogRes.data.successful) {
                 if (isMain & messageLogRes.data.logIds.length > 0) {
-                  (0, import_util.showNotification)({ level: "success", message: "Message log added", ttl: 3e3 });
                   (0, import_analytics.trackSyncMessageLog)();
                   let messageLogPrefCache = {};
                   messageLogPrefCache[`rc-crm-conversation-pref-${logInfo.conversationId}`] = {
@@ -10556,13 +10554,14 @@
                   };
                   await chrome.storage.local.set(messageLogPrefCache);
                 }
+                (0, import_util.showNotification)({ level: messageLogRes.data.returnMessage?.messageType ?? "success", message: messageLogRes.data.returnMessage?.message ?? "Message log added", ttl: messageLogRes.data.returnMessage?.ttl ?? 3e3 });
                 await chrome.storage.local.set({ [`rc-crm-conversation-log-${logInfo.conversationLogId}`]: { logged: true } });
                 await resolveCachedLog2({ type: "Message", id: logInfo.conversationId });
               }
               break;
           }
         } else {
-          (0, import_util.showNotification)({ level: "warning", message: "Please go to Settings and authorize CRM platform", ttl: 3e3 });
+          (0, import_util.showNotification)({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 3e3 });
         }
       }
       async function getLog2({ serverUrl, logType, sessionIds, requireDetails }) {
@@ -10571,10 +10570,11 @@
           switch (logType) {
             case "Call":
               const callLogRes = await axios_default2.get(`${serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}&sessionIds=${sessionIds}&requireDetails=${requireDetails}`);
+              (0, import_util.showNotification)({ level: callLogRes.data.returnMessage?.messageType, message: callLogRes.data.returnMessage?.message, ttl: callLogRes.data.returnMessage?.ttl });
               return { successful: callLogRes.data.successful, callLogs: callLogRes.data.logs };
           }
         } else {
-          return { successful: false, message: "Please go to Settings and authorize CRM platform" };
+          return { successful: false, message: "Please go to Settings and connect to CRM platform" };
         }
       }
       function openLog2({ manifest: manifest2, platformName: platformName2, hostname, logId, contactType }) {
@@ -10602,7 +10602,7 @@
                   }
                   console.log("call recording update done");
                 } else {
-                  (0, import_util.showNotification)({ level: "success", message: "Call log updated", ttl: 3e3 });
+                  (0, import_util.showNotification)({ level: callLogRes.data.returnMessage?.messageType ?? "success", message: callLogRes.data.returnMessage?.message ?? "Call log updated", ttl: callLogRes.data.returnMessage?.ttl ?? 3e3 });
                 }
               }
           }
@@ -10682,9 +10682,21 @@
           overridingFormats.push(overridingPhoneNumberFormat3);
         if (!!rcUnifiedCrmExtJwt) {
           const contactRes = await axios_default2.get(`${serverUrl}/contact?jwtToken=${rcUnifiedCrmExtJwt}&phoneNumber=${phoneNumber}&overridingFormat=${overridingFormats.toString()}`);
-          return { matched: contactRes.data.successful, message: contactRes.data.message, contactInfo: contactRes.data.contact };
+          return {
+            matched: contactRes.data.successful,
+            returnMessage: contactRes.data.returnMessage,
+            contactInfo: contactRes.data.contact
+          };
         } else {
-          return { matched: false, message: "Please go to Settings and authorize CRM platform", contactInfo: null };
+          return {
+            matched: false,
+            returnMessage: {
+              message: "Please go to Settings and connect to CRM platform",
+              messageType: "warning",
+              ttl: 3e3
+            },
+            contactInfo: null
+          };
         }
       }
       async function createContact2({ serverUrl, phoneNumber, newContactName, newContactType }) {
@@ -10698,22 +10710,27 @@
               newContactType
             }
           );
-          if (!!!contactRes.data?.successful && contactRes.data?.message === "Failed to create contact.") {
-            await chrome.runtime.sendMessage(
-              {
-                type: "notifyToReconnectCRM"
-              }
-            );
-          }
           document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
             type: "rc-adapter-trigger-contact-match",
             phoneNumbers: [phoneNumber]
           }, "*");
           await chrome.storage.local.set({ tempContactMatchTask: { contactId: contactRes.data.contact.id, phoneNumber, contactName: newContactName, contactType: newContactType } });
           import_analytics.default.createNewContact();
-          return { matched: contactRes.data.successful, contactInfo: contactRes.data.contact };
+          return {
+            matched: contactRes.data.successful,
+            contactInfo: contactRes.data.contact,
+            returnMessage: contactRes.data.returnMessage
+          };
         } else {
-          return { matched: false, message: "Please go to Settings and authorize CRM platform", contactInfo: null };
+          return {
+            matched: false,
+            returnMessage: {
+              message: "Please go to Settings and connect to CRM platform",
+              messageType: "warning",
+              ttl: 3e3
+            },
+            contactInfo: null
+          };
         }
       }
       async function openContactPage2({ manifest: manifest2, platformName: platformName2, phoneNumber, contactId, contactType }) {
@@ -11869,7 +11886,7 @@
                   }
                 );
               } else if (!rcUnifiedCrmExtJwt) {
-                showNotification({ level: "warning", message: "Please authorize CRM platform account via Settings.", ttl: 1e4 });
+                showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 1e4 });
               }
               try {
                 const extId = JSON.parse(localStorage.getItem("sdk-rc-widgetplatform")).owner_id;
@@ -12016,7 +12033,7 @@
             break;
           case "rc-post-message-request":
             if (!crmAuthed && (data.path === "/callLogger" || data.path === "/messageLogger")) {
-              showNotification({ level: "warning", message: "Please authorize CRM platform account via Settings.", ttl: 1e4 });
+              showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 1e4 });
               break;
             }
             switch (data.path) {
@@ -12244,15 +12261,15 @@
                     case "createLog":
                       let newContactInfo = {};
                       if (data.body.formData.contact === "createNewContact") {
-                        const newContactResp = await createContact({
+                        const { contactInfo: newContactInfo2, returnMessage: newContactReturnMessage } = await createContact({
                           serverUrl: manifest.serverUrl,
                           phoneNumber: contactPhoneNumber,
                           newContactName: data.body.formData.newContactName,
                           newContactType: data.body.formData.newContactType
                         });
-                        newContactInfo = newContactResp.contactInfo;
+                        showNotification({ level: newContactReturnMessage?.messageType, message: newContactReturnMessage?.message, ttl: newContactReturnMessage?.ttl });
                         if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
-                          await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
+                          await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo2.id, contactType: data.body.formData.newContactType });
                         }
                       }
                       await addLog(
@@ -12290,9 +12307,9 @@
                     sessionIds: data.body.call.sessionId,
                     requireDetails: data.body.triggerType === "editLog"
                   });
-                  const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber });
+                  const { matched: callContactMatched, returnMessage: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber });
+                  showNotification({ level: callLogContactMatchMessage?.messageType, message: callLogContactMatchMessage?.message, ttl: callLogContactMatchMessage?.ttl });
                   if (!callContactMatched) {
-                    showNotification({ level: "warning", message: callLogContactMatchMessage, ttl: 3e3 });
                     window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                     break;
                   }
@@ -12418,9 +12435,6 @@
                       }
                     }
                   }
-                } else {
-                  showNotification({ level: "warning", message: "Cannot find call log", ttl: 3e3 });
-                  break;
                 }
                 responseMessage(
                   data.requestId,
@@ -12486,6 +12500,7 @@
                       });
                     }
                   }
+                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 } else if (data.body.triggerType === "logForm") {
                   if (data.body.redirect) {
                     let additionalSubmission = {};
@@ -12533,6 +12548,7 @@
                       });
                     }
                     await showUnresolvedTabPage();
+                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                   }
                 } else {
                   if (!messageAutoLogOn && data.body.triggerType === "auto" || data.body.redirect != void 0 && data.body.prefill != void 0 && !data.body.redirect && !data.body.prefill) {
@@ -12586,8 +12602,8 @@
                   if (!isTrailing) {
                     leadingSMSCallReady = true;
                   }
+                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 }
-                window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 responseMessage(
                   data.requestId,
                   {
