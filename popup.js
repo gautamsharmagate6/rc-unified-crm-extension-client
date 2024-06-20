@@ -11783,14 +11783,14 @@
     }
   }
   getCustomManifest();
-  async function showUnresolvedTabPage() {
+  async function showUnresolvedTabPage({ path }) {
     const unresolvedLogs = await getAllUnresolvedLogs();
     const unresolvedLogsPage = logPage.getUnresolvedLogsPageRender({ unresolvedLogs });
     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
       type: "rc-adapter-register-customized-page",
       page: unresolvedLogsPage
     }, "*");
-    if (unresolvedLogsPage.hidden) {
+    if (unresolvedLogsPage.hidden && !!path && path == "/customizedTabs/unresolve") {
       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
         type: "rc-adapter-navigate-to",
         path: "goBack"
@@ -12022,7 +12022,7 @@
             if (data.path !== "/") {
               trackPage(data.path);
               if (data.path === "/customizedTabs/unresolve") {
-                await showUnresolvedTabPage();
+                await showUnresolvedTabPage({ currentPath: data.path });
               }
             }
             if (!!data.path) {
