@@ -11783,7 +11783,7 @@
     }
   }
   getCustomManifest();
-  async function showUnresolvedTabPage({ path }) {
+  async function showUnresolvedTabPage(path) {
     const unresolvedLogs = await getAllUnresolvedLogs();
     const unresolvedLogsPage = logPage.getUnresolvedLogsPageRender({ unresolvedLogs });
     document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
@@ -12022,7 +12022,7 @@
             if (data.path !== "/") {
               trackPage(data.path);
               if (data.path === "/customizedTabs/unresolve") {
-                await showUnresolvedTabPage({ currentPath: data.path });
+                await showUnresolvedTabPage(data.path);
               }
             }
             if (!!data.path) {
