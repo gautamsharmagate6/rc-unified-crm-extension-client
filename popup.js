@@ -12261,15 +12261,17 @@
                     case "createLog":
                       let newContactInfo = {};
                       if (data.body.formData.contact === "createNewContact") {
-                        const { contactInfo: newContactInfo2, returnMessage: newContactReturnMessage } = await createContact({
+                        const createContactResult = await createContact({
                           serverUrl: manifest.serverUrl,
                           phoneNumber: contactPhoneNumber,
                           newContactName: data.body.formData.newContactName,
                           newContactType: data.body.formData.newContactType
                         });
+                        newContactInfo = createContactResult.contactInfo;
+                        const newContactReturnMessage = createContactResult.returnMessage;
                         showNotification({ level: newContactReturnMessage?.messageType, message: newContactReturnMessage?.message, ttl: newContactReturnMessage?.ttl });
                         if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
-                          await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo2.id, contactType: data.body.formData.newContactType });
+                          await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
                         }
                       }
                       await addLog(
