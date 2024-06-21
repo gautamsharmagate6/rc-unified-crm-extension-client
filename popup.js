@@ -11458,7 +11458,7 @@
           const contactName = isMultipleContactConflit ? "Multiple contacts" : unresolvedLogs[cacheId].contactInfo[0].name;
           logsList.push({
             const: cacheId,
-            title: `${contactName} (${unresolvedLogs[cacheId]?.phoneNumber ?? unresolvedLogs[cacheId].contactInfo[0].phone})`,
+            title: `${contactName} ${unresolvedLogs[cacheId]?.phoneNumber ? `(${unresolvedLogs[cacheId]?.phoneNumber})` : ""}`,
             description: isNoContact ? "Missing: No matched contact" : isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
             meta: unresolvedLogs[cacheId].date,
             icon: unresolvedLogs[cacheId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
