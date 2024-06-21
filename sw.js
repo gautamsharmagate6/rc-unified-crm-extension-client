@@ -49,7 +49,7 @@
       module.exports = {
         defaultCrmManifestUrl: "https://unified-crm-extension-test.labs.ringcentral.com/crmManifest",
         mixpanelToken: "0c3618bcd33665a15a979a972bac380f",
-        version: "0.8.14"
+        version: "1.0.0"
       };
     }
   });
@@ -59,7 +59,7 @@
     "package.json"(exports, module) {
       module.exports = {
         name: "rc-unified-crm-extension-client",
-        version: "0.8.13",
+        version: "1.0.0",
         description: "![image](https://user-images.githubusercontent.com/7036536/190325756-35ef367d-1557-4833-84aa-b09f5d6717ab.png)",
         main: "background.js",
         scripts: {
