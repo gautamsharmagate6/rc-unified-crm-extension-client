@@ -11790,7 +11790,7 @@
       type: "rc-adapter-register-customized-page",
       page: unresolvedLogsPage
     }, "*");
-    if (unresolvedLogsPage.hidden && !!path && path == "/customizedTabs/unresolve") {
+    if (unresolvedLogsPage.hidden && !!path && (path == "/customizedTabs/unresolve" || path == "/messageLogger" || path == "/callLogger")) {
       document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
         type: "rc-adapter-navigate-to",
         path: "goBack"
@@ -12289,7 +12289,7 @@
                         }
                       );
                       if (!!data.body.formData.isUnresolved) {
-                        await showUnresolvedTabPage();
+                        await showUnresolvedTabPage(data.path);
                       }
                       break;
                     case "editLog":
@@ -12549,7 +12549,9 @@
                         contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
                       });
                     }
-                    await showUnresolvedTabPage();
+                    if (!!data.body.formData.isUnresolved) {
+                      await showUnresolvedTabPage(data.path);
+                    }
                     window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                   }
                 } else {
