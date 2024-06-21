@@ -12016,7 +12016,7 @@
             trackEditSettings({ changedItem: "auto-message-log", status: data.autoLog });
             break;
           case "rc-route-changed-notify":
-            if (!data.path.startsWith("/log/message")) {
+            if (!data.path.startsWith("/log/message") && !data.path.startsWith("/conversations/")) {
               autoPopupMainConverastionId = null;
             }
             if (data.path !== "/") {
