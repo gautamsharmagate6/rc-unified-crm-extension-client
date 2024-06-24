@@ -27,6 +27,7 @@ async function openPopupWindow() {
   await chrome.storage.local.set({
     popupWindowId: popup.id,
   });
+
   return false;
 }
 
