@@ -138,8 +138,11 @@ async function Initialize() {
   const { renderQuickAccessButton } = await chrome.storage.local.get({ renderQuickAccessButton: true });
   if (window.self === window.top && renderQuickAccessButton) {
     await RenderQuickAccessButton();
+  }  
+  // Case: C2D renders extra elements inside Bullhorn note section
+  if (!window.location.href.startsWith('https://app.bullhornstaffing.com/content')) {
+    await initializeC2D();
   }
-  await initializeC2D();
 }
 
 Initialize();
