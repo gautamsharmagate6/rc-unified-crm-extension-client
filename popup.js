@@ -11864,7 +11864,7 @@
               platformHostname = platformInfo2["platform-info"].hostname;
               platform = manifest.platforms[platformName];
               if (!!platform.requestConfig?.timeout) {
-                axios_default2.defaults.timeout = platform.requestConfig.timeout;
+                axios_default2.defaults.timeout = platform.requestConfig.timeout * 1e3;
               }
               registered = true;
               document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
