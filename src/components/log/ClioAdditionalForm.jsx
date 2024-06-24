@@ -3,11 +3,11 @@ import DropdownList from '../dropdownList';
 import React, { useState, useEffect } from 'react';
 
 export default ({ additionalFormInfo, setSubmission, logType }) => {
-    const [additionalDropdownSelection, setAdditionalDropdownSelection] = useState(additionalFormInfo != null ? additionalFormInfo.matters[0].id : null);
+    const [additionalDropdownSelection, setAdditionalDropdownSelection] = useState(additionalFormInfo?.matters != null ? additionalFormInfo.matters[0].id : null);
     const [logTimeEntry, setLogTimeEntry] = useState(additionalFormInfo != null ? true : null);
 
     useEffect(() => {
-        if (additionalFormInfo != null) {
+        if (additionalFormInfo?.matters != null) {
             setSubmission({ matterId: additionalFormInfo.matters[0].id, logTimeEntry: true })
         }
         else {
@@ -17,7 +17,7 @@ export default ({ additionalFormInfo, setSubmission, logType }) => {
 
     useEffect(() => {
         if (additionalFormInfo != null) {
-            setSubmission({ matterId: additionalDropdownSelection, logTimeEntry: logTimeEntry == null ? true: logTimeEntry });
+            setSubmission({ matterId: additionalDropdownSelection, logTimeEntry: logTimeEntry == null ? true : logTimeEntry });
         }
         else {
             setSubmission({});
@@ -25,7 +25,7 @@ export default ({ additionalFormInfo, setSubmission, logType }) => {
     }, [logTimeEntry, additionalDropdownSelection])
 
     useEffect(() => {
-        if (additionalFormInfo != null) {
+        if (additionalFormInfo?.matters != null) {
             setSubmission({ matterId: additionalFormInfo.matters[0].id, logTimeEntry: true });
             setAdditionalDropdownSelection(additionalFormInfo.matters[0].id);
         }
@@ -38,14 +38,16 @@ export default ({ additionalFormInfo, setSubmission, logType }) => {
         <div>
             {additionalFormInfo != null &&
                 <div>
-                    <DropdownList
-                        key='key'
-                        label="Sync to matter"
-                        selectionItems={additionalFormInfo.matters.map(d => { return { value: d.id, display: d.title } })}
-                        presetSelection={additionalDropdownSelection}
-                        onSelected={(selection) => {
-                            setAdditionalDropdownSelection(selection);
-                        }} />
+                    {additionalFormInfo.matters != null &&
+                        <DropdownList
+                            key='key'
+                            label="Sync to matter"
+                            selectionItems={additionalFormInfo.matters.map(d => { return { value: d.id, display: d.title } })}
+                            presetSelection={additionalDropdownSelection}
+                            onSelected={(selection) => {
+                                setAdditionalDropdownSelection(selection);
+                            }} />
+                    }
                     {logType === 'Call' &&
                         <RcCheckbox
                             label="Log time entry"
