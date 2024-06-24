@@ -158,7 +158,7 @@ window.addEventListener('message', async (e) => {
                   type: 'basic',
                   iconUrl: '/images/logo32.png',
                   title: `Please upgrade RingCentral CRM Extension to the latest version`,
-                  message: "You are using a legacy version. Please go to chrome://extensions/ and click 'Update' to upgrade to the latest version.",
+                  message: "You are using a legacy version. Please click below button to go to Chrome Web Store and upgrade to the latest version.",
                   priority: 1,
                   buttons: [
                     {
