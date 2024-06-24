@@ -5,22 +5,15 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-  }) : x)(function(x) {
-    if (typeof require !== "undefined")
-      return require.apply(this, arguments);
-    throw Error('Dynamic require of "' + x + '" is not supported');
-  });
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
-  var __commonJS = (cb, mod) => function __require2() {
+  var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
-  var __export = (target, all2) => {
-    for (var name in all2)
-      __defProp(target, name, { get: all2[name], enumerable: true });
+  var __export = (target, all3) => {
+    for (var name in all3)
+      __defProp(target, name, { get: all3[name], enumerable: true });
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -31,18 +24,13 @@
     return to;
   };
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
     isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
     mod
   ));
-  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
   // node_modules/axios/lib/helpers/bind.js
   function bind(fn, thisArg) {
-    return function wrap2() {
+    return function wrap() {
       return fn.apply(thisArg, arguments);
     };
   }
@@ -88,17 +76,32 @@
       }
     }
   }
+  function findKey(obj, key) {
+    key = key.toLowerCase();
+    const keys = Object.keys(obj);
+    let i = keys.length;
+    let _key;
+    while (i-- > 0) {
+      _key = keys[i];
+      if (key === _key.toLowerCase()) {
+        return _key;
+      }
+    }
+    return null;
+  }
   function merge() {
+    const { caseless } = isContextDefined(this) && this || {};
     const result = {};
     const assignValue = (val, key) => {
-      if (isPlainObject(result[key]) && isPlainObject(val)) {
-        result[key] = merge(result[key], val);
+      const targetKey = caseless && findKey(result, key) || key;
+      if (isPlainObject(result[targetKey]) && isPlainObject(val)) {
+        result[targetKey] = merge(result[targetKey], val);
       } else if (isPlainObject(val)) {
-        result[key] = merge({}, val);
+        result[targetKey] = merge({}, val);
       } else if (isArray(val)) {
-        result[key] = val.slice();
+        result[targetKey] = val.slice();
       } else {
-        result[key] = val;
+        result[targetKey] = val;
       }
     };
     for (let i = 0, l = arguments.length; i < l; i++) {
@@ -106,14 +109,17 @@
     }
     return result;
   }
-  var toString, getPrototypeOf, kindOf, kindOfTest, typeOfTest, isArray, isUndefined, isArrayBuffer, isString, isFunction, isNumber, isObject, isBoolean, isPlainObject, isDate, isFile, isBlob, isFileList, isStream, isFormData, isURLSearchParams, trim, extend, stripBOM, inherits, toFlatObject, endsWith, toArray, isTypedArray, forEachEntry, matchAll, isHTMLForm, toCamelCase, hasOwnProperty, isRegExp, reduceDescriptors, freezeMethods, toObjectSet, noop, toFiniteNumber, utils_default;
+  function isSpecCompliantForm(thing) {
+    return !!(thing && isFunction(thing.append) && thing[Symbol.toStringTag] === "FormData" && thing[Symbol.iterator]);
+  }
+  var toString, getPrototypeOf, kindOf, kindOfTest, typeOfTest, isArray, isUndefined, isArrayBuffer, isString, isFunction, isNumber, isObject, isBoolean, isPlainObject, isDate, isFile, isBlob, isFileList, isStream, isFormData, isURLSearchParams, trim, _global, isContextDefined, extend, stripBOM, inherits, toFlatObject, endsWith, toArray, isTypedArray, forEachEntry, matchAll, isHTMLForm, toCamelCase, hasOwnProperty, isRegExp, reduceDescriptors, freezeMethods, toObjectSet, noop, toFiniteNumber, ALPHA, DIGIT, ALPHABET, generateString, toJSONObject, isAsyncFn, isThenable, utils_default;
   var init_utils = __esm({
     "node_modules/axios/lib/utils.js"() {
       "use strict";
       init_bind();
       ({ toString } = Object.prototype);
       ({ getPrototypeOf } = Object);
-      kindOf = /* @__PURE__ */ ((cache) => (thing) => {
+      kindOf = ((cache) => (thing) => {
         const str = toString.call(thing);
         return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
       })(/* @__PURE__ */ Object.create(null));
@@ -143,11 +149,17 @@
       isFileList = kindOfTest("FileList");
       isStream = (val) => isObject(val) && isFunction(val.pipe);
       isFormData = (thing) => {
-        const pattern = "[object FormData]";
-        return thing && (typeof FormData === "function" && thing instanceof FormData || toString.call(thing) === pattern || isFunction(thing.toString) && thing.toString() === pattern);
+        let kind;
+        return thing && (typeof FormData === "function" && thing instanceof FormData || isFunction(thing.append) && ((kind = kindOf(thing)) === "formdata" || kind === "object" && isFunction(thing.toString) && thing.toString() === "[object FormData]"));
       };
       isURLSearchParams = kindOfTest("URLSearchParams");
       trim = (str) => str.trim ? str.trim() : str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, "");
+      _global = (() => {
+        if (typeof globalThis !== "undefined")
+          return globalThis;
+        return typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : global;
+      })();
+      isContextDefined = (context) => !isUndefined(context) && context !== _global;
       extend = (a, b, thisArg, { allOwnKeys } = {}) => {
         forEach(b, (val, key) => {
           if (thisArg && isFunction(val)) {
@@ -217,7 +229,7 @@
         }
         return arr;
       };
-      isTypedArray = /* @__PURE__ */ ((TypedArray) => {
+      isTypedArray = ((TypedArray) => {
         return (thing) => {
           return TypedArray && thing instanceof TypedArray;
         };
@@ -242,7 +254,7 @@
       isHTMLForm = kindOfTest("HTMLFormElement");
       toCamelCase = (str) => {
         return str.toLowerCase().replace(
-          /[_-\s]([a-z\d])(\w*)/g,
+          /[-_\s]([a-z\d])(\w*)/g,
           function replacer(m, p1, p2) {
             return p1.toUpperCase() + p2;
           }
@@ -254,14 +266,18 @@
         const descriptors2 = Object.getOwnPropertyDescriptors(obj);
         const reducedDescriptors = {};
         forEach(descriptors2, (descriptor, name) => {
-          if (reducer(descriptor, name, obj) !== false) {
-            reducedDescriptors[name] = descriptor;
+          let ret;
+          if ((ret = reducer(descriptor, name, obj)) !== false) {
+            reducedDescriptors[name] = ret || descriptor;
           }
         });
         Object.defineProperties(obj, reducedDescriptors);
       };
       freezeMethods = (obj) => {
         reduceDescriptors(obj, (descriptor, name) => {
+          if (isFunction(obj) && ["arguments", "caller", "callee"].indexOf(name) !== -1) {
+            return false;
+          }
           const value = obj[name];
           if (!isFunction(value))
             return;
@@ -272,19 +288,19 @@
           }
           if (!descriptor.set) {
             descriptor.set = () => {
-              throw Error("Can not read-only method '" + name + "'");
+              throw Error("Can not rewrite read-only method '" + name + "'");
             };
           }
         });
       };
       toObjectSet = (arrayOrString, delimiter) => {
         const obj = {};
-        const define2 = (arr) => {
+        const define = (arr) => {
           arr.forEach((value) => {
             obj[value] = true;
           });
         };
-        isArray(arrayOrString) ? define2(arrayOrString) : define2(String(arrayOrString).split(delimiter));
+        isArray(arrayOrString) ? define(arrayOrString) : define(String(arrayOrString).split(delimiter));
         return obj;
       };
       noop = () => {
@@ -293,6 +309,45 @@
         value = +value;
         return Number.isFinite(value) ? value : defaultValue;
       };
+      ALPHA = "abcdefghijklmnopqrstuvwxyz";
+      DIGIT = "0123456789";
+      ALPHABET = {
+        DIGIT,
+        ALPHA,
+        ALPHA_DIGIT: ALPHA + ALPHA.toUpperCase() + DIGIT
+      };
+      generateString = (size = 16, alphabet = ALPHABET.ALPHA_DIGIT) => {
+        let str = "";
+        const { length } = alphabet;
+        while (size--) {
+          str += alphabet[Math.random() * length | 0];
+        }
+        return str;
+      };
+      toJSONObject = (obj) => {
+        const stack = new Array(10);
+        const visit = (source, i) => {
+          if (isObject(source)) {
+            if (stack.indexOf(source) >= 0) {
+              return;
+            }
+            if (!("toJSON" in source)) {
+              stack[i] = source;
+              const target = isArray(source) ? [] : {};
+              forEach(source, (value, key) => {
+                const reducedValue = visit(value, i + 1);
+                !isUndefined(reducedValue) && (target[key] = reducedValue);
+              });
+              stack[i] = void 0;
+              return target;
+            }
+          }
+          return source;
+        };
+        return visit(obj, 0);
+      };
+      isAsyncFn = kindOfTest("AsyncFunction");
+      isThenable = (thing) => thing && (isObject(thing) || isFunction(thing)) && isFunction(thing.then) && isFunction(thing.catch);
       utils_default = {
         isArray,
         isArrayBuffer,
@@ -330,19 +385,27 @@
         isHTMLForm,
         hasOwnProperty,
         hasOwnProp: hasOwnProperty,
-        // an alias to avoid ESLint no-prototype-builtins detection
         reduceDescriptors,
         freezeMethods,
         toObjectSet,
         toCamelCase,
         noop,
-        toFiniteNumber
+        toFiniteNumber,
+        findKey,
+        global: _global,
+        isContextDefined,
+        ALPHABET,
+        generateString,
+        isSpecCompliantForm,
+        toJSONObject,
+        isAsyncFn,
+        isThenable
       };
     }
   });
 
   // node_modules/axios/lib/core/AxiosError.js
-  function AxiosError(message, code, config, request, response) {
+  function AxiosError(message, code, config2, request, response) {
     Error.call(this);
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -352,7 +415,7 @@
     this.message = message;
     this.name = "AxiosError";
     code && (this.code = code);
-    config && (this.config = config);
+    config2 && (this.config = config2);
     request && (this.request = request);
     response && (this.response = response);
   }
@@ -364,19 +427,15 @@
       utils_default.inherits(AxiosError, Error, {
         toJSON: function toJSON() {
           return {
-            // Standard
             message: this.message,
             name: this.name,
-            // Microsoft
             description: this.description,
             number: this.number,
-            // Mozilla
             fileName: this.fileName,
             lineNumber: this.lineNumber,
             columnNumber: this.columnNumber,
             stack: this.stack,
-            // Axios
-            config: this.config,
+            config: utils_default.toJSONObject(this.config),
             code: this.code,
             status: this.response && this.response.status ? this.response.status : null
           };
@@ -397,20 +456,19 @@
         "ERR_CANCELED",
         "ERR_NOT_SUPPORT",
         "ERR_INVALID_URL"
-        // eslint-disable-next-line func-names
       ].forEach((code) => {
         descriptors[code] = { value: code };
       });
       Object.defineProperties(AxiosError, descriptors);
       Object.defineProperty(prototype, "isAxiosError", { value: true });
-      AxiosError.from = (error, code, config, request, response, customProps) => {
+      AxiosError.from = (error, code, config2, request, response, customProps) => {
         const axiosError = Object.create(prototype);
         utils_default.toFlatObject(error, axiosError, function filter2(obj) {
           return obj !== Error.prototype;
         }, (prop) => {
           return prop !== "isAxiosError";
         });
-        AxiosError.call(axiosError, error.message, code, config, request, response);
+        AxiosError.call(axiosError, error.message, code, config2, request, response);
         axiosError.cause = error;
         axiosError.name = error.name;
         customProps && Object.assign(axiosError, customProps);
@@ -420,19 +478,11 @@
     }
   });
 
-  // node_modules/form-data/lib/browser.js
-  var require_browser = __commonJS({
-    "node_modules/form-data/lib/browser.js"(exports, module) {
-      module.exports = typeof self == "object" ? self.FormData : window.FormData;
-    }
-  });
-
-  // node_modules/axios/lib/env/classes/FormData.js
-  var import_form_data, FormData_default;
-  var init_FormData = __esm({
-    "node_modules/axios/lib/env/classes/FormData.js"() {
-      import_form_data = __toESM(require_browser(), 1);
-      FormData_default = import_form_data.default;
+  // node_modules/axios/lib/helpers/null.js
+  var null_default;
+  var init_null = __esm({
+    "node_modules/axios/lib/helpers/null.js"() {
+      null_default = null;
     }
   });
 
@@ -454,14 +504,11 @@
   function isFlatArray(arr) {
     return utils_default.isArray(arr) && !arr.some(isVisitable);
   }
-  function isSpecCompliant(thing) {
-    return thing && utils_default.isFunction(thing.append) && thing[Symbol.toStringTag] === "FormData" && thing[Symbol.iterator];
-  }
   function toFormData(obj, formData, options) {
     if (!utils_default.isObject(obj)) {
       throw new TypeError("target must be an object");
     }
-    formData = formData || new (FormData_default || FormData)();
+    formData = formData || new (null_default || FormData)();
     options = utils_default.toFlatObject(options, {
       metaTokens: true,
       dots: false,
@@ -474,7 +521,7 @@
     const dots = options.dots;
     const indexes = options.indexes;
     const _Blob = options.Blob || typeof Blob !== "undefined" && Blob;
-    const useBlob = _Blob && isSpecCompliant(formData);
+    const useBlob = _Blob && utils_default.isSpecCompliantForm(formData);
     if (!utils_default.isFunction(visitor)) {
       throw new TypeError("visitor must be a function");
     }
@@ -498,11 +545,10 @@
         if (utils_default.endsWith(key, "{}")) {
           key = metaTokens ? key : key.slice(0, -2);
           value = JSON.stringify(value);
-        } else if (utils_default.isArray(value) && isFlatArray(value) || (utils_default.isFileList(value) || utils_default.endsWith(key, "[]") && (arr = utils_default.toArray(value)))) {
+        } else if (utils_default.isArray(value) && isFlatArray(value) || (utils_default.isFileList(value) || utils_default.endsWith(key, "[]")) && (arr = utils_default.toArray(value))) {
           key = removeBrackets(key);
           arr.forEach(function each(el, index) {
-            !utils_default.isUndefined(el) && formData.append(
-              // eslint-disable-next-line no-nested-ternary
+            !(utils_default.isUndefined(el) || el === null) && formData.append(
               indexes === true ? renderKey([key], index, dots) : indexes === null ? key : key + "[]",
               convertValue(el)
             );
@@ -530,7 +576,7 @@
       }
       stack.push(value);
       utils_default.forEach(value, function each(el, key) {
-        const result = !utils_default.isUndefined(el) && visitor.call(
+        const result = !(utils_default.isUndefined(el) || el === null) && visitor.call(
           formData,
           el,
           utils_default.isString(key) ? key.trim() : key,
@@ -555,7 +601,7 @@
       "use strict";
       init_utils();
       init_AxiosError();
-      init_FormData();
+      init_null();
       predicates = utils_default.toFlatObject(utils_default, {}, null, function filter(prop) {
         return /^is[A-Z]/.test(prop);
       });
@@ -611,14 +657,20 @@
     if (!params) {
       return url;
     }
-    const hashmarkIndex = url.indexOf("#");
-    if (hashmarkIndex !== -1) {
-      url = url.slice(0, hashmarkIndex);
-    }
     const _encode = options && options.encode || encode2;
-    const serializerParams = utils_default.isURLSearchParams(params) ? params.toString() : new AxiosURLSearchParams_default(params, options).toString(_encode);
-    if (serializerParams) {
-      url += (url.indexOf("?") === -1 ? "?" : "&") + serializerParams;
+    const serializeFn = options && options.serialize;
+    let serializedParams;
+    if (serializeFn) {
+      serializedParams = serializeFn(params, options);
+    } else {
+      serializedParams = utils_default.isURLSearchParams(params) ? params.toString() : new AxiosURLSearchParams_default(params, options).toString(_encode);
+    }
+    if (serializedParams) {
+      const hashmarkIndex = url.indexOf("#");
+      if (hashmarkIndex !== -1) {
+        url = url.slice(0, hashmarkIndex);
+      }
+      url += (url.indexOf("?") === -1 ? "?" : "&") + serializedParams;
     }
     return url;
   }
@@ -640,14 +692,6 @@
         constructor() {
           this.handlers = [];
         }
-        /**
-         * Add a new interceptor to the stack
-         *
-         * @param {Function} fulfilled The function to handle `then` for a `Promise`
-         * @param {Function} rejected The function to handle `reject` for a `Promise`
-         *
-         * @return {Number} An ID used to remove interceptor later
-         */
         use(fulfilled, rejected, options) {
           this.handlers.push({
             fulfilled,
@@ -657,38 +701,16 @@
           });
           return this.handlers.length - 1;
         }
-        /**
-         * Remove an interceptor from the stack
-         *
-         * @param {Number} id The ID that was returned by `use`
-         *
-         * @returns {Boolean} `true` if the interceptor was removed, `false` otherwise
-         */
         eject(id) {
           if (this.handlers[id]) {
             this.handlers[id] = null;
           }
         }
-        /**
-         * Clear all interceptors from the stack
-         *
-         * @returns {void}
-         */
         clear() {
           if (this.handlers) {
             this.handlers = [];
           }
         }
-        /**
-         * Iterate over all the registered interceptors
-         *
-         * This method is particularly useful for skipping over any
-         * interceptors that may have become `null` calling `eject`.
-         *
-         * @param {Function} fn The function to call for each interceptor
-         *
-         * @returns {void}
-         */
         forEach(fn) {
           utils_default.forEach(this.handlers, function forEachHandler(h) {
             if (h !== null) {
@@ -725,52 +747,80 @@
   });
 
   // node_modules/axios/lib/platform/browser/classes/FormData.js
-  var FormData_default2;
-  var init_FormData2 = __esm({
+  var FormData_default;
+  var init_FormData = __esm({
     "node_modules/axios/lib/platform/browser/classes/FormData.js"() {
       "use strict";
-      FormData_default2 = FormData;
+      FormData_default = typeof FormData !== "undefined" ? FormData : null;
+    }
+  });
+
+  // node_modules/axios/lib/platform/browser/classes/Blob.js
+  var Blob_default;
+  var init_Blob = __esm({
+    "node_modules/axios/lib/platform/browser/classes/Blob.js"() {
+      "use strict";
+      Blob_default = typeof Blob !== "undefined" ? Blob : null;
     }
   });
 
   // node_modules/axios/lib/platform/browser/index.js
-  var isStandardBrowserEnv, browser_default;
+  var browser_default;
   var init_browser = __esm({
     "node_modules/axios/lib/platform/browser/index.js"() {
       init_URLSearchParams();
-      init_FormData2();
-      isStandardBrowserEnv = (() => {
-        let product;
-        if (typeof navigator !== "undefined" && ((product = navigator.product) === "ReactNative" || product === "NativeScript" || product === "NS")) {
-          return false;
-        }
-        return typeof window !== "undefined" && typeof document !== "undefined";
-      })();
+      init_FormData();
+      init_Blob();
       browser_default = {
         isBrowser: true,
         classes: {
           URLSearchParams: URLSearchParams_default,
-          FormData: FormData_default2,
-          Blob
+          FormData: FormData_default,
+          Blob: Blob_default
         },
-        isStandardBrowserEnv,
         protocols: ["http", "https", "file", "blob", "url", "data"]
       };
     }
   });
 
+  // node_modules/axios/lib/platform/common/utils.js
+  var utils_exports = {};
+  __export(utils_exports, {
+    hasBrowserEnv: () => hasBrowserEnv,
+    hasStandardBrowserEnv: () => hasStandardBrowserEnv,
+    hasStandardBrowserWebWorkerEnv: () => hasStandardBrowserWebWorkerEnv
+  });
+  var hasBrowserEnv, hasStandardBrowserEnv, hasStandardBrowserWebWorkerEnv;
+  var init_utils2 = __esm({
+    "node_modules/axios/lib/platform/common/utils.js"() {
+      hasBrowserEnv = typeof window !== "undefined" && typeof document !== "undefined";
+      hasStandardBrowserEnv = ((product) => {
+        return hasBrowserEnv && ["ReactNative", "NativeScript", "NS"].indexOf(product) < 0;
+      })(typeof navigator !== "undefined" && navigator.product);
+      hasStandardBrowserWebWorkerEnv = (() => {
+        return typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope && typeof self.importScripts === "function";
+      })();
+    }
+  });
+
   // node_modules/axios/lib/platform/index.js
+  var platform_default;
   var init_platform = __esm({
     "node_modules/axios/lib/platform/index.js"() {
       init_browser();
+      init_utils2();
+      platform_default = {
+        ...utils_exports,
+        ...browser_default
+      };
     }
   });
 
   // node_modules/axios/lib/helpers/toURLEncodedForm.js
   function toURLEncodedForm(data, options) {
-    return toFormData_default(data, new browser_default.classes.URLSearchParams(), Object.assign({
+    return toFormData_default(data, new platform_default.classes.URLSearchParams(), Object.assign({
       visitor: function(value, key, path, helpers) {
-        if (browser_default.isNode && utils_default.isBuffer(value)) {
+        if (platform_default.isNode && utils_default.isBuffer(value)) {
           this.append(key, value.toString("base64"));
           return false;
         }
@@ -808,6 +858,8 @@
   function formDataToJSON(formData) {
     function buildPath(path, value, target, index) {
       let name = path[index++];
+      if (name === "__proto__")
+        return true;
       const isNumericKey = Number.isFinite(+name);
       const isLast = index >= path.length;
       name = !name && utils_default.isArray(target) ? target.length : name;
@@ -846,192 +898,118 @@
     }
   });
 
-  // node_modules/axios/lib/core/settle.js
-  function settle(resolve, reject, response) {
-    const validateStatus2 = response.config.validateStatus;
-    if (!response.status || !validateStatus2 || validateStatus2(response.status)) {
-      resolve(response);
-    } else {
-      reject(new AxiosError_default(
-        "Request failed with status code " + response.status,
-        [AxiosError_default.ERR_BAD_REQUEST, AxiosError_default.ERR_BAD_RESPONSE][Math.floor(response.status / 100) - 4],
-        response.config,
-        response.request,
-        response
-      ));
+  // node_modules/axios/lib/defaults/index.js
+  function stringifySafely(rawValue, parser, encoder) {
+    if (utils_default.isString(rawValue)) {
+      try {
+        (parser || JSON.parse)(rawValue);
+        return utils_default.trim(rawValue);
+      } catch (e) {
+        if (e.name !== "SyntaxError") {
+          throw e;
+        }
+      }
     }
+    return (encoder || JSON.stringify)(rawValue);
   }
-  var init_settle = __esm({
-    "node_modules/axios/lib/core/settle.js"() {
+  var defaults, defaults_default;
+  var init_defaults = __esm({
+    "node_modules/axios/lib/defaults/index.js"() {
       "use strict";
+      init_utils();
       init_AxiosError();
-    }
-  });
-
-  // node_modules/axios/lib/helpers/cookies.js
-  var cookies_default;
-  var init_cookies = __esm({
-    "node_modules/axios/lib/helpers/cookies.js"() {
-      "use strict";
-      init_utils();
+      init_transitional();
+      init_toFormData();
+      init_toURLEncodedForm();
       init_platform();
-      cookies_default = browser_default.isStandardBrowserEnv ? (
-        // Standard browser envs support document.cookie
-        /* @__PURE__ */ function standardBrowserEnv() {
-          return {
-            write: function write(name, value, expires, path, domain, secure) {
-              const cookie = [];
-              cookie.push(name + "=" + encodeURIComponent(value));
-              if (utils_default.isNumber(expires)) {
-                cookie.push("expires=" + new Date(expires).toGMTString());
-              }
-              if (utils_default.isString(path)) {
-                cookie.push("path=" + path);
-              }
-              if (utils_default.isString(domain)) {
-                cookie.push("domain=" + domain);
-              }
-              if (secure === true) {
-                cookie.push("secure");
-              }
-              document.cookie = cookie.join("; ");
-            },
-            read: function read(name) {
-              const match = document.cookie.match(new RegExp("(^|;\\s*)(" + name + ")=([^;]*)"));
-              return match ? decodeURIComponent(match[3]) : null;
-            },
-            remove: function remove(name) {
-              this.write(name, "", Date.now() - 864e5);
-            }
-          };
-        }()
-      ) : (
-        // Non standard browser env (web workers, react-native) lack needed support.
-        /* @__PURE__ */ function nonStandardBrowserEnv() {
-          return {
-            write: function write() {
-            },
-            read: function read() {
-              return null;
-            },
-            remove: function remove() {
-            }
-          };
-        }()
-      );
-    }
-  });
-
-  // node_modules/axios/lib/helpers/isAbsoluteURL.js
-  function isAbsoluteURL(url) {
-    return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
-  }
-  var init_isAbsoluteURL = __esm({
-    "node_modules/axios/lib/helpers/isAbsoluteURL.js"() {
-      "use strict";
-    }
-  });
-
-  // node_modules/axios/lib/helpers/combineURLs.js
-  function combineURLs(baseURL, relativeURL) {
-    return relativeURL ? baseURL.replace(/\/+$/, "") + "/" + relativeURL.replace(/^\/+/, "") : baseURL;
-  }
-  var init_combineURLs = __esm({
-    "node_modules/axios/lib/helpers/combineURLs.js"() {
-      "use strict";
-    }
-  });
-
-  // node_modules/axios/lib/core/buildFullPath.js
-  function buildFullPath(baseURL, requestedURL) {
-    if (baseURL && !isAbsoluteURL(requestedURL)) {
-      return combineURLs(baseURL, requestedURL);
-    }
-    return requestedURL;
-  }
-  var init_buildFullPath = __esm({
-    "node_modules/axios/lib/core/buildFullPath.js"() {
-      "use strict";
-      init_isAbsoluteURL();
-      init_combineURLs();
-    }
-  });
-
-  // node_modules/axios/lib/helpers/isURLSameOrigin.js
-  var isURLSameOrigin_default;
-  var init_isURLSameOrigin = __esm({
-    "node_modules/axios/lib/helpers/isURLSameOrigin.js"() {
-      "use strict";
-      init_utils();
-      init_platform();
-      isURLSameOrigin_default = browser_default.isStandardBrowserEnv ? (
-        // Standard browser envs have full support of the APIs needed to test
-        // whether the request URL is of the same origin as current location.
-        function standardBrowserEnv2() {
-          const msie = /(msie|trident)/i.test(navigator.userAgent);
-          const urlParsingNode = document.createElement("a");
-          let originURL;
-          function resolveURL(url) {
-            let href = url;
-            if (msie) {
-              urlParsingNode.setAttribute("href", href);
-              href = urlParsingNode.href;
-            }
-            urlParsingNode.setAttribute("href", href);
-            return {
-              href: urlParsingNode.href,
-              protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, "") : "",
-              host: urlParsingNode.host,
-              search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, "") : "",
-              hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, "") : "",
-              hostname: urlParsingNode.hostname,
-              port: urlParsingNode.port,
-              pathname: urlParsingNode.pathname.charAt(0) === "/" ? urlParsingNode.pathname : "/" + urlParsingNode.pathname
-            };
+      init_formDataToJSON();
+      defaults = {
+        transitional: transitional_default,
+        adapter: ["xhr", "http"],
+        transformRequest: [function transformRequest(data, headers) {
+          const contentType = headers.getContentType() || "";
+          const hasJSONContentType = contentType.indexOf("application/json") > -1;
+          const isObjectPayload = utils_default.isObject(data);
+          if (isObjectPayload && utils_default.isHTMLForm(data)) {
+            data = new FormData(data);
           }
-          originURL = resolveURL(window.location.href);
-          return function isURLSameOrigin(requestURL) {
-            const parsed = utils_default.isString(requestURL) ? resolveURL(requestURL) : requestURL;
-            return parsed.protocol === originURL.protocol && parsed.host === originURL.host;
-          };
-        }()
-      ) : (
-        // Non standard browser envs (web workers, react-native) lack needed support.
-        /* @__PURE__ */ function nonStandardBrowserEnv2() {
-          return function isURLSameOrigin() {
-            return true;
-          };
-        }()
-      );
-    }
-  });
-
-  // node_modules/axios/lib/cancel/CanceledError.js
-  function CanceledError(message, config, request) {
-    AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config, request);
-    this.name = "CanceledError";
-  }
-  var CanceledError_default;
-  var init_CanceledError = __esm({
-    "node_modules/axios/lib/cancel/CanceledError.js"() {
-      "use strict";
-      init_AxiosError();
-      init_utils();
-      utils_default.inherits(CanceledError, AxiosError_default, {
-        __CANCEL__: true
+          const isFormData2 = utils_default.isFormData(data);
+          if (isFormData2) {
+            return hasJSONContentType ? JSON.stringify(formDataToJSON_default(data)) : data;
+          }
+          if (utils_default.isArrayBuffer(data) || utils_default.isBuffer(data) || utils_default.isStream(data) || utils_default.isFile(data) || utils_default.isBlob(data)) {
+            return data;
+          }
+          if (utils_default.isArrayBufferView(data)) {
+            return data.buffer;
+          }
+          if (utils_default.isURLSearchParams(data)) {
+            headers.setContentType("application/x-www-form-urlencoded;charset=utf-8", false);
+            return data.toString();
+          }
+          let isFileList2;
+          if (isObjectPayload) {
+            if (contentType.indexOf("application/x-www-form-urlencoded") > -1) {
+              return toURLEncodedForm(data, this.formSerializer).toString();
+            }
+            if ((isFileList2 = utils_default.isFileList(data)) || contentType.indexOf("multipart/form-data") > -1) {
+              const _FormData = this.env && this.env.FormData;
+              return toFormData_default(
+                isFileList2 ? { "files[]": data } : data,
+                _FormData && new _FormData(),
+                this.formSerializer
+              );
+            }
+          }
+          if (isObjectPayload || hasJSONContentType) {
+            headers.setContentType("application/json", false);
+            return stringifySafely(data);
+          }
+          return data;
+        }],
+        transformResponse: [function transformResponse(data) {
+          const transitional2 = this.transitional || defaults.transitional;
+          const forcedJSONParsing = transitional2 && transitional2.forcedJSONParsing;
+          const JSONRequested = this.responseType === "json";
+          if (data && utils_default.isString(data) && (forcedJSONParsing && !this.responseType || JSONRequested)) {
+            const silentJSONParsing = transitional2 && transitional2.silentJSONParsing;
+            const strictJSONParsing = !silentJSONParsing && JSONRequested;
+            try {
+              return JSON.parse(data);
+            } catch (e) {
+              if (strictJSONParsing) {
+                if (e.name === "SyntaxError") {
+                  throw AxiosError_default.from(e, AxiosError_default.ERR_BAD_RESPONSE, this, null, this.response);
+                }
+                throw e;
+              }
+            }
+          }
+          return data;
+        }],
+        timeout: 0,
+        xsrfCookieName: "XSRF-TOKEN",
+        xsrfHeaderName: "X-XSRF-TOKEN",
+        maxContentLength: -1,
+        maxBodyLength: -1,
+        env: {
+          FormData: platform_default.classes.FormData,
+          Blob: platform_default.classes.Blob
+        },
+        validateStatus: function validateStatus(status) {
+          return status >= 200 && status < 300;
+        },
+        headers: {
+          common: {
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": void 0
+          }
+        }
+      };
+      utils_default.forEach(["delete", "get", "head", "post", "put", "patch"], (method) => {
+        defaults.headers[method] = {};
       });
-      CanceledError_default = CanceledError;
-    }
-  });
-
-  // node_modules/axios/lib/helpers/parseProtocol.js
-  function parseProtocol(url) {
-    const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
-    return match && match[1] || "";
-  }
-  var init_parseProtocol = __esm({
-    "node_modules/axios/lib/helpers/parseProtocol.js"() {
-      "use strict";
+      defaults_default = defaults;
     }
   });
 
@@ -1095,7 +1073,7 @@
     if (value === false || value == null) {
       return value;
     }
-    return String(value);
+    return utils_default.isArray(value) ? value.map(normalizeValue) : String(value);
   }
   function parseTokens(str) {
     const tokens = /* @__PURE__ */ Object.create(null);
@@ -1106,9 +1084,12 @@
     }
     return tokens;
   }
-  function matchHeaderValue(context, value, header, filter2) {
+  function matchHeaderValue(context, value, header, filter2, isHeaderNameFilter) {
     if (utils_default.isFunction(filter2)) {
       return filter2.call(this, value, header);
+    }
+    if (isHeaderNameFilter) {
+      value = header;
     }
     if (!utils_default.isString(value))
       return;
@@ -1135,96 +1116,77 @@
       });
     });
   }
-  function findKey(obj, key) {
-    key = key.toLowerCase();
-    const keys = Object.keys(obj);
-    let i = keys.length;
-    let _key;
-    while (i-- > 0) {
-      _key = keys[i];
-      if (key === _key.toLowerCase()) {
-        return _key;
-      }
-    }
-    return null;
-  }
-  function AxiosHeaders(headers, defaults2) {
-    headers && this.set(headers);
-    this[$defaults] = defaults2 || null;
-  }
-  var $internals, $defaults, AxiosHeaders_default;
+  var $internals, isValidHeaderName, AxiosHeaders, AxiosHeaders_default;
   var init_AxiosHeaders = __esm({
     "node_modules/axios/lib/core/AxiosHeaders.js"() {
       "use strict";
       init_utils();
       init_parseHeaders();
       $internals = Symbol("internals");
-      $defaults = Symbol("defaults");
-      Object.assign(AxiosHeaders.prototype, {
-        set: function(header, valueOrRewrite, rewrite) {
+      isValidHeaderName = (str) => /^[-_a-zA-Z0-9^`|~,!#$%&'*+.]+$/.test(str.trim());
+      AxiosHeaders = class {
+        constructor(headers) {
+          headers && this.set(headers);
+        }
+        set(header, valueOrRewrite, rewrite) {
           const self2 = this;
           function setHeader(_value, _header, _rewrite) {
             const lHeader = normalizeHeader(_header);
             if (!lHeader) {
               throw new Error("header name must be a non-empty string");
             }
-            const key = findKey(self2, lHeader);
-            if (key && _rewrite !== true && (self2[key] === false || _rewrite === false)) {
-              return;
+            const key = utils_default.findKey(self2, lHeader);
+            if (!key || self2[key] === void 0 || _rewrite === true || _rewrite === void 0 && self2[key] !== false) {
+              self2[key || _header] = normalizeValue(_value);
             }
-            if (utils_default.isArray(_value)) {
-              _value = _value.map(normalizeValue);
-            } else {
-              _value = normalizeValue(_value);
-            }
-            self2[key || _header] = _value;
           }
-          if (utils_default.isPlainObject(header)) {
-            utils_default.forEach(header, (_value, _header) => {
-              setHeader(_value, _header, valueOrRewrite);
-            });
+          const setHeaders = (headers, _rewrite) => utils_default.forEach(headers, (_value, _header) => setHeader(_value, _header, _rewrite));
+          if (utils_default.isPlainObject(header) || header instanceof this.constructor) {
+            setHeaders(header, valueOrRewrite);
+          } else if (utils_default.isString(header) && (header = header.trim()) && !isValidHeaderName(header)) {
+            setHeaders(parseHeaders_default(header), valueOrRewrite);
           } else {
-            setHeader(valueOrRewrite, header, rewrite);
+            header != null && setHeader(valueOrRewrite, header, rewrite);
           }
           return this;
-        },
-        get: function(header, parser) {
-          header = normalizeHeader(header);
-          if (!header)
-            return void 0;
-          const key = findKey(this, header);
-          if (key) {
-            const value = this[key];
-            if (!parser) {
-              return value;
-            }
-            if (parser === true) {
-              return parseTokens(value);
-            }
-            if (utils_default.isFunction(parser)) {
-              return parser.call(this, value, key);
-            }
-            if (utils_default.isRegExp(parser)) {
-              return parser.exec(value);
-            }
-            throw new TypeError("parser must be boolean|regexp|function");
-          }
-        },
-        has: function(header, matcher) {
+        }
+        get(header, parser) {
           header = normalizeHeader(header);
           if (header) {
-            const key = findKey(this, header);
-            return !!(key && (!matcher || matchHeaderValue(this, this[key], key, matcher)));
+            const key = utils_default.findKey(this, header);
+            if (key) {
+              const value = this[key];
+              if (!parser) {
+                return value;
+              }
+              if (parser === true) {
+                return parseTokens(value);
+              }
+              if (utils_default.isFunction(parser)) {
+                return parser.call(this, value, key);
+              }
+              if (utils_default.isRegExp(parser)) {
+                return parser.exec(value);
+              }
+              throw new TypeError("parser must be boolean|regexp|function");
+            }
+          }
+        }
+        has(header, matcher) {
+          header = normalizeHeader(header);
+          if (header) {
+            const key = utils_default.findKey(this, header);
+            return !!(key && this[key] !== void 0 && (!matcher || matchHeaderValue(this, this[key], key, matcher)));
           }
           return false;
-        },
-        delete: function(header, matcher) {
+        }
+        delete(header, matcher) {
           const self2 = this;
           let deleted = false;
           function deleteHeader(_header) {
             _header = normalizeHeader(_header);
             if (_header) {
-              const key = findKey(self2, _header);
+              const key = utils_default.findKey(self2, _header);
               if (key && (!matcher || matchHeaderValue(self2, self2[key], key, matcher))) {
                 delete self2[key];
                 deleted = true;
@@ -1237,15 +1199,25 @@
             deleteHeader(header);
           }
           return deleted;
-        },
-        clear: function() {
-          return Object.keys(this).forEach(this.delete.bind(this));
-        },
-        normalize: function(format) {
+        }
+        clear(matcher) {
+          const keys = Object.keys(this);
+          let i = keys.length;
+          let deleted = false;
+          while (i--) {
+            const key = keys[i];
+            if (!matcher || matchHeaderValue(this, this[key], key, matcher, true)) {
+              delete this[key];
+              deleted = true;
+            }
+          }
+          return deleted;
+        }
+        normalize(format) {
           const self2 = this;
           const headers = {};
           utils_default.forEach(this, (value, header) => {
-            const key = findKey(headers, header);
+            const key = utils_default.findKey(headers, header);
             if (key) {
               self2[key] = normalizeValue(value);
               delete self2[header];
@@ -1259,28 +1231,35 @@
             headers[normalized] = true;
           });
           return this;
-        },
-        toJSON: function() {
+        }
+        concat(...targets) {
+          return this.constructor.concat(this, ...targets);
+        }
+        toJSON(asStrings) {
           const obj = /* @__PURE__ */ Object.create(null);
-          utils_default.forEach(
-            Object.assign({}, this[$defaults] || null, this),
-            (value, header) => {
-              if (value == null || value === false)
-                return;
-              obj[header] = utils_default.isArray(value) ? value.join(", ") : value;
-            }
-          );
+          utils_default.forEach(this, (value, header) => {
+            value != null && value !== false && (obj[header] = asStrings && utils_default.isArray(value) ? value.join(", ") : value);
+          });
           return obj;
         }
-      });
-      Object.assign(AxiosHeaders, {
-        from: function(thing) {
-          if (utils_default.isString(thing)) {
-            return new this(parseHeaders_default(thing));
-          }
+        [Symbol.iterator]() {
+          return Object.entries(this.toJSON())[Symbol.iterator]();
+        }
+        toString() {
+          return Object.entries(this.toJSON()).map(([header, value]) => header + ": " + value).join("\n");
+        }
+        get [Symbol.toStringTag]() {
+          return "AxiosHeaders";
+        }
+        static from(thing) {
           return thing instanceof this ? thing : new this(thing);
-        },
-        accessor: function(header) {
+        }
+        static concat(first, ...targets) {
+          const computed = new this(first);
+          targets.forEach((target) => computed.set(target));
+          return computed;
+        }
+        static accessor(header) {
           const internals = this[$internals] = this[$internals] = {
             accessors: {}
           };
@@ -1296,11 +1275,212 @@
           utils_default.isArray(header) ? header.forEach(defineAccessor) : defineAccessor(header);
           return this;
         }
+      };
+      AxiosHeaders.accessor(["Content-Type", "Content-Length", "Accept", "Accept-Encoding", "User-Agent", "Authorization"]);
+      utils_default.reduceDescriptors(AxiosHeaders.prototype, ({ value }, key) => {
+        let mapped = key[0].toUpperCase() + key.slice(1);
+        return {
+          get: () => value,
+          set(headerValue) {
+            this[mapped] = headerValue;
+          }
+        };
       });
-      AxiosHeaders.accessor(["Content-Type", "Content-Length", "Accept", "Accept-Encoding", "User-Agent"]);
-      utils_default.freezeMethods(AxiosHeaders.prototype);
       utils_default.freezeMethods(AxiosHeaders);
       AxiosHeaders_default = AxiosHeaders;
+    }
+  });
+
+  // node_modules/axios/lib/core/transformData.js
+  function transformData(fns, response) {
+    const config2 = this || defaults_default;
+    const context = response || config2;
+    const headers = AxiosHeaders_default.from(context.headers);
+    let data = context.data;
+    utils_default.forEach(fns, function transform(fn) {
+      data = fn.call(config2, data, headers.normalize(), response ? response.status : void 0);
+    });
+    headers.normalize();
+    return data;
+  }
+  var init_transformData = __esm({
+    "node_modules/axios/lib/core/transformData.js"() {
+      "use strict";
+      init_utils();
+      init_defaults();
+      init_AxiosHeaders();
+    }
+  });
+
+  // node_modules/axios/lib/cancel/isCancel.js
+  function isCancel(value) {
+    return !!(value && value.__CANCEL__);
+  }
+  var init_isCancel = __esm({
+    "node_modules/axios/lib/cancel/isCancel.js"() {
+      "use strict";
+    }
+  });
+
+  // node_modules/axios/lib/cancel/CanceledError.js
+  function CanceledError(message, config2, request) {
+    AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config2, request);
+    this.name = "CanceledError";
+  }
+  var CanceledError_default;
+  var init_CanceledError = __esm({
+    "node_modules/axios/lib/cancel/CanceledError.js"() {
+      "use strict";
+      init_AxiosError();
+      init_utils();
+      utils_default.inherits(CanceledError, AxiosError_default, {
+        __CANCEL__: true
+      });
+      CanceledError_default = CanceledError;
+    }
+  });
+
+  // node_modules/axios/lib/core/settle.js
+  function settle(resolve, reject, response) {
+    const validateStatus2 = response.config.validateStatus;
+    if (!response.status || !validateStatus2 || validateStatus2(response.status)) {
+      resolve(response);
+    } else {
+      reject(new AxiosError_default(
+        "Request failed with status code " + response.status,
+        [AxiosError_default.ERR_BAD_REQUEST, AxiosError_default.ERR_BAD_RESPONSE][Math.floor(response.status / 100) - 4],
+        response.config,
+        response.request,
+        response
+      ));
+    }
+  }
+  var init_settle = __esm({
+    "node_modules/axios/lib/core/settle.js"() {
+      "use strict";
+      init_AxiosError();
+    }
+  });
+
+  // node_modules/axios/lib/helpers/cookies.js
+  var cookies_default;
+  var init_cookies = __esm({
+    "node_modules/axios/lib/helpers/cookies.js"() {
+      init_utils();
+      init_platform();
+      cookies_default = platform_default.hasStandardBrowserEnv ? {
+        write(name, value, expires, path, domain, secure) {
+          const cookie = [name + "=" + encodeURIComponent(value)];
+          utils_default.isNumber(expires) && cookie.push("expires=" + new Date(expires).toGMTString());
+          utils_default.isString(path) && cookie.push("path=" + path);
+          utils_default.isString(domain) && cookie.push("domain=" + domain);
+          secure === true && cookie.push("secure");
+          document.cookie = cookie.join("; ");
+        },
+        read(name) {
+          const match = document.cookie.match(new RegExp("(^|;\\s*)(" + name + ")=([^;]*)"));
+          return match ? decodeURIComponent(match[3]) : null;
+        },
+        remove(name) {
+          this.write(name, "", Date.now() - 864e5);
+        }
+      } : {
+        write() {
+        },
+        read() {
+          return null;
+        },
+        remove() {
+        }
+      };
+    }
+  });
+
+  // node_modules/axios/lib/helpers/isAbsoluteURL.js
+  function isAbsoluteURL(url) {
+    return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
+  }
+  var init_isAbsoluteURL = __esm({
+    "node_modules/axios/lib/helpers/isAbsoluteURL.js"() {
+      "use strict";
+    }
+  });
+
+  // node_modules/axios/lib/helpers/combineURLs.js
+  function combineURLs(baseURL, relativeURL) {
+    return relativeURL ? baseURL.replace(/\/?\/$/, "") + "/" + relativeURL.replace(/^\/+/, "") : baseURL;
+  }
+  var init_combineURLs = __esm({
+    "node_modules/axios/lib/helpers/combineURLs.js"() {
+      "use strict";
+    }
+  });
+
+  // node_modules/axios/lib/core/buildFullPath.js
+  function buildFullPath(baseURL, requestedURL) {
+    if (baseURL && !isAbsoluteURL(requestedURL)) {
+      return combineURLs(baseURL, requestedURL);
+    }
+    return requestedURL;
+  }
+  var init_buildFullPath = __esm({
+    "node_modules/axios/lib/core/buildFullPath.js"() {
+      "use strict";
+      init_isAbsoluteURL();
+      init_combineURLs();
+    }
+  });
+
+  // node_modules/axios/lib/helpers/isURLSameOrigin.js
+  var isURLSameOrigin_default;
+  var init_isURLSameOrigin = __esm({
+    "node_modules/axios/lib/helpers/isURLSameOrigin.js"() {
+      "use strict";
+      init_utils();
+      init_platform();
+      isURLSameOrigin_default = platform_default.hasStandardBrowserEnv ? function standardBrowserEnv() {
+        const msie = /(msie|trident)/i.test(navigator.userAgent);
+        const urlParsingNode = document.createElement("a");
+        let originURL;
+        function resolveURL(url) {
+          let href = url;
+          if (msie) {
+            urlParsingNode.setAttribute("href", href);
+            href = urlParsingNode.href;
+          }
+          urlParsingNode.setAttribute("href", href);
+          return {
+            href: urlParsingNode.href,
+            protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, "") : "",
+            host: urlParsingNode.host,
+            search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, "") : "",
+            hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, "") : "",
+            hostname: urlParsingNode.hostname,
+            port: urlParsingNode.port,
+            pathname: urlParsingNode.pathname.charAt(0) === "/" ? urlParsingNode.pathname : "/" + urlParsingNode.pathname
+          };
+        }
+        originURL = resolveURL(window.location.href);
+        return function isURLSameOrigin(requestURL) {
+          const parsed = utils_default.isString(requestURL) ? resolveURL(requestURL) : requestURL;
+          return parsed.protocol === originURL.protocol && parsed.host === originURL.host;
+        };
+      }() : function nonStandardBrowserEnv() {
+        return function isURLSameOrigin() {
+          return true;
+        };
+      }();
+    }
+  });
+
+  // node_modules/axios/lib/helpers/parseProtocol.js
+  function parseProtocol(url) {
+    const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
+    return match && match[1] || "";
+  }
+  var init_parseProtocol = __esm({
+    "node_modules/axios/lib/helpers/parseProtocol.js"() {
+      "use strict";
     }
   });
 
@@ -1363,147 +1543,14 @@
         progress: total ? loaded / total : void 0,
         bytes: progressBytes,
         rate: rate ? rate : void 0,
-        estimated: rate && total && inRange ? (total - loaded) / rate : void 0
+        estimated: rate && total && inRange ? (total - loaded) / rate : void 0,
+        event: e
       };
       data[isDownloadStream ? "download" : "upload"] = true;
       listener(data);
     };
   }
-  function xhrAdapter(config) {
-    return new Promise(function dispatchXhrRequest(resolve, reject) {
-      let requestData = config.data;
-      const requestHeaders = AxiosHeaders_default.from(config.headers).normalize();
-      const responseType = config.responseType;
-      let onCanceled;
-      function done() {
-        if (config.cancelToken) {
-          config.cancelToken.unsubscribe(onCanceled);
-        }
-        if (config.signal) {
-          config.signal.removeEventListener("abort", onCanceled);
-        }
-      }
-      if (utils_default.isFormData(requestData) && browser_default.isStandardBrowserEnv) {
-        requestHeaders.setContentType(false);
-      }
-      let request = new XMLHttpRequest();
-      if (config.auth) {
-        const username = config.auth.username || "";
-        const password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : "";
-        requestHeaders.set("Authorization", "Basic " + btoa(username + ":" + password));
-      }
-      const fullPath = buildFullPath(config.baseURL, config.url);
-      request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
-      request.timeout = config.timeout;
-      function onloadend() {
-        if (!request) {
-          return;
-        }
-        const responseHeaders = AxiosHeaders_default.from(
-          "getAllResponseHeaders" in request && request.getAllResponseHeaders()
-        );
-        const responseData = !responseType || responseType === "text" || responseType === "json" ? request.responseText : request.response;
-        const response = {
-          data: responseData,
-          status: request.status,
-          statusText: request.statusText,
-          headers: responseHeaders,
-          config,
-          request
-        };
-        settle(function _resolve(value) {
-          resolve(value);
-          done();
-        }, function _reject(err) {
-          reject(err);
-          done();
-        }, response);
-        request = null;
-      }
-      if ("onloadend" in request) {
-        request.onloadend = onloadend;
-      } else {
-        request.onreadystatechange = function handleLoad() {
-          if (!request || request.readyState !== 4) {
-            return;
-          }
-          if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf("file:") === 0)) {
-            return;
-          }
-          setTimeout(onloadend);
-        };
-      }
-      request.onabort = function handleAbort() {
-        if (!request) {
-          return;
-        }
-        reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config, request));
-        request = null;
-      };
-      request.onerror = function handleError() {
-        reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config, request));
-        request = null;
-      };
-      request.ontimeout = function handleTimeout() {
-        let timeoutErrorMessage = config.timeout ? "timeout of " + config.timeout + "ms exceeded" : "timeout exceeded";
-        const transitional2 = config.transitional || transitional_default;
-        if (config.timeoutErrorMessage) {
-          timeoutErrorMessage = config.timeoutErrorMessage;
-        }
-        reject(new AxiosError_default(
-          timeoutErrorMessage,
-          transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-          config,
-          request
-        ));
-        request = null;
-      };
-      if (browser_default.isStandardBrowserEnv) {
-        const xsrfValue = (config.withCredentials || isURLSameOrigin_default(fullPath)) && config.xsrfCookieName && cookies_default.read(config.xsrfCookieName);
-        if (xsrfValue) {
-          requestHeaders.set(config.xsrfHeaderName, xsrfValue);
-        }
-      }
-      requestData === void 0 && requestHeaders.setContentType(null);
-      if ("setRequestHeader" in request) {
-        utils_default.forEach(requestHeaders.toJSON(), function setRequestHeader(val, key) {
-          request.setRequestHeader(key, val);
-        });
-      }
-      if (!utils_default.isUndefined(config.withCredentials)) {
-        request.withCredentials = !!config.withCredentials;
-      }
-      if (responseType && responseType !== "json") {
-        request.responseType = config.responseType;
-      }
-      if (typeof config.onDownloadProgress === "function") {
-        request.addEventListener("progress", progressEventReducer(config.onDownloadProgress, true));
-      }
-      if (typeof config.onUploadProgress === "function" && request.upload) {
-        request.upload.addEventListener("progress", progressEventReducer(config.onUploadProgress));
-      }
-      if (config.cancelToken || config.signal) {
-        onCanceled = (cancel) => {
-          if (!request) {
-            return;
-          }
-          reject(!cancel || cancel.type ? new CanceledError_default(null, config, request) : cancel);
-          request.abort();
-          request = null;
-        };
-        config.cancelToken && config.cancelToken.subscribe(onCanceled);
-        if (config.signal) {
-          config.signal.aborted ? onCanceled() : config.signal.addEventListener("abort", onCanceled);
-        }
-      }
-      const protocol = parseProtocol(fullPath);
-      if (protocol && browser_default.protocols.indexOf(protocol) === -1) {
-        reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config));
-        return;
-      }
-      request.send(requestData || null);
-    });
-  }
+  var isXHRAdapterSupported, xhr_default;
   var init_xhr = __esm({
     "node_modules/axios/lib/adapters/xhr.js"() {
       "use strict";
@@ -1520,242 +1567,252 @@
       init_platform();
       init_AxiosHeaders();
       init_speedometer();
-    }
-  });
-
-  // node_modules/axios/lib/adapters/index.js
-  var adapters, adapters_default;
-  var init_adapters = __esm({
-    "node_modules/axios/lib/adapters/index.js"() {
-      init_utils();
-      init_xhr();
-      init_xhr();
-      adapters = {
-        http: xhrAdapter,
-        xhr: xhrAdapter
-      };
-      adapters_default = {
-        getAdapter: (nameOrAdapter) => {
-          if (utils_default.isString(nameOrAdapter)) {
-            const adapter = adapters[nameOrAdapter];
-            if (!nameOrAdapter) {
-              throw Error(
-                utils_default.hasOwnProp(nameOrAdapter) ? `Adapter '${nameOrAdapter}' is not available in the build` : `Can not resolve adapter '${nameOrAdapter}'`
-              );
+      isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
+      xhr_default = isXHRAdapterSupported && function(config2) {
+        return new Promise(function dispatchXhrRequest(resolve, reject) {
+          let requestData = config2.data;
+          const requestHeaders = AxiosHeaders_default.from(config2.headers).normalize();
+          let { responseType, withXSRFToken } = config2;
+          let onCanceled;
+          function done() {
+            if (config2.cancelToken) {
+              config2.cancelToken.unsubscribe(onCanceled);
             }
-            return adapter;
-          }
-          if (!utils_default.isFunction(nameOrAdapter)) {
-            throw new TypeError("adapter is not a function");
-          }
-          return nameOrAdapter;
-        },
-        adapters
-      };
-    }
-  });
-
-  // node_modules/axios/lib/defaults/index.js
-  function getDefaultAdapter() {
-    let adapter;
-    if (typeof XMLHttpRequest !== "undefined") {
-      adapter = adapters_default.getAdapter("xhr");
-    } else if (typeof process !== "undefined" && utils_default.kindOf(process) === "process") {
-      adapter = adapters_default.getAdapter("http");
-    }
-    return adapter;
-  }
-  function stringifySafely(rawValue, parser, encoder) {
-    if (utils_default.isString(rawValue)) {
-      try {
-        (parser || JSON.parse)(rawValue);
-        return utils_default.trim(rawValue);
-      } catch (e) {
-        if (e.name !== "SyntaxError") {
-          throw e;
-        }
-      }
-    }
-    return (encoder || JSON.stringify)(rawValue);
-  }
-  var DEFAULT_CONTENT_TYPE, defaults, defaults_default;
-  var init_defaults = __esm({
-    "node_modules/axios/lib/defaults/index.js"() {
-      "use strict";
-      init_utils();
-      init_AxiosError();
-      init_transitional();
-      init_toFormData();
-      init_toURLEncodedForm();
-      init_platform();
-      init_formDataToJSON();
-      init_adapters();
-      DEFAULT_CONTENT_TYPE = {
-        "Content-Type": "application/x-www-form-urlencoded"
-      };
-      defaults = {
-        transitional: transitional_default,
-        adapter: getDefaultAdapter(),
-        transformRequest: [function transformRequest(data, headers) {
-          const contentType = headers.getContentType() || "";
-          const hasJSONContentType = contentType.indexOf("application/json") > -1;
-          const isObjectPayload = utils_default.isObject(data);
-          if (isObjectPayload && utils_default.isHTMLForm(data)) {
-            data = new FormData(data);
-          }
-          const isFormData2 = utils_default.isFormData(data);
-          if (isFormData2) {
-            if (!hasJSONContentType) {
-              return data;
-            }
-            return hasJSONContentType ? JSON.stringify(formDataToJSON_default(data)) : data;
-          }
-          if (utils_default.isArrayBuffer(data) || utils_default.isBuffer(data) || utils_default.isStream(data) || utils_default.isFile(data) || utils_default.isBlob(data)) {
-            return data;
-          }
-          if (utils_default.isArrayBufferView(data)) {
-            return data.buffer;
-          }
-          if (utils_default.isURLSearchParams(data)) {
-            headers.setContentType("application/x-www-form-urlencoded;charset=utf-8", false);
-            return data.toString();
-          }
-          let isFileList2;
-          if (isObjectPayload) {
-            if (contentType.indexOf("application/x-www-form-urlencoded") > -1) {
-              return toURLEncodedForm(data, this.formSerializer).toString();
-            }
-            if ((isFileList2 = utils_default.isFileList(data)) || contentType.indexOf("multipart/form-data") > -1) {
-              const _FormData = this.env && this.env.FormData;
-              return toFormData_default(
-                isFileList2 ? { "files[]": data } : data,
-                _FormData && new _FormData(),
-                this.formSerializer
-              );
+            if (config2.signal) {
+              config2.signal.removeEventListener("abort", onCanceled);
             }
           }
-          if (isObjectPayload || hasJSONContentType) {
-            headers.setContentType("application/json", false);
-            return stringifySafely(data);
+          let contentType;
+          if (utils_default.isFormData(requestData)) {
+            if (platform_default.hasStandardBrowserEnv || platform_default.hasStandardBrowserWebWorkerEnv) {
+              requestHeaders.setContentType(false);
+            } else if ((contentType = requestHeaders.getContentType()) !== false) {
+              const [type, ...tokens] = contentType ? contentType.split(";").map((token) => token.trim()).filter(Boolean) : [];
+              requestHeaders.setContentType([type || "multipart/form-data", ...tokens].join("; "));
+            }
           }
-          return data;
-        }],
-        transformResponse: [function transformResponse(data) {
-          const transitional2 = this.transitional || defaults.transitional;
-          const forcedJSONParsing = transitional2 && transitional2.forcedJSONParsing;
-          const JSONRequested = this.responseType === "json";
-          if (data && utils_default.isString(data) && (forcedJSONParsing && !this.responseType || JSONRequested)) {
-            const silentJSONParsing = transitional2 && transitional2.silentJSONParsing;
-            const strictJSONParsing = !silentJSONParsing && JSONRequested;
-            try {
-              return JSON.parse(data);
-            } catch (e) {
-              if (strictJSONParsing) {
-                if (e.name === "SyntaxError") {
-                  throw AxiosError_default.from(e, AxiosError_default.ERR_BAD_RESPONSE, this, null, this.response);
-                }
-                throw e;
+          let request = new XMLHttpRequest();
+          if (config2.auth) {
+            const username = config2.auth.username || "";
+            const password = config2.auth.password ? unescape(encodeURIComponent(config2.auth.password)) : "";
+            requestHeaders.set("Authorization", "Basic " + btoa(username + ":" + password));
+          }
+          const fullPath = buildFullPath(config2.baseURL, config2.url);
+          request.open(config2.method.toUpperCase(), buildURL(fullPath, config2.params, config2.paramsSerializer), true);
+          request.timeout = config2.timeout;
+          function onloadend() {
+            if (!request) {
+              return;
+            }
+            const responseHeaders = AxiosHeaders_default.from(
+              "getAllResponseHeaders" in request && request.getAllResponseHeaders()
+            );
+            const responseData = !responseType || responseType === "text" || responseType === "json" ? request.responseText : request.response;
+            const response = {
+              data: responseData,
+              status: request.status,
+              statusText: request.statusText,
+              headers: responseHeaders,
+              config: config2,
+              request
+            };
+            settle(function _resolve(value) {
+              resolve(value);
+              done();
+            }, function _reject(err) {
+              reject(err);
+              done();
+            }, response);
+            request = null;
+          }
+          if ("onloadend" in request) {
+            request.onloadend = onloadend;
+          } else {
+            request.onreadystatechange = function handleLoad() {
+              if (!request || request.readyState !== 4) {
+                return;
+              }
+              if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf("file:") === 0)) {
+                return;
+              }
+              setTimeout(onloadend);
+            };
+          }
+          request.onabort = function handleAbort() {
+            if (!request) {
+              return;
+            }
+            reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config2, request));
+            request = null;
+          };
+          request.onerror = function handleError() {
+            reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config2, request));
+            request = null;
+          };
+          request.ontimeout = function handleTimeout() {
+            let timeoutErrorMessage = config2.timeout ? "timeout of " + config2.timeout + "ms exceeded" : "timeout exceeded";
+            const transitional2 = config2.transitional || transitional_default;
+            if (config2.timeoutErrorMessage) {
+              timeoutErrorMessage = config2.timeoutErrorMessage;
+            }
+            reject(new AxiosError_default(
+              timeoutErrorMessage,
+              transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
+              config2,
+              request
+            ));
+            request = null;
+          };
+          if (platform_default.hasStandardBrowserEnv) {
+            withXSRFToken && utils_default.isFunction(withXSRFToken) && (withXSRFToken = withXSRFToken(config2));
+            if (withXSRFToken || withXSRFToken !== false && isURLSameOrigin_default(fullPath)) {
+              const xsrfValue = config2.xsrfHeaderName && config2.xsrfCookieName && cookies_default.read(config2.xsrfCookieName);
+              if (xsrfValue) {
+                requestHeaders.set(config2.xsrfHeaderName, xsrfValue);
               }
             }
           }
-          return data;
-        }],
-        /**
-         * A timeout in milliseconds to abort a request. If set to 0 (default) a
-         * timeout is not created.
-         */
-        timeout: 0,
-        xsrfCookieName: "XSRF-TOKEN",
-        xsrfHeaderName: "X-XSRF-TOKEN",
-        maxContentLength: -1,
-        maxBodyLength: -1,
-        env: {
-          FormData: browser_default.classes.FormData,
-          Blob: browser_default.classes.Blob
-        },
-        validateStatus: function validateStatus(status) {
-          return status >= 200 && status < 300;
-        },
-        headers: {
-          common: {
-            "Accept": "application/json, text/plain, */*"
+          requestData === void 0 && requestHeaders.setContentType(null);
+          if ("setRequestHeader" in request) {
+            utils_default.forEach(requestHeaders.toJSON(), function setRequestHeader(val, key) {
+              request.setRequestHeader(key, val);
+            });
           }
-        }
+          if (!utils_default.isUndefined(config2.withCredentials)) {
+            request.withCredentials = !!config2.withCredentials;
+          }
+          if (responseType && responseType !== "json") {
+            request.responseType = config2.responseType;
+          }
+          if (typeof config2.onDownloadProgress === "function") {
+            request.addEventListener("progress", progressEventReducer(config2.onDownloadProgress, true));
+          }
+          if (typeof config2.onUploadProgress === "function" && request.upload) {
+            request.upload.addEventListener("progress", progressEventReducer(config2.onUploadProgress));
+          }
+          if (config2.cancelToken || config2.signal) {
+            onCanceled = (cancel) => {
+              if (!request) {
+                return;
+              }
+              reject(!cancel || cancel.type ? new CanceledError_default(null, config2, request) : cancel);
+              request.abort();
+              request = null;
+            };
+            config2.cancelToken && config2.cancelToken.subscribe(onCanceled);
+            if (config2.signal) {
+              config2.signal.aborted ? onCanceled() : config2.signal.addEventListener("abort", onCanceled);
+            }
+          }
+          const protocol = parseProtocol(fullPath);
+          if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
+            reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config2));
+            return;
+          }
+          request.send(requestData || null);
+        });
       };
-      utils_default.forEach(["delete", "get", "head"], function forEachMethodNoData(method) {
-        defaults.headers[method] = {};
-      });
-      utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData(method) {
-        defaults.headers[method] = utils_default.merge(DEFAULT_CONTENT_TYPE);
-      });
-      defaults_default = defaults;
     }
   });
 
-  // node_modules/axios/lib/core/transformData.js
-  function transformData(fns, response) {
-    const config = this || defaults_default;
-    const context = response || config;
-    const headers = AxiosHeaders_default.from(context.headers);
-    let data = context.data;
-    utils_default.forEach(fns, function transform(fn) {
-      data = fn.call(config, data, headers.normalize(), response ? response.status : void 0);
-    });
-    headers.normalize();
-    return data;
-  }
-  var init_transformData = __esm({
-    "node_modules/axios/lib/core/transformData.js"() {
-      "use strict";
+  // node_modules/axios/lib/adapters/adapters.js
+  var knownAdapters, renderReason, isResolvedHandle, adapters_default;
+  var init_adapters = __esm({
+    "node_modules/axios/lib/adapters/adapters.js"() {
       init_utils();
-      init_defaults();
-      init_AxiosHeaders();
-    }
-  });
-
-  // node_modules/axios/lib/cancel/isCancel.js
-  function isCancel(value) {
-    return !!(value && value.__CANCEL__);
-  }
-  var init_isCancel = __esm({
-    "node_modules/axios/lib/cancel/isCancel.js"() {
-      "use strict";
+      init_null();
+      init_xhr();
+      init_AxiosError();
+      knownAdapters = {
+        http: null_default,
+        xhr: xhr_default
+      };
+      utils_default.forEach(knownAdapters, (fn, value) => {
+        if (fn) {
+          try {
+            Object.defineProperty(fn, "name", { value });
+          } catch (e) {
+          }
+          Object.defineProperty(fn, "adapterName", { value });
+        }
+      });
+      renderReason = (reason) => `- ${reason}`;
+      isResolvedHandle = (adapter) => utils_default.isFunction(adapter) || adapter === null || adapter === false;
+      adapters_default = {
+        getAdapter: (adapters) => {
+          adapters = utils_default.isArray(adapters) ? adapters : [adapters];
+          const { length } = adapters;
+          let nameOrAdapter;
+          let adapter;
+          const rejectedReasons = {};
+          for (let i = 0; i < length; i++) {
+            nameOrAdapter = adapters[i];
+            let id;
+            adapter = nameOrAdapter;
+            if (!isResolvedHandle(nameOrAdapter)) {
+              adapter = knownAdapters[(id = String(nameOrAdapter)).toLowerCase()];
+              if (adapter === void 0) {
+                throw new AxiosError_default(`Unknown adapter '${id}'`);
+              }
+            }
+            if (adapter) {
+              break;
+            }
+            rejectedReasons[id || "#" + i] = adapter;
+          }
+          if (!adapter) {
+            const reasons = Object.entries(rejectedReasons).map(
+              ([id, state]) => `adapter ${id} ` + (state === false ? "is not supported by the environment" : "is not available in the build")
+            );
+            let s = length ? reasons.length > 1 ? "since :\n" + reasons.map(renderReason).join("\n") : " " + renderReason(reasons[0]) : "as no adapter specified";
+            throw new AxiosError_default(
+              `There is no suitable adapter to dispatch the request ` + s,
+              "ERR_NOT_SUPPORT"
+            );
+          }
+          return adapter;
+        },
+        adapters: knownAdapters
+      };
     }
   });
 
   // node_modules/axios/lib/core/dispatchRequest.js
-  function throwIfCancellationRequested(config) {
-    if (config.cancelToken) {
-      config.cancelToken.throwIfRequested();
+  function throwIfCancellationRequested(config2) {
+    if (config2.cancelToken) {
+      config2.cancelToken.throwIfRequested();
     }
-    if (config.signal && config.signal.aborted) {
-      throw new CanceledError_default();
+    if (config2.signal && config2.signal.aborted) {
+      throw new CanceledError_default(null, config2);
     }
   }
-  function dispatchRequest(config) {
-    throwIfCancellationRequested(config);
-    config.headers = AxiosHeaders_default.from(config.headers);
-    config.data = transformData.call(
-      config,
-      config.transformRequest
+  function dispatchRequest(config2) {
+    throwIfCancellationRequested(config2);
+    config2.headers = AxiosHeaders_default.from(config2.headers);
+    config2.data = transformData.call(
+      config2,
+      config2.transformRequest
     );
-    const adapter = config.adapter || defaults_default.adapter;
-    return adapter(config).then(function onAdapterResolution(response) {
-      throwIfCancellationRequested(config);
+    if (["post", "put", "patch"].indexOf(config2.method) !== -1) {
+      config2.headers.setContentType("application/x-www-form-urlencoded", false);
+    }
+    const adapter = adapters_default.getAdapter(config2.adapter || defaults_default.adapter);
+    return adapter(config2).then(function onAdapterResolution(response) {
+      throwIfCancellationRequested(config2);
       response.data = transformData.call(
-        config,
-        config.transformResponse,
+        config2,
+        config2.transformResponse,
         response
       );
       response.headers = AxiosHeaders_default.from(response.headers);
       return response;
     }, function onAdapterRejection(reason) {
       if (!isCancel(reason)) {
-        throwIfCancellationRequested(config);
+        throwIfCancellationRequested(config2);
         if (reason && reason.response) {
           reason.response.data = transformData.call(
-            config,
-            config.transformResponse,
+            config2,
+            config2.transformResponse,
             reason.response
           );
           reason.response.headers = AxiosHeaders_default.from(reason.response.headers);
@@ -1772,16 +1829,17 @@
       init_defaults();
       init_CanceledError();
       init_AxiosHeaders();
+      init_adapters();
     }
   });
 
   // node_modules/axios/lib/core/mergeConfig.js
   function mergeConfig(config1, config2) {
     config2 = config2 || {};
-    const config = {};
-    function getMergedValue(target, source) {
+    const config3 = {};
+    function getMergedValue(target, source, caseless) {
       if (utils_default.isPlainObject(target) && utils_default.isPlainObject(source)) {
-        return utils_default.merge(target, source);
+        return utils_default.merge.call({ caseless }, target, source);
       } else if (utils_default.isPlainObject(source)) {
         return utils_default.merge({}, source);
       } else if (utils_default.isArray(source)) {
@@ -1789,72 +1847,77 @@
       }
       return source;
     }
-    function mergeDeepProperties(prop) {
-      if (!utils_default.isUndefined(config2[prop])) {
-        return getMergedValue(config1[prop], config2[prop]);
-      } else if (!utils_default.isUndefined(config1[prop])) {
-        return getMergedValue(void 0, config1[prop]);
+    function mergeDeepProperties(a, b, caseless) {
+      if (!utils_default.isUndefined(b)) {
+        return getMergedValue(a, b, caseless);
+      } else if (!utils_default.isUndefined(a)) {
+        return getMergedValue(void 0, a, caseless);
       }
     }
-    function valueFromConfig2(prop) {
-      if (!utils_default.isUndefined(config2[prop])) {
-        return getMergedValue(void 0, config2[prop]);
+    function valueFromConfig2(a, b) {
+      if (!utils_default.isUndefined(b)) {
+        return getMergedValue(void 0, b);
       }
     }
-    function defaultToConfig2(prop) {
-      if (!utils_default.isUndefined(config2[prop])) {
-        return getMergedValue(void 0, config2[prop]);
-      } else if (!utils_default.isUndefined(config1[prop])) {
-        return getMergedValue(void 0, config1[prop]);
+    function defaultToConfig2(a, b) {
+      if (!utils_default.isUndefined(b)) {
+        return getMergedValue(void 0, b);
+      } else if (!utils_default.isUndefined(a)) {
+        return getMergedValue(void 0, a);
       }
     }
-    function mergeDirectKeys(prop) {
+    function mergeDirectKeys(a, b, prop) {
       if (prop in config2) {
-        return getMergedValue(config1[prop], config2[prop]);
+        return getMergedValue(a, b);
       } else if (prop in config1) {
-        return getMergedValue(void 0, config1[prop]);
+        return getMergedValue(void 0, a);
       }
     }
     const mergeMap = {
-      "url": valueFromConfig2,
-      "method": valueFromConfig2,
-      "data": valueFromConfig2,
-      "baseURL": defaultToConfig2,
-      "transformRequest": defaultToConfig2,
-      "transformResponse": defaultToConfig2,
-      "paramsSerializer": defaultToConfig2,
-      "timeout": defaultToConfig2,
-      "timeoutMessage": defaultToConfig2,
-      "withCredentials": defaultToConfig2,
-      "adapter": defaultToConfig2,
-      "responseType": defaultToConfig2,
-      "xsrfCookieName": defaultToConfig2,
-      "xsrfHeaderName": defaultToConfig2,
-      "onUploadProgress": defaultToConfig2,
-      "onDownloadProgress": defaultToConfig2,
-      "decompress": defaultToConfig2,
-      "maxContentLength": defaultToConfig2,
-      "maxBodyLength": defaultToConfig2,
-      "beforeRedirect": defaultToConfig2,
-      "transport": defaultToConfig2,
-      "httpAgent": defaultToConfig2,
-      "httpsAgent": defaultToConfig2,
-      "cancelToken": defaultToConfig2,
-      "socketPath": defaultToConfig2,
-      "responseEncoding": defaultToConfig2,
-      "validateStatus": mergeDirectKeys
+      url: valueFromConfig2,
+      method: valueFromConfig2,
+      data: valueFromConfig2,
+      baseURL: defaultToConfig2,
+      transformRequest: defaultToConfig2,
+      transformResponse: defaultToConfig2,
+      paramsSerializer: defaultToConfig2,
+      timeout: defaultToConfig2,
+      timeoutMessage: defaultToConfig2,
+      withCredentials: defaultToConfig2,
+      withXSRFToken: defaultToConfig2,
+      adapter: defaultToConfig2,
+      responseType: defaultToConfig2,
+      xsrfCookieName: defaultToConfig2,
+      xsrfHeaderName: defaultToConfig2,
+      onUploadProgress: defaultToConfig2,
+      onDownloadProgress: defaultToConfig2,
+      decompress: defaultToConfig2,
+      maxContentLength: defaultToConfig2,
+      maxBodyLength: defaultToConfig2,
+      beforeRedirect: defaultToConfig2,
+      transport: defaultToConfig2,
+      httpAgent: defaultToConfig2,
+      httpsAgent: defaultToConfig2,
+      cancelToken: defaultToConfig2,
+      socketPath: defaultToConfig2,
+      responseEncoding: defaultToConfig2,
+      validateStatus: mergeDirectKeys,
+      headers: (a, b) => mergeDeepProperties(headersToObject(a), headersToObject(b), true)
     };
-    utils_default.forEach(Object.keys(config1).concat(Object.keys(config2)), function computeConfigValue(prop) {
+    utils_default.forEach(Object.keys(Object.assign({}, config1, config2)), function computeConfigValue(prop) {
       const merge2 = mergeMap[prop] || mergeDeepProperties;
-      const configValue = merge2(prop);
-      utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config[prop] = configValue);
+      const configValue = merge2(config1[prop], config2[prop], prop);
+      utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config3[prop] = configValue);
     });
-    return config;
+    return config3;
   }
+  var headersToObject;
   var init_mergeConfig = __esm({
     "node_modules/axios/lib/core/mergeConfig.js"() {
       "use strict";
       init_utils();
+      init_AxiosHeaders();
+      headersToObject = (thing) => thing instanceof AxiosHeaders_default ? { ...thing } : thing;
     }
   });
 
@@ -1862,7 +1925,7 @@
   var VERSION;
   var init_data = __esm({
     "node_modules/axios/lib/env/data.js"() {
-      VERSION = "1.1.2";
+      VERSION = "1.6.8";
     }
   });
 
@@ -1954,23 +2017,32 @@
             response: new InterceptorManager_default()
           };
         }
-        /**
-         * Dispatch a request
-         *
-         * @param {String|Object} configOrUrl The config specific for this request (merged with this.defaults)
-         * @param {?Object} config
-         *
-         * @returns {Promise} The Promise to be fulfilled
-         */
-        request(configOrUrl, config) {
-          if (typeof configOrUrl === "string") {
-            config = config || {};
-            config.url = configOrUrl;
-          } else {
-            config = configOrUrl || {};
+        async request(configOrUrl, config2) {
+          try {
+            return await this._request(configOrUrl, config2);
+          } catch (err) {
+            if (err instanceof Error) {
+              let dummy;
+              Error.captureStackTrace ? Error.captureStackTrace(dummy = {}) : dummy = new Error();
+              const stack = dummy.stack ? dummy.stack.replace(/^.+\n/, "") : "";
+              if (!err.stack) {
+                err.stack = stack;
+              } else if (stack && !String(err.stack).endsWith(stack.replace(/^.+\n.+\n/, ""))) {
+                err.stack += "\n" + stack;
+              }
+            }
+            throw err;
           }
-          config = mergeConfig(this.defaults, config);
-          const transitional2 = config.transitional;
+        }
+        _request(configOrUrl, config2) {
+          if (typeof configOrUrl === "string") {
+            config2 = config2 || {};
+            config2.url = configOrUrl;
+          } else {
+            config2 = configOrUrl || {};
+          }
+          config2 = mergeConfig(this.defaults, config2);
+          const { transitional: transitional2, paramsSerializer, headers } = config2;
           if (transitional2 !== void 0) {
             validator_default.assertOptions(transitional2, {
               silentJSONParsing: validators2.transitional(validators2.boolean),
@@ -1978,22 +2050,34 @@
               clarifyTimeoutError: validators2.transitional(validators2.boolean)
             }, false);
           }
-          config.method = (config.method || this.defaults.method || "get").toLowerCase();
-          const defaultHeaders = config.headers && utils_default.merge(
-            config.headers.common,
-            config.headers[config.method]
+          if (paramsSerializer != null) {
+            if (utils_default.isFunction(paramsSerializer)) {
+              config2.paramsSerializer = {
+                serialize: paramsSerializer
+              };
+            } else {
+              validator_default.assertOptions(paramsSerializer, {
+                encode: validators2.function,
+                serialize: validators2.function
+              }, true);
+            }
+          }
+          config2.method = (config2.method || this.defaults.method || "get").toLowerCase();
+          let contextHeaders = headers && utils_default.merge(
+            headers.common,
+            headers[config2.method]
           );
-          defaultHeaders && utils_default.forEach(
+          headers && utils_default.forEach(
             ["delete", "get", "head", "post", "put", "patch", "common"],
-            function cleanHeaderConfig(method) {
-              delete config.headers[method];
+            (method) => {
+              delete headers[method];
             }
           );
-          config.headers = new AxiosHeaders_default(config.headers, defaultHeaders);
+          config2.headers = AxiosHeaders_default.concat(contextHeaders, headers);
           const requestInterceptorChain = [];
           let synchronousRequestInterceptors = true;
           this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-            if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config) === false) {
+            if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config2) === false) {
               return;
             }
             synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -2011,14 +2095,14 @@
             chain.unshift.apply(chain, requestInterceptorChain);
             chain.push.apply(chain, responseInterceptorChain);
             len = chain.length;
-            promise = Promise.resolve(config);
+            promise = Promise.resolve(config2);
             while (i < len) {
               promise = promise.then(chain[i++], chain[i++]);
             }
             return promise;
           }
           len = requestInterceptorChain.length;
-          let newConfig = config;
+          let newConfig = config2;
           i = 0;
           while (i < len) {
             const onFulfilled = requestInterceptorChain[i++];
@@ -2042,25 +2126,25 @@
           }
           return promise;
         }
-        getUri(config) {
-          config = mergeConfig(this.defaults, config);
-          const fullPath = buildFullPath(config.baseURL, config.url);
-          return buildURL(fullPath, config.params, config.paramsSerializer);
+        getUri(config2) {
+          config2 = mergeConfig(this.defaults, config2);
+          const fullPath = buildFullPath(config2.baseURL, config2.url);
+          return buildURL(fullPath, config2.params, config2.paramsSerializer);
         }
       };
-      utils_default.forEach(["delete", "get", "head", "options"], function forEachMethodNoData2(method) {
-        Axios.prototype[method] = function(url, config) {
-          return this.request(mergeConfig(config || {}, {
+      utils_default.forEach(["delete", "get", "head", "options"], function forEachMethodNoData(method) {
+        Axios.prototype[method] = function(url, config2) {
+          return this.request(mergeConfig(config2 || {}, {
             method,
             url,
-            data: (config || {}).data
+            data: (config2 || {}).data
           }));
         };
       });
-      utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData2(method) {
+      utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData(method) {
         function generateHTTPMethod(isForm) {
-          return function httpMethod(url, data, config) {
-            return this.request(mergeConfig(config || {}, {
+          return function httpMethod(url, data, config2) {
+            return this.request(mergeConfig(config2 || {}, {
               method,
               headers: isForm ? {
                 "Content-Type": "multipart/form-data"
@@ -2083,7 +2167,7 @@
     "node_modules/axios/lib/cancel/CancelToken.js"() {
       "use strict";
       init_CanceledError();
-      CancelToken = class _CancelToken {
+      CancelToken = class {
         constructor(executor) {
           if (typeof executor !== "function") {
             throw new TypeError("executor must be a function.");
@@ -2113,25 +2197,19 @@
             };
             return promise;
           };
-          executor(function cancel(message, config, request) {
+          executor(function cancel(message, config2, request) {
             if (token.reason) {
               return;
             }
-            token.reason = new CanceledError_default(message, config, request);
+            token.reason = new CanceledError_default(message, config2, request);
             resolvePromise(token.reason);
           });
         }
-        /**
-         * Throws a `CanceledError` if cancellation has been requested.
-         */
         throwIfRequested() {
           if (this.reason) {
             throw this.reason;
           }
         }
-        /**
-         * Subscribe to the cancel signal
-         */
         subscribe(listener) {
           if (this.reason) {
             listener(this.reason);
@@ -2143,9 +2221,6 @@
             this._listeners = [listener];
           }
         }
-        /**
-         * Unsubscribe from the cancel signal
-         */
         unsubscribe(listener) {
           if (!this._listeners) {
             return;
@@ -2155,13 +2230,9 @@
             this._listeners.splice(index, 1);
           }
         }
-        /**
-         * Returns an object that contains a new `CancelToken` and a function that, when called,
-         * cancels the `CancelToken`.
-         */
         static source() {
           let cancel;
-          const token = new _CancelToken(function executor(c) {
+          const token = new CancelToken(function executor(c) {
             cancel = c;
           });
           return {
@@ -2176,7 +2247,7 @@
 
   // node_modules/axios/lib/helpers/spread.js
   function spread(callback) {
-    return function wrap2(arr) {
+    return function wrap(arr) {
       return callback.apply(null, arr);
     };
   }
@@ -2194,6 +2265,82 @@
     "node_modules/axios/lib/helpers/isAxiosError.js"() {
       "use strict";
       init_utils();
+    }
+  });
+
+  // node_modules/axios/lib/helpers/HttpStatusCode.js
+  var HttpStatusCode, HttpStatusCode_default;
+  var init_HttpStatusCode = __esm({
+    "node_modules/axios/lib/helpers/HttpStatusCode.js"() {
+      HttpStatusCode = {
+        Continue: 100,
+        SwitchingProtocols: 101,
+        Processing: 102,
+        EarlyHints: 103,
+        Ok: 200,
+        Created: 201,
+        Accepted: 202,
+        NonAuthoritativeInformation: 203,
+        NoContent: 204,
+        ResetContent: 205,
+        PartialContent: 206,
+        MultiStatus: 207,
+        AlreadyReported: 208,
+        ImUsed: 226,
+        MultipleChoices: 300,
+        MovedPermanently: 301,
+        Found: 302,
+        SeeOther: 303,
+        NotModified: 304,
+        UseProxy: 305,
+        Unused: 306,
+        TemporaryRedirect: 307,
+        PermanentRedirect: 308,
+        BadRequest: 400,
+        Unauthorized: 401,
+        PaymentRequired: 402,
+        Forbidden: 403,
+        NotFound: 404,
+        MethodNotAllowed: 405,
+        NotAcceptable: 406,
+        ProxyAuthenticationRequired: 407,
+        RequestTimeout: 408,
+        Conflict: 409,
+        Gone: 410,
+        LengthRequired: 411,
+        PreconditionFailed: 412,
+        PayloadTooLarge: 413,
+        UriTooLong: 414,
+        UnsupportedMediaType: 415,
+        RangeNotSatisfiable: 416,
+        ExpectationFailed: 417,
+        ImATeapot: 418,
+        MisdirectedRequest: 421,
+        UnprocessableEntity: 422,
+        Locked: 423,
+        FailedDependency: 424,
+        TooEarly: 425,
+        UpgradeRequired: 426,
+        PreconditionRequired: 428,
+        TooManyRequests: 429,
+        RequestHeaderFieldsTooLarge: 431,
+        UnavailableForLegalReasons: 451,
+        InternalServerError: 500,
+        NotImplemented: 501,
+        BadGateway: 502,
+        ServiceUnavailable: 503,
+        GatewayTimeout: 504,
+        HttpVersionNotSupported: 505,
+        VariantAlsoNegotiates: 506,
+        InsufficientStorage: 507,
+        LoopDetected: 508,
+        NotExtended: 510,
+        NetworkAuthenticationRequired: 511
+      };
+      Object.entries(HttpStatusCode).forEach(([key, value]) => {
+        HttpStatusCode[value] = key;
+      });
+      HttpStatusCode_default = HttpStatusCode;
     }
   });
 
@@ -2226,6 +2373,9 @@
       init_AxiosError();
       init_spread();
       init_isAxiosError();
+      init_AxiosHeaders();
+      init_adapters();
+      init_HttpStatusCode();
       axios = createInstance(defaults_default);
       axios.Axios = Axios_default;
       axios.CanceledError = CanceledError_default;
@@ -2240,19 +2390,445 @@
       };
       axios.spread = spread;
       axios.isAxiosError = isAxiosError;
-      axios.formToJSON = (thing) => {
-        return formDataToJSON_default(utils_default.isHTMLForm(thing) ? new FormData(thing) : thing);
-      };
+      axios.mergeConfig = mergeConfig;
+      axios.AxiosHeaders = AxiosHeaders_default;
+      axios.formToJSON = (thing) => formDataToJSON_default(utils_default.isHTMLForm(thing) ? new FormData(thing) : thing);
+      axios.getAdapter = adapters_default.getAdapter;
+      axios.HttpStatusCode = HttpStatusCode_default;
+      axios.default = axios;
       axios_default = axios;
     }
   });
 
   // node_modules/axios/index.js
-  var axios_default2;
+  var Axios2, AxiosError2, CanceledError2, isCancel2, CancelToken2, VERSION2, all2, Cancel, isAxiosError2, spread2, toFormData2, AxiosHeaders2, HttpStatusCode2, formToJSON, getAdapter, mergeConfig2;
   var init_axios2 = __esm({
     "node_modules/axios/index.js"() {
       init_axios();
-      axios_default2 = axios_default;
+      ({
+        Axios: Axios2,
+        AxiosError: AxiosError2,
+        CanceledError: CanceledError2,
+        isCancel: isCancel2,
+        CancelToken: CancelToken2,
+        VERSION: VERSION2,
+        all: all2,
+        Cancel,
+        isAxiosError: isAxiosError2,
+        spread: spread2,
+        toFormData: toFormData2,
+        AxiosHeaders: AxiosHeaders2,
+        HttpStatusCode: HttpStatusCode2,
+        formToJSON,
+        getAdapter,
+        mergeConfig: mergeConfig2
+      } = axios_default);
+    }
+  });
+
+  // src/config.json
+  var require_config = __commonJS({
+    "src/config.json"(exports, module) {
+      module.exports = {
+        default: {
+          serverUrl: "https://lite-http-tunnel-s52m.onrender.com",
+          platforms: {
+            pipedrive: {
+              name: "pipedrive",
+              authType: "oauth",
+              authUrl: "https://oauth.pipedrive.com/oauth/authorize",
+              clientId: "5d4736e322561f57",
+              redirectUri: "https://unified-crm-extension.labs.ringcentral.com/pipedrive-redirect",
+              canOpenLogPage: false,
+              page: {
+                callLog: {
+                  additionalFields: [
+                    {
+                      const: "deals",
+                      title: "Deal",
+                      type: "selection",
+                      contactDependent: true
+                    }
+                  ]
+                },
+                messageLog: {
+                  additionalFields: [
+                    {
+                      const: "deals",
+                      title: "Deal",
+                      type: "selection",
+                      contactDependent: true
+                    }
+                  ]
+                }
+              }
+            },
+            insightly: {
+              name: "insightly",
+              authType: "apiKey",
+              canOpenLogPage: true,
+              page: {
+                callLog: {
+                  additionalFields: [
+                    {
+                      const: "organization",
+                      title: "Organisation",
+                      type: "selection",
+                      contactDependent: true
+                    },
+                    {
+                      const: "opportunity",
+                      title: "Opportunity",
+                      type: "selection",
+                      contactDependent: true
+                    },
+                    {
+                      const: "project",
+                      title: "Project",
+                      type: "selection",
+                      contactDependent: true
+                    }
+                  ]
+                },
+                messageLog: {
+                  additionalFields: [
+                    {
+                      const: "organization",
+                      title: "Organisation",
+                      type: "selection",
+                      contactDependent: true
+                    },
+                    {
+                      const: "opportunity",
+                      title: "Opportunity",
+                      type: "selection",
+                      contactDependent: true
+                    },
+                    {
+                      const: "project",
+                      title: "Project",
+                      type: "selection",
+                      contactDependent: true
+                    }
+                  ]
+                }
+              }
+            },
+            clio: {
+              name: "clio",
+              authType: "oauth",
+              authUrl: "https://app.clio.com/oauth/authorize",
+              clientId: "JxK4GglGRoZnWoKA4sSLoXa5PHA2E6Mjisv3iIMY",
+              canOpenLogPage: false,
+              page: {
+                callLog: {
+                  additionalFields: [
+                    {
+                      const: "matters",
+                      title: "Matter",
+                      type: "selection",
+                      contactDependent: true
+                    },
+                    {
+                      const: "logTimeEntry",
+                      title: "Log time entry",
+                      type: "checkbox",
+                      contactDependent: false,
+                      defaultValue: true
+                    }
+                  ]
+                },
+                messageLog: {
+                  additionalFields: [
+                    {
+                      const: "matters",
+                      title: "Matter",
+                      type: "selection",
+                      contactDependent: true
+                    }
+                  ]
+                }
+              }
+            },
+            redtail: {
+              name: "redtail",
+              authType: "apiKey",
+              canOpenLogPage: true
+            },
+            bullhorn: {
+              name: "bullhorn",
+              authType: "oauth",
+              clientId: "5a1ff851-6b1c-454d-8501-826502e6fc76",
+              canOpenLogPage: false,
+              page: {
+                callLog: {
+                  additionalFields: [
+                    {
+                      const: "noteActions",
+                      title: "Note action",
+                      type: "selection",
+                      contactDependent: false
+                    }
+                  ]
+                },
+                messageLog: {
+                  additionalFields: [
+                    {
+                      const: "noteActions",
+                      title: "Note action",
+                      type: "selection",
+                      contactDependent: false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          mixpanelToken: "04acd7cb2e1867dcf98b6e8cf5ee1e1c",
+          clientId: "3rJq9BxcTCm-I7CFcY19ew",
+          rcServer: "https://platform.ringcentral.com",
+          redirectUri: "https://ringcentral.github.io/ringcentral-embeddable/redirect.html",
+          version: "0.8.19",
+          releaseNote: {
+            all: "",
+            pipedrive: "",
+            insightly: "",
+            clio: "",
+            redtail: "",
+            bullhorn: ""
+          },
+          welcomeMessage: {
+            pipedrive: {
+              docLink: "https://ringcentral.github.io/rc-unified-crm-extension/pipedrive/",
+              VideoLink: "https://youtu.be/Hu0qC13HDkQ"
+            },
+            insightly: {
+              docLink: "https://ringcentral.github.io/rc-unified-crm-extension/insightly/",
+              VideoLink: "https://youtu.be/5hWvVI12UAc"
+            },
+            clio: {
+              docLink: "https://ringcentral.github.io/rc-unified-crm-extension/clio/",
+              VideoLink: "https://youtu.be/pQgdsAR1UCI"
+            },
+            redtail: {
+              docLink: "https://ringcentral.github.io/rc-unified-crm-extension/redtail/",
+              VideoLink: "https://youtu.be/1pbpbEvp5uQ"
+            },
+            bullhorn: {
+              docLink: "https://ringcentral.github.io/rc-unified-crm-extension/bullhorn/",
+              VideoLink: "https://youtu.be/afbdQD0y4Yo"
+            }
+          },
+          platformsWithDifferentContactType: {
+            insightly: [
+              "Lead",
+              "Contact"
+            ],
+            bullhorn: [
+              "Candidate",
+              "Contact"
+            ]
+          }
+        },
+        serverUrl: "https://lite-http-tunnel-s52m.onrender.com",
+        platforms: {
+          pipedrive: {
+            name: "pipedrive",
+            authType: "oauth",
+            authUrl: "https://oauth.pipedrive.com/oauth/authorize",
+            clientId: "5d4736e322561f57",
+            redirectUri: "https://unified-crm-extension.labs.ringcentral.com/pipedrive-redirect",
+            canOpenLogPage: false,
+            page: {
+              callLog: {
+                additionalFields: [
+                  {
+                    const: "deals",
+                    title: "Deal",
+                    type: "selection",
+                    contactDependent: true
+                  }
+                ]
+              },
+              messageLog: {
+                additionalFields: [
+                  {
+                    const: "deals",
+                    title: "Deal",
+                    type: "selection",
+                    contactDependent: true
+                  }
+                ]
+              }
+            }
+          },
+          insightly: {
+            name: "insightly",
+            authType: "apiKey",
+            canOpenLogPage: true,
+            page: {
+              callLog: {
+                additionalFields: [
+                  {
+                    const: "organization",
+                    title: "Organisation",
+                    type: "selection",
+                    contactDependent: true
+                  },
+                  {
+                    const: "opportunity",
+                    title: "Opportunity",
+                    type: "selection",
+                    contactDependent: true
+                  },
+                  {
+                    const: "project",
+                    title: "Project",
+                    type: "selection",
+                    contactDependent: true
+                  }
+                ]
+              },
+              messageLog: {
+                additionalFields: [
+                  {
+                    const: "organization",
+                    title: "Organisation",
+                    type: "selection",
+                    contactDependent: true
+                  },
+                  {
+                    const: "opportunity",
+                    title: "Opportunity",
+                    type: "selection",
+                    contactDependent: true
+                  },
+                  {
+                    const: "project",
+                    title: "Project",
+                    type: "selection",
+                    contactDependent: true
+                  }
+                ]
+              }
+            }
+          },
+          clio: {
+            name: "clio",
+            authType: "oauth",
+            authUrl: "https://app.clio.com/oauth/authorize",
+            clientId: "JxK4GglGRoZnWoKA4sSLoXa5PHA2E6Mjisv3iIMY",
+            canOpenLogPage: false,
+            page: {
+              callLog: {
+                additionalFields: [
+                  {
+                    const: "matters",
+                    title: "Matter",
+                    type: "selection",
+                    contactDependent: true
+                  },
+                  {
+                    const: "logTimeEntry",
+                    title: "Log time entry",
+                    type: "checkbox",
+                    contactDependent: false,
+                    defaultValue: true
+                  }
+                ]
+              },
+              messageLog: {
+                additionalFields: [
+                  {
+                    const: "matters",
+                    title: "Matter",
+                    type: "selection",
+                    contactDependent: true
+                  }
+                ]
+              }
+            }
+          },
+          redtail: {
+            name: "redtail",
+            authType: "apiKey",
+            canOpenLogPage: true
+          },
+          bullhorn: {
+            name: "bullhorn",
+            authType: "oauth",
+            clientId: "5a1ff851-6b1c-454d-8501-826502e6fc76",
+            canOpenLogPage: false,
+            page: {
+              callLog: {
+                additionalFields: [
+                  {
+                    const: "noteActions",
+                    title: "Note action",
+                    type: "selection",
+                    contactDependent: false
+                  }
+                ]
+              },
+              messageLog: {
+                additionalFields: [
+                  {
+                    const: "noteActions",
+                    title: "Note action",
+                    type: "selection",
+                    contactDependent: false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        mixpanelToken: "04acd7cb2e1867dcf98b6e8cf5ee1e1c",
+        clientId: "3rJq9BxcTCm-I7CFcY19ew",
+        rcServer: "https://platform.ringcentral.com",
+        redirectUri: "https://ringcentral.github.io/ringcentral-embeddable/redirect.html",
+        version: "0.8.19",
+        releaseNote: {
+          all: "",
+          pipedrive: "",
+          insightly: "",
+          clio: "",
+          redtail: "",
+          bullhorn: ""
+        },
+        welcomeMessage: {
+          pipedrive: {
+            docLink: "https://ringcentral.github.io/rc-unified-crm-extension/pipedrive/",
+            VideoLink: "https://youtu.be/Hu0qC13HDkQ"
+          },
+          insightly: {
+            docLink: "https://ringcentral.github.io/rc-unified-crm-extension/insightly/",
+            VideoLink: "https://youtu.be/5hWvVI12UAc"
+          },
+          clio: {
+            docLink: "https://ringcentral.github.io/rc-unified-crm-extension/clio/",
+            VideoLink: "https://youtu.be/pQgdsAR1UCI"
+          },
+          redtail: {
+            docLink: "https://ringcentral.github.io/rc-unified-crm-extension/redtail/",
+            VideoLink: "https://youtu.be/1pbpbEvp5uQ"
+          },
+          bullhorn: {
+            docLink: "https://ringcentral.github.io/rc-unified-crm-extension/bullhorn/",
+            VideoLink: "https://youtu.be/afbdQD0y4Yo"
+          }
+        },
+        platformsWithDifferentContactType: {
+          insightly: [
+            "Lead",
+            "Contact"
+          ],
+          bullhorn: [
+            "Candidate",
+            "Contact"
+          ]
+        }
+      };
     }
   });
 
@@ -2295,14 +2871,84 @@
     }
   });
 
-  // src/manifest.json
+  // public/manifest.json
   var manifest_default;
   var init_manifest = __esm({
-    "src/manifest.json"() {
+    "public/manifest.json"() {
       manifest_default = {
-        defaultCrmManifestUrl: "https://unified-crm-extension-test.labs.ringcentral.com/crmManifest",
-        mixpanelToken: "0c3618bcd33665a15a979a972bac380f",
-        version: "1.0.0"
+        name: "RingCentral CRM Extension",
+        description: "A RingCentral extension for CRM platforms",
+        version: "0.8.15",
+        permissions: [
+          "storage",
+          "alarms",
+          "tabs",
+          "background",
+          "unlimitedStorage",
+          "notifications"
+        ],
+        content_scripts: [
+          {
+            matches: [
+              "https://*.labs.ringcentral.com/*",
+              "https://*.ngrok-free.app/*",
+              "https://lite-http-tunnel-s52m.onrender.com/*",
+              "https://*.pipedrive.com/*",
+              "https://*.insightly.com/*",
+              "https://*.clio.com/*",
+              "https://*.redtailtechnology.com/*",
+              "https://*.bullhornstaffing.com/*"
+            ],
+            js: [
+              "./c2d/index.js",
+              "./content.js"
+            ],
+            all_frames: true
+          }
+        ],
+        web_accessible_resources: [
+          {
+            resources: [
+              "/embeddable/*",
+              "/c2d/*"
+            ],
+            matches: [
+              "https://*.labs.ringcentral.com/*",
+              "https://*.ngrok-free.app/*",
+              "https://lite-http-tunnel-s52m.onrender.com/*",
+              "https://*.pipedrive.com/*",
+              "https://*.insightly.com/*",
+              "https://*.clio.com/*",
+              "https://*.redtailtechnology.com/*",
+              "https://*.bullhornstaffing.com/*"
+            ]
+          }
+        ],
+        action: {
+          default_icon: {
+            "16": "/images/logo16.png",
+            "32": "/images/logo32.png",
+            "48": "/images/logo48.png",
+            "128": "/images/logo128.png"
+          }
+        },
+        background: {
+          service_worker: "sw.js"
+        },
+        options_ui: {
+          page: "options.html",
+          open_in_tab: false
+        },
+        content_security_policy: {
+          extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self' 'wasm-unsafe-eval'"
+        },
+        manifest_version: 3,
+        icons: {
+          "16": "/images/logo16.png",
+          "32": "/images/logo32.png",
+          "48": "/images/logo48.png",
+          "128": "/images/logo128.png"
+        }
       };
     }
   });
@@ -2313,14 +2959,14 @@
       "use strict";
       var Config = {
         DEBUG: false,
-        LIB_VERSION: "2.49.0"
+        LIB_VERSION: "2.50.0"
       };
-      var window$1;
+      var win;
       if (typeof window === "undefined") {
         loc = {
           hostname: ""
         };
-        window$1 = {
+        win = {
           navigator: { userAgent: "" },
           document: {
             location: loc,
@@ -2330,20 +2976,21 @@
           location: loc
         };
       } else {
-        window$1 = window;
+        win = window;
       }
       var loc;
+      var MAX_RECORDING_MS = 24 * 60 * 60 * 1e3;
       var ArrayProto = Array.prototype;
       var FuncProto = Function.prototype;
       var ObjProto = Object.prototype;
       var slice = ArrayProto.slice;
       var toString3 = ObjProto.toString;
       var hasOwnProperty2 = ObjProto.hasOwnProperty;
-      var windowConsole = window$1.console;
-      var navigator2 = window$1.navigator;
-      var document$1 = window$1.document;
-      var windowOpera = window$1.opera;
-      var screen = window$1.screen;
+      var windowConsole = win.console;
+      var navigator2 = win.navigator;
+      var document$1 = win.document;
+      var windowOpera = win.opera;
+      var screen = win.screen;
       var userAgent = navigator2.userAgent;
       var nativeBind = FuncProto.bind;
       var nativeForEach = ArrayProto.forEach;
@@ -2357,7 +3004,6 @@
         }
       };
       var console2 = {
-        /** @type {function(...*)} */
         log: function() {
           if (Config.DEBUG && !_.isUndefined(windowConsole) && windowConsole) {
             try {
@@ -2369,7 +3015,6 @@
             }
           }
         },
-        /** @type {function(...*)} */
         warn: function() {
           if (Config.DEBUG && !_.isUndefined(windowConsole) && windowConsole) {
             var args = ["Mixpanel warning:"].concat(_.toArray(arguments));
@@ -2382,7 +3027,6 @@
             }
           }
         },
-        /** @type {function(...*)} */
         error: function() {
           if (Config.DEBUG && !_.isUndefined(windowConsole) && windowConsole) {
             var args = ["Mixpanel error:"].concat(_.toArray(arguments));
@@ -2395,7 +3039,6 @@
             }
           }
         },
-        /** @type {function(...*)} */
         critical: function() {
           if (!_.isUndefined(windowConsole) && windowConsole) {
             var args = ["Mixpanel error:"].concat(_.toArray(arguments));
@@ -2603,7 +3246,7 @@
       };
       _.timestamp = function() {
         Date.now = Date.now || function() {
-          return +/* @__PURE__ */ new Date();
+          return +new Date();
         };
         return Date.now();
       };
@@ -2641,13 +3284,12 @@
         }
         return ret;
       };
-      _.JSONEncode = /* @__PURE__ */ function() {
+      _.JSONEncode = function() {
         return function(mixed_val) {
           var value = mixed_val;
           var quote = function(string) {
             var escapable = /[\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
             var meta = {
-              // table of character substitutions
               "\b": "\\b",
               "	": "\\t",
               "\n": "\\n",
@@ -2965,15 +3607,15 @@
         }
         return utftext;
       };
-      _.UUID = /* @__PURE__ */ function() {
+      _.UUID = function() {
         var T = function() {
-          var time = 1 * /* @__PURE__ */ new Date();
+          var time = 1 * new Date();
           var ticks;
-          if (window$1.performance && window$1.performance.now) {
-            ticks = window$1.performance.now();
+          if (win.performance && win.performance.now) {
+            ticks = win.performance.now();
           } else {
             ticks = 0;
-            while (time == 1 * /* @__PURE__ */ new Date()) {
+            while (time == 1 * new Date()) {
               ticks++;
             }
           }
@@ -3022,8 +3664,6 @@
         "screaming frog",
         "yahoo! slurp",
         "yandexbot",
-        // a whole bunch of goog-specific crawlers
-        // https://developers.google.com/search/docs/advanced/crawling/overview-google-crawlers
         "adsbot-google",
         "apis-google",
         "duplexweb-google",
@@ -3105,7 +3745,7 @@
             cdomain = domain ? "; domain=." + domain : "";
           }
           if (seconds) {
-            var date = /* @__PURE__ */ new Date();
+            var date = new Date();
             date.setTime(date.getTime() + seconds * 1e3);
             expires = "; expires=" + date.toGMTString();
           }
@@ -3127,7 +3767,7 @@
             cdomain = domain ? "; domain=." + domain : "";
           }
           if (days) {
-            var date = /* @__PURE__ */ new Date();
+            var date = new Date();
             date.setTime(date.getTime() + days * 24 * 60 * 60 * 1e3);
             expires = "; expires=" + date.toGMTString();
           }
@@ -3256,7 +3896,7 @@
         return register_event;
       }();
       var TOKEN_MATCH_REGEX = new RegExp('^(\\w*)\\[(\\w+)([=~\\|\\^\\$\\*]?)=?"?([^\\]"]*)"?\\]$');
-      _.dom_query = /* @__PURE__ */ function() {
+      _.dom_query = function() {
         function getAllChildren(e) {
           return e.all ? e.all : e.getElementsByTagName("*");
         }
@@ -3307,8 +3947,7 @@
               currentContext = [];
               currentContextIndex = 0;
               for (j = 0; j < found.length; j++) {
-                if (found[j].className && _.isString(found[j].className) && // some SVG elements have classNames which are not strings
-                hasClass(found[j], className)) {
+                if (found[j].className && _.isString(found[j].className) && hasClass(found[j], className)) {
                   currentContext[currentContextIndex++] = found[j];
                 }
               }
@@ -3458,11 +4097,6 @@
           }
           return ret;
         },
-        /**
-         * This function detects which browser is running this script.
-         * The order of the checks are important since many user agents
-         * include key words used in later checks.
-         */
         browser: function(user_agent, vendor, opera) {
           vendor = vendor || "";
           if (opera || _.includes(user_agent, " OPR/")) {
@@ -3507,11 +4141,6 @@
             return "";
           }
         },
-        /**
-         * This function detects which browser version is running this script,
-         * parsing major and minor version (e.g., 42.1). User agent strings from:
-         * http://www.useragentstring.com/pages/useragentstring.php
-         */
         browserVersion: function(userAgent2, vendor, opera) {
           var browser = _.info.browser(userAgent2, vendor, opera);
           var versionRegexs = {
@@ -3590,7 +4219,7 @@
           return "";
         },
         currentUrl: function() {
-          return window$1.location.href;
+          return win.location.href;
         },
         properties: function(extra_props) {
           if (typeof extra_props !== "object") {
@@ -3611,7 +4240,6 @@
             "$lib_version": Config.LIB_VERSION,
             "$insert_id": cheap_guid(),
             "time": _.timestamp() / 1e3
-            // epoch time in seconds
           }, _.strip_empty_properties(extra_props));
         },
         people_properties: function() {
@@ -3625,10 +4253,10 @@
         mpPageViewProperties: function() {
           return _.strip_empty_properties({
             "current_page_title": document$1.title,
-            "current_domain": window$1.location.hostname,
-            "current_url_path": window$1.location.pathname,
-            "current_url_protocol": window$1.location.protocol,
-            "current_url_search": window$1.location.search
+            "current_domain": win.location.hostname,
+            "current_url_path": win.location.pathname,
+            "current_url_protocol": win.location.protocol,
+            "current_url_search": win.location.search
           });
         }
       };
@@ -3773,8 +4401,8 @@
           pid = errorCB;
           errorCB = null;
         }
-        var i = pid || (/* @__PURE__ */ new Date()).getTime() + "|" + Math.random();
-        var startTime = (/* @__PURE__ */ new Date()).getTime();
+        var i = pid || new Date().getTime() + "|" + Math.random();
+        var startTime = new Date().getTime();
         var key = this.storageKey;
         var pollIntervalMS = this.pollIntervalMS;
         var timeoutMS = this.timeoutMS;
@@ -3786,7 +4414,7 @@
           errorCB && errorCB(err);
         };
         var delay = function(cb) {
-          if ((/* @__PURE__ */ new Date()).getTime() - startTime > timeoutMS) {
+          if (new Date().getTime() - startTime > timeoutMS) {
             logger$2.error("Timeout waiting for mutex on " + key + "; clearing lock. [" + i + "]");
             storage.removeItem(keyZ);
             storage.removeItem(keyY);
@@ -3881,7 +4509,7 @@
       RequestQueue.prototype.enqueue = function(item, flushInterval, cb) {
         var queueEntry = {
           "id": cheap_guid(),
-          "flushAfter": (/* @__PURE__ */ new Date()).getTime() + flushInterval * 2,
+          "flushAfter": new Date().getTime() + flushInterval * 2,
           "payload": item
         };
         this.lock.withLock(_.bind(function lockAcquired() {
@@ -3918,7 +4546,7 @@
             });
             for (var i = 0; i < storedQueue.length; i++) {
               var item = storedQueue[i];
-              if ((/* @__PURE__ */ new Date()).getTime() > item["flushAfter"] && !idsInBatch[item["id"]]) {
+              if (new Date().getTime() > item["flushAfter"] && !idsInBatch[item["id"]]) {
                 item.orphaned = true;
                 batch.push(item);
                 if (batch.length >= batchSize) {
@@ -4114,7 +4742,7 @@
           }
           options = options || {};
           var timeoutMS = this.libConfig["batch_request_timeout_ms"];
-          var startTime = (/* @__PURE__ */ new Date()).getTime();
+          var startTime = new Date().getTime();
           var currentBatchSize = this.batchSize;
           var batch = this.queue.fillBatch(currentBatchSize);
           var dataForRequest = [];
@@ -4163,7 +4791,7 @@
               var removeItemsFromQueue = false;
               if (options.unloading) {
                 this.queue.updatePayloads(transformedItems);
-              } else if (_.isObject(res) && res.error === "timeout" && (/* @__PURE__ */ new Date()).getTime() - startTime >= timeoutMS) {
+              } else if (_.isObject(res) && res.error === "timeout" && new Date().getTime() - startTime >= timeoutMS) {
                 this.reportError("Network timeout; retrying");
                 this.flush();
               } else if (_.isObject(res) && res.xhr_req && (res.xhr_req["status"] >= 500 || res.xhr_req["status"] === 429 || res.error === "timeout")) {
@@ -4238,9 +4866,7 @@
             method: "POST",
             verbose: true,
             ignore_json_errors: true,
-            // eslint-disable-line camelcase
             timeout_ms: timeoutMS
-            // eslint-disable-line camelcase
           };
           if (options.unloading) {
             requestOptions.transport = "sendBeacon";
@@ -4324,14 +4950,13 @@
         if (options && options.ignoreDnt) {
           return false;
         }
-        var win = options && options.window || window$1;
-        var nav = win["navigator"] || {};
+        var win$1 = options && options.window || win;
+        var nav = win$1["navigator"] || {};
         var hasDntOn = false;
         _.each([
           nav["doNotTrack"],
-          // standard
           nav["msDoNotTrack"],
-          win["doNotTrack"]
+          win$1["doNotTrack"]
         ], function(dntValue) {
           if (_.includes([true, 1, "1", "yes"], dntValue)) {
             hasDntOn = true;
@@ -4368,13 +4993,13 @@
             var ignoreDnt = getConfigValue.call(this, "ignore_dnt");
             var persistenceType = getConfigValue.call(this, "opt_out_tracking_persistence_type");
             var persistencePrefix = getConfigValue.call(this, "opt_out_tracking_cookie_prefix");
-            var win = getConfigValue.call(this, "window");
+            var win2 = getConfigValue.call(this, "window");
             if (token) {
               optedOut = hasOptedOut(token, {
                 ignoreDnt,
                 persistenceType,
                 persistencePrefix,
-                window: win
+                window: win2
               });
             }
           } catch (err) {
@@ -4830,18 +5455,18 @@
         ALIAS_ID_KEY,
         EVENT_TIMERS_KEY
       ];
-      var MixpanelPersistence = function(config) {
+      var MixpanelPersistence = function(config2) {
         this["props"] = {};
         this.campaign_params_saved = false;
-        if (config["persistence_name"]) {
-          this.name = "mp_" + config["persistence_name"];
+        if (config2["persistence_name"]) {
+          this.name = "mp_" + config2["persistence_name"];
         } else {
-          this.name = "mp_" + config["token"] + "_mixpanel";
+          this.name = "mp_" + config2["token"] + "_mixpanel";
         }
-        var storage_type = config["persistence"];
+        var storage_type = config2["persistence"];
         if (storage_type !== "cookie" && storage_type !== "localStorage") {
           console2.critical("Unknown persistence type " + storage_type + "; falling back to cookie");
-          storage_type = config["persistence"] = "cookie";
+          storage_type = config2["persistence"] = "cookie";
         }
         if (storage_type === "localStorage" && _.localStorage.is_supported()) {
           this.storage = _.localStorage;
@@ -4849,8 +5474,8 @@
           this.storage = _.cookie;
         }
         this.load();
-        this.update_config(config);
-        this.upgrade(config);
+        this.update_config(config2);
+        this.upgrade(config2);
         this.save();
       };
       MixpanelPersistence.prototype.properties = function() {
@@ -4872,8 +5497,8 @@
           this["props"] = _.extend({}, entry);
         }
       };
-      MixpanelPersistence.prototype.upgrade = function(config) {
-        var upgrade_from_old_lib = config["upgrade"], old_cookie_name, old_cookie;
+      MixpanelPersistence.prototype.upgrade = function(config2) {
+        var upgrade_from_old_lib = config2["upgrade"], old_cookie_name, old_cookie;
         if (upgrade_from_old_lib) {
           old_cookie_name = "mp_super_properties";
           if (typeof upgrade_from_old_lib === "string") {
@@ -4890,8 +5515,8 @@
             );
           }
         }
-        if (!config["cookie_name"] && config["name"] !== "mixpanel") {
-          old_cookie_name = "mp_" + config["token"] + "_" + config["name"];
+        if (!config2["cookie_name"] && config2["name"] !== "mixpanel") {
+          old_cookie_name = "mp_" + config2["token"] + "_" + config2["name"];
           old_cookie = this.storage.parse(old_cookie_name);
           if (old_cookie) {
             this.storage.remove(old_cookie_name);
@@ -4983,13 +5608,13 @@
           "$initial_referring_domain": this["props"]["$initial_referring_domain"]
         });
       };
-      MixpanelPersistence.prototype.update_config = function(config) {
-        this.default_expiry = this.expire_days = config["cookie_expiration"];
-        this.set_disabled(config["disable_persistence"]);
-        this.set_cookie_domain(config["cookie_domain"]);
-        this.set_cross_site(config["cross_site_cookie"]);
-        this.set_cross_subdomain(config["cross_subdomain_cookie"]);
-        this.set_secure(config["secure_cookie"]);
+      MixpanelPersistence.prototype.update_config = function(config2) {
+        this.default_expiry = this.expire_days = config2["cookie_expiration"];
+        this.set_disabled(config2["disable_persistence"]);
+        this.set_cookie_domain(config2["cookie_domain"]);
+        this.set_cross_site(config2["cross_site_cookie"]);
+        this.set_cross_subdomain(config2["cross_subdomain_cookie"]);
+        this.set_secure(config2["secure_cookie"]);
       };
       MixpanelPersistence.prototype.set_disabled = function(disabled) {
         this.disabled = disabled;
@@ -5162,7 +5787,7 @@
       var PAYLOAD_TYPE_BASE64 = "base64";
       var PAYLOAD_TYPE_JSON = "json";
       var DEVICE_ID_PREFIX = "$device:";
-      var USE_XHR = window$1.XMLHttpRequest && "withCredentials" in new XMLHttpRequest();
+      var USE_XHR = win.XMLHttpRequest && "withCredentials" in new XMLHttpRequest();
       var ENQUEUE_REQUESTS = !USE_XHR && userAgent.indexOf("MSIE") === -1 && userAgent.indexOf("Mozilla") === -1;
       var sendBeacon = null;
       if (navigator2["sendBeacon"]) {
@@ -5173,7 +5798,8 @@
       var DEFAULT_API_ROUTES = {
         "track": "track/",
         "engage": "engage/",
-        "groups": "groups/"
+        "groups": "groups/",
+        "record": "record/"
       };
       var DEFAULT_CONFIG = {
         "api_host": "https://api-js.mixpanel.com",
@@ -5215,19 +5841,23 @@
         "opt_out_tracking_cookie_prefix": null,
         "property_blacklist": [],
         "xhr_headers": {},
-        // { header: value, header2: value }
         "ignore_dnt": false,
         "batch_requests": true,
         "batch_size": 50,
         "batch_flush_interval_ms": 5e3,
         "batch_request_timeout_ms": 9e4,
         "batch_autostart": true,
-        "hooks": {}
+        "hooks": {},
+        "record_sessions_percent": 0,
+        "record_idle_timeout_ms": 30 * 60 * 1e3,
+        "record_max_ms": MAX_RECORDING_MS,
+        "record_mask_text_selector": "*",
+        "recorder_src": "https://cdn.mxpnl.com/libs/mixpanel-recorder.min.js"
       };
       var DOM_LOADED = false;
       var MixpanelLib = function() {
       };
-      var create_mplib = function(token, config, name) {
+      var create_mplib = function(token, config2, name) {
         var instance, target = name === PRIMARY_INSTANCE_NAME ? mixpanel_master : mixpanel_master[name];
         if (target && init_type === INIT_MODULE) {
           instance = target;
@@ -5239,7 +5869,7 @@
           instance = new MixpanelLib();
         }
         instance._cached_groups = {};
-        instance._init(token, config, name);
+        instance._init(token, config2, name);
         instance["people"] = new MixpanelPeople();
         instance["people"]._init(instance);
         if (!instance.get_config("skip_first_touch_marketing")) {
@@ -5263,7 +5893,7 @@
         }
         return instance;
       };
-      MixpanelLib.prototype.init = function(token, config, name) {
+      MixpanelLib.prototype.init = function(token, config2, name) {
         if (_.isUndefined(name)) {
           this.report_error("You must name your new library: init(token, config, name)");
           return;
@@ -5272,23 +5902,23 @@
           this.report_error("You must initialize the main mixpanel object right after you include the Mixpanel js snippet");
           return;
         }
-        var instance = create_mplib(token, config, name);
+        var instance = create_mplib(token, config2, name);
         mixpanel_master[name] = instance;
         instance._loaded();
         return instance;
       };
-      MixpanelLib.prototype._init = function(token, config, name) {
-        config = config || {};
+      MixpanelLib.prototype._init = function(token, config2, name) {
+        config2 = config2 || {};
         this["__loaded"] = true;
         this["config"] = {};
         var variable_features = {};
-        if (!("api_payload_format" in config)) {
-          var api_host = config["api_host"] || DEFAULT_CONFIG["api_host"];
+        if (!("api_payload_format" in config2)) {
+          var api_host = config2["api_host"] || DEFAULT_CONFIG["api_host"];
           if (api_host.match(/\.mixpanel\.com/)) {
             variable_features["api_payload_format"] = PAYLOAD_TYPE_JSON;
           }
         }
-        this.set_config(_.extend({}, DEFAULT_CONFIG, variable_features, config, {
+        this.set_config(_.extend({}, DEFAULT_CONFIG, variable_features, config2, {
           "name": name,
           "token": token,
           "callback_fn": (name === PRIMARY_INSTANCE_NAME ? name : PRIMARY_INSTANCE_NAME + "." + name) + "._jsc"
@@ -5313,18 +5943,18 @@
             });
           } else {
             this.init_batchers();
-            if (sendBeacon && window$1.addEventListener) {
+            if (sendBeacon && win.addEventListener) {
               var flush_on_unload = _.bind(function() {
                 if (!this.request_batchers.events.stopped) {
                   this.request_batchers.events.flush({ unloading: true });
                 }
               }, this);
-              window$1.addEventListener("pagehide", function(ev) {
+              win.addEventListener("pagehide", function(ev) {
                 if (ev["persisted"]) {
                   flush_on_unload();
                 }
               });
-              window$1.addEventListener("visibilitychange", function() {
+              win.addEventListener("visibilitychange", function() {
                 if (document$1["visibilityState"] === "hidden") {
                   flush_on_unload();
                 }
@@ -5345,6 +5975,36 @@
         var track_pageview_option = this.get_config("track_pageview");
         if (track_pageview_option) {
           this._init_url_change_tracking(track_pageview_option);
+        }
+        if (this.get_config("record_sessions_percent") > 0 && Math.random() * 100 <= this.get_config("record_sessions_percent")) {
+          this.start_session_recording();
+        }
+      };
+      MixpanelLib.prototype.start_session_recording = addOptOutCheckMixpanelLib(function() {
+        if (!win["MutationObserver"]) {
+          console2.critical("Browser does not support MutationObserver; skipping session recording");
+          return;
+        }
+        var handleLoadedRecorder = _.bind(function() {
+          this._recorder = this._recorder || new win["__mp_recorder"](this);
+          this._recorder["startRecording"]();
+        }, this);
+        if (_.isUndefined(win["__mp_recorder"])) {
+          var scriptEl = document$1.createElement("script");
+          scriptEl.type = "text/javascript";
+          scriptEl.async = true;
+          scriptEl.onload = handleLoadedRecorder;
+          scriptEl.src = this.get_config("recorder_src");
+          document$1.head.appendChild(scriptEl);
+        } else {
+          handleLoadedRecorder();
+        }
+      });
+      MixpanelLib.prototype.stop_session_recording = function() {
+        if (this._recorder) {
+          this._recorder["stopRecording"]();
+        } else {
+          console2.critical("Session recorder module not loaded");
         }
       };
       MixpanelLib.prototype._loaded = function() {
@@ -5398,27 +6058,27 @@
           previous_tracked_url = _.info.currentUrl();
         }
         if (_.include(["full-url", "url-with-path-and-query-string", "url-with-path"], track_pageview_option)) {
-          window$1.addEventListener("popstate", function() {
-            window$1.dispatchEvent(new Event("mp_locationchange"));
+          win.addEventListener("popstate", function() {
+            win.dispatchEvent(new Event("mp_locationchange"));
           });
-          window$1.addEventListener("hashchange", function() {
-            window$1.dispatchEvent(new Event("mp_locationchange"));
+          win.addEventListener("hashchange", function() {
+            win.dispatchEvent(new Event("mp_locationchange"));
           });
-          var nativePushState = window$1.history.pushState;
+          var nativePushState = win.history.pushState;
           if (typeof nativePushState === "function") {
-            window$1.history.pushState = function(state, unused, url) {
-              nativePushState.call(window$1.history, state, unused, url);
-              window$1.dispatchEvent(new Event("mp_locationchange"));
+            win.history.pushState = function(state, unused, url) {
+              nativePushState.call(win.history, state, unused, url);
+              win.dispatchEvent(new Event("mp_locationchange"));
             };
           }
-          var nativeReplaceState = window$1.history.replaceState;
+          var nativeReplaceState = win.history.replaceState;
           if (typeof nativeReplaceState === "function") {
-            window$1.history.replaceState = function(state, unused, url) {
-              nativeReplaceState.call(window$1.history, state, unused, url);
-              window$1.dispatchEvent(new Event("mp_locationchange"));
+            win.history.replaceState = function(state, unused, url) {
+              nativeReplaceState.call(win.history, state, unused, url);
+              win.dispatchEvent(new Event("mp_locationchange"));
             };
           }
-          window$1.addEventListener("mp_locationchange", function() {
+          win.addEventListener("mp_locationchange", function() {
             var current_url = _.info.currentUrl();
             var should_track = false;
             if (track_pageview_option === "full-url") {
@@ -5500,7 +6160,7 @@
           }
         }
         data["ip"] = this.get_config("ip") ? 1 : 0;
-        data["_"] = (/* @__PURE__ */ new Date()).getTime().toString();
+        data["_"] = new Date().getTime().toString();
         if (use_post) {
           body_data = "data=" + encodeURIComponent(data["data"]);
           delete data["data"];
@@ -5538,7 +6198,7 @@
             });
             if (options.timeout_ms && typeof req.timeout !== "undefined") {
               req.timeout = options.timeout_ms;
-              var start_time = (/* @__PURE__ */ new Date()).getTime();
+              var start_time = new Date().getTime();
             }
             req.withCredentials = true;
             req.onreadystatechange = function() {
@@ -5564,7 +6224,7 @@
                   }
                 } else {
                   var error;
-                  if (req.timeout && !req.status && (/* @__PURE__ */ new Date()).getTime() - start_time >= req.timeout) {
+                  if (req.timeout && !req.status && new Date().getTime() - start_time >= req.timeout) {
                     error = "timeout";
                   } else {
                     error = "Bad HTTP status: " + req.status + " " + req.statusText;
@@ -5774,11 +6434,17 @@
         properties["token"] = this.get_config("token");
         var start_timestamp = this["persistence"].remove_event_timer(event_name);
         if (!_.isUndefined(start_timestamp)) {
-          var duration_in_ms = (/* @__PURE__ */ new Date()).getTime() - start_timestamp;
+          var duration_in_ms = new Date().getTime() - start_timestamp;
           properties["$duration"] = parseFloat((duration_in_ms / 1e3).toFixed(3));
         }
         this._set_default_superprops();
         var marketing_properties = this.get_config("track_marketing") ? _.info.marketingParams() : {};
+        if (this._recorder) {
+          var replay_id = this._recorder["replayId"];
+          if (replay_id) {
+            properties["$mp_replay_id"] = replay_id;
+          }
+        }
         properties = _.extend(
           {},
           _.info.properties({ "mp_loader": this.get_config("mp_loader") }),
@@ -5904,7 +6570,7 @@
         if (this._event_is_disabled(event_name)) {
           return;
         }
-        this["persistence"].set_event_timer(event_name, (/* @__PURE__ */ new Date()).getTime());
+        this["persistence"].set_event_timer(event_name, new Date().getTime());
       };
       var REGISTER_DEFAULTS = {
         "persistent": true
@@ -6025,10 +6691,10 @@
       MixpanelLib.prototype.name_tag = function(name_tag) {
         this._register_single("mp_name_tag", name_tag);
       };
-      MixpanelLib.prototype.set_config = function(config) {
-        if (_.isObject(config)) {
-          _.extend(this["config"], config);
-          var new_batch_size = config["batch_size"];
+      MixpanelLib.prototype.set_config = function(config2) {
+        if (_.isObject(config2)) {
+          _.extend(this["config"], config2);
+          var new_batch_size = config2["batch_size"];
           if (new_batch_size) {
             _.each(this.request_batchers, function(batcher) {
               batcher.resetBatchSize();
@@ -6216,6 +6882,8 @@
       MixpanelLib.prototype["track_with_groups"] = MixpanelLib.prototype.track_with_groups;
       MixpanelLib.prototype["start_batch_senders"] = MixpanelLib.prototype.start_batch_senders;
       MixpanelLib.prototype["stop_batch_senders"] = MixpanelLib.prototype.stop_batch_senders;
+      MixpanelLib.prototype["start_session_recording"] = MixpanelLib.prototype.start_session_recording;
+      MixpanelLib.prototype["stop_session_recording"] = MixpanelLib.prototype.stop_session_recording;
       MixpanelLib.prototype["DEFAULT_API_ROUTES"] = DEFAULT_API_ROUTES;
       MixpanelPersistence.prototype["properties"] = MixpanelPersistence.prototype.properties;
       MixpanelPersistence.prototype["update_search_keyword"] = MixpanelPersistence.prototype.update_search_keyword;
@@ -6232,10 +6900,10 @@
         mixpanel_master["_"] = _;
       };
       var override_mp_init_func = function() {
-        mixpanel_master["init"] = function(token, config, name) {
+        mixpanel_master["init"] = function(token, config2, name) {
           if (name) {
             if (!mixpanel_master[name]) {
-              mixpanel_master[name] = instances[name] = create_mplib(token, config, name);
+              mixpanel_master[name] = instances[name] = create_mplib(token, config2, name);
               mixpanel_master[name]._loaded();
             }
             return mixpanel_master[name];
@@ -6244,13 +6912,13 @@
             if (instances[PRIMARY_INSTANCE_NAME]) {
               instance = instances[PRIMARY_INSTANCE_NAME];
             } else if (token) {
-              instance = create_mplib(token, config, PRIMARY_INSTANCE_NAME);
+              instance = create_mplib(token, config2, PRIMARY_INSTANCE_NAME);
               instance._loaded();
               instances[PRIMARY_INSTANCE_NAME] = instance;
             }
             mixpanel_master = instance;
             if (init_type === INIT_SNIPPET) {
-              window$1[PRIMARY_INSTANCE_NAME] = mixpanel_master;
+              win[PRIMARY_INSTANCE_NAME] = mixpanel_master;
             }
             extend_mp();
           }
@@ -6287,14 +6955,14 @@
           document$1.attachEvent("onreadystatechange", dom_loaded_handler);
           var toplevel = false;
           try {
-            toplevel = window$1.frameElement === null;
+            toplevel = win.frameElement === null;
           } catch (e) {
           }
           if (document$1.documentElement.doScroll && toplevel) {
             do_scroll_check();
           }
         }
-        _.register_event(window$1, "load", dom_loaded_handler, true);
+        _.register_event(win, "load", dom_loaded_handler, true);
       };
       function init_as_module() {
         init_type = INIT_MODULE;
@@ -6313,20 +6981,15 @@
   var require_analytics = __commonJS({
     "src/lib/analytics.js"(exports) {
       init_manifest();
+      var import_config = __toESM(require_config());
       var import_mixpanel_browser = __toESM(require_mixpanel_cjs());
-      var useAnalytics = !!manifest_default.mixpanelToken;
-      if (useAnalytics) {
-        import_mixpanel_browser.default.init(manifest_default.mixpanelToken);
-      }
+      import_mixpanel_browser.default.init(import_config.default.mixpanelToken);
       var appName = "RingCentral CRM Extension";
       var version = manifest_default.version;
       exports.reset = function reset2() {
         import_mixpanel_browser.default.reset();
       };
       exports.identify = function identify2({ platformName: platformName2, rcAccountId, extensionId }) {
-        if (!useAnalytics) {
-          return;
-        }
         import_mixpanel_browser.default.identify(extensionId);
         import_mixpanel_browser.default.people.set({
           crmPlatform: platformName2,
@@ -6335,22 +6998,13 @@
         });
       };
       exports.group = function group2({ rcAccountId }) {
-        if (!useAnalytics) {
-          return;
-        }
         import_mixpanel_browser.default.add_group("rcAccountId", rcAccountId);
         import_mixpanel_browser.default.set_group("rcAccountId", rcAccountId);
       };
       function track(event, properties = {}) {
-        if (!useAnalytics) {
-          return;
-        }
-        import_mixpanel_browser.default.track(event, { appName, version, collectedFrom: "client", ...properties });
+        import_mixpanel_browser.default.track(event, { appName, version, ...properties });
       }
       exports.trackPage = function page(name, properties = {}) {
-        if (!useAnalytics) {
-          return;
-        }
         try {
           const pathSegments = name.split("/");
           const rootPath = `/${pathSegments[1]}`;
@@ -6465,26 +7119,127 @@
     }
   });
 
+  // src/platformModules/pipedrive.js
+  var require_pipedrive = __commonJS({
+    "src/platformModules/pipedrive.js"(exports) {
+      function openContactPage2(hostname, incomingCallContactInfo) {
+        window.open(`https://${hostname}/person/${incomingCallContactInfo.id}`);
+      }
+      function openLogPage({ hostname, logId }) {
+        window.open(`https://${hostname}/activities/${logId}`);
+      }
+      async function onUnauthorize() {
+      }
+      exports.openContactPage = openContactPage2;
+      exports.openLogPage = openLogPage;
+      exports.onUnauthorize = onUnauthorize;
+    }
+  });
+
+  // src/platformModules/insightly.js
+  var require_insightly = __commonJS({
+    "src/platformModules/insightly.js"(exports) {
+      function openContactPage2(hostname, incomingCallContactInfo) {
+        if (incomingCallContactInfo?.type === "Contact") {
+          window.open(`https://${hostname}/list/Contact/?blade=/details/contact/${incomingCallContactInfo.id}`);
+        }
+        if (incomingCallContactInfo?.type === "Lead") {
+          window.open(`https://${hostname}/list/Lead/?blade=/details/lead/${incomingCallContactInfo.id}`);
+        }
+      }
+      function openLogPage({ hostname, logId, contactType }) {
+        window.open(`https://${hostname}/list/${contactType}/?blade=/details/Event/${logId}`);
+      }
+      async function onUnauthorize() {
+      }
+      exports.openContactPage = openContactPage2;
+      exports.openLogPage = openLogPage;
+      exports.onUnauthorize = onUnauthorize;
+    }
+  });
+
+  // src/platformModules/clio.js
+  var require_clio = __commonJS({
+    "src/platformModules/clio.js"(exports) {
+      function openContactPage2(hostname, incomingCallContactInfo) {
+        window.open(`https://${hostname}/nc/#/contacts/${incomingCallContactInfo.id}`);
+      }
+      async function onUnauthorize() {
+      }
+      exports.openContactPage = openContactPage2;
+      exports.onUnauthorize = onUnauthorize;
+    }
+  });
+
+  // src/platformModules/redtail.js
+  var require_redtail = __commonJS({
+    "src/platformModules/redtail.js"(exports) {
+      function openContactPage2(hostname, incomingCallContactInfo) {
+        window.open(`https://${hostname}/contacts/${incomingCallContactInfo.id}`);
+      }
+      function openLogPage({ hostname, logId }) {
+        window.open(`https://${hostname}/activities/${logId}`);
+      }
+      async function onUnauthorize() {
+      }
+      exports.openContactPage = openContactPage2;
+      exports.openLogPage = openLogPage;
+      exports.onUnauthorize = onUnauthorize;
+    }
+  });
+
+  // src/platformModules/bullhorn.js
+  var require_bullhorn = __commonJS({
+    "src/platformModules/bullhorn.js"(exports) {
+      function openContactPage2(hostname, incomingCallContactInfo) {
+        openBullhornContactPage({ contactType: incomingCallContactInfo.type, contactId: incomingCallContactInfo.id });
+      }
+      async function openBullhornContactPage({ contactType, contactId }) {
+        const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
+        if (crm_extension_bullhorn_user_urls?.atsUrl) {
+          const newTab = window.open(`${crm_extension_bullhorn_user_urls.atsUrl}/BullhornStaffing/OpenWindow.cfm?Entity=${contactType}&id=${contactId}&view=Overview`, "_blank", "popup");
+          newTab.blur();
+          window.focus();
+        }
+      }
+      async function onUnauthorize() {
+        await chrome.storage.local.remove("crm_extension_bullhornUsername");
+        await chrome.storage.local.remove("crm_extension_bullhorn_user_urls");
+      }
+      exports.openContactPage = openContactPage2;
+      exports.onUnauthorize = onUnauthorize;
+    }
+  });
+
   // src/core/auth.js
   var require_auth = __commonJS({
     "src/core/auth.js"(exports) {
       init_axios2();
+      var import_config = __toESM(require_config());
       var import_util = __toESM(require_util());
       var import_analytics = __toESM(require_analytics());
+      var import_pipedrive = __toESM(require_pipedrive());
+      var import_insightly = __toESM(require_insightly());
+      var import_clio = __toESM(require_clio());
+      var import_redtail = __toESM(require_redtail());
+      var import_bullhorn = __toESM(require_bullhorn());
       async function submitPlatformSelection(platform2) {
         await chrome.storage.local.set({
           ["platform-info"]: platform2
         });
       }
-      async function apiKeyLogin2({ serverUrl, apiKey, apiUrl, username, password }) {
+      async function apiKeyLogin2({ apiKey, apiUrl, username, password }) {
         try {
           const platformInfo = await chrome.storage.local.get("platform-info");
           const platformName2 = platformInfo["platform-info"].platformName;
           const hostname = platformInfo["platform-info"].hostname;
-          const res = await axios_default2.post(`${serverUrl}/apiKeyLogin?state=platform=${platformName2}`, {
-            apiKey: apiKey ?? "apiKey",
+          const { rcUserInfo: rcUserInfo2 } = await chrome.storage.local.get("rcUserInfo");
+          const rcUserNumber = rcUserInfo2.rcUserNumber;
+          const res = await axios_default.post(`${import_config.default.serverUrl}/apiKeyLoginV2?state=platform=${platformName2}`, {
+            apiKey,
             platform: platformName2,
             hostname,
+            rcUserNumber,
             additionalInfo: {
               apiUrl,
               username,
@@ -6492,7 +7247,7 @@
             }
           });
           setAuth(true);
-          (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully authorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
+          (0, import_util.showNotification)({ level: "success", message: "Successfully authorized.", ttl: 3e3 });
           await chrome.storage.local.set({
             ["rcUnifiedCrmExtJwt"]: res.data.jwtToken
           });
@@ -6500,46 +7255,60 @@
           await chrome.storage.local.set({ crmUserInfo });
           setAuth(true, crmUserInfo.name);
           (0, import_analytics.trackCrmLogin)();
-          document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-            type: "rc-adapter-navigate-to",
-            path: "goBack"
-          }, "*");
           return res.data.jwtToken;
         } catch (e) {
           console.log(e);
           (0, import_util.showNotification)({ level: "warning", message: "Failed to register api key.", ttl: 3e3 });
         }
       }
-      async function onAuthCallback({ serverUrl, callbackUri }) {
+      function sendMessageAsync(tabId, message) {
+        return new Promise((resolve, reject) => {
+          chrome.tabs.sendMessage(tabId, message, (response) => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+            } else {
+              resolve(response);
+            }
+          });
+        });
+      }
+      async function onAuthCallback(callbackUri) {
+        const { rcUserInfo: rcUserInfo2 } = await chrome.storage.local.get("rcUserInfo");
+        const rcUserNumber = rcUserInfo2.rcUserNumber;
         const platformInfo = await chrome.storage.local.get("platform-info");
         const hostname = platformInfo["platform-info"].hostname;
         let oauthCallbackUrl = "";
         if (platformInfo["platform-info"].platformName === "bullhorn") {
-          const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
-          const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
-          oauthCallbackUrl = `${serverUrl}/oauth-callback?callbackUri=${callbackUri}&hostname=${hostname}&tokenUrl=${crm_extension_bullhorn_user_urls.oauthUrl}/token&apiUrl=${crm_extension_bullhorn_user_urls.restUrl}&username=${crm_extension_bullhornUsername}`;
+          let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
+          let { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
+          if (crm_extension_bullhornUsername == null) {
+            const activeTab = await new Promise((resolve) => chrome.tabs.query({ active: true }, (tabs) => resolve(tabs.find((t) => t.url.includes("https://app.bullhornstaffing.com/")))));
+            const bullhornUsernameResponse = await sendMessageAsync(activeTab.id, { action: "fetchBullhornUsername" });
+            const { data: crm_extension_bullhorn_user_urls2 } = await axios_default.get(`https://rest.bullhornstaffing.com/rest-services/loginInfo?username=${bullhornUsernameResponse.bullhornUsername}`);
+            await chrome.storage.local.set({ crm_extension_bullhorn_user_urls: crm_extension_bullhorn_user_urls2 });
+            oauthCallbackUrl = `${import_config.default.serverUrl}/oauth-callbackV2?callbackUri=${callbackUri}&rcUserNumber=${rcUserNumber}&hostname=${hostname}&tokenUrl=${crm_extension_bullhorn_user_urls2.oauthUrl}/token&apiUrl=${crm_extension_bullhorn_user_urls2.restUrl}&username=${bullhornUsernameResponse.bullhornUsername}`;
+          } else {
+            oauthCallbackUrl = `${import_config.default.serverUrl}/oauth-callbackV2?callbackUri=${callbackUri}&rcUserNumber=${rcUserNumber}&hostname=${hostname}&tokenUrl=${crm_extension_bullhorn_user_urls.oauthUrl}/token&apiUrl=${crm_extension_bullhorn_user_urls.restUrl}&username=${crm_extension_bullhornUsername}`;
+          }
         } else {
-          oauthCallbackUrl = `${serverUrl}/oauth-callback?callbackUri=${callbackUri}&hostname=${hostname}`;
+          oauthCallbackUrl = `${import_config.default.serverUrl}/oauth-callbackV2?callbackUri=${callbackUri}&rcUserNumber=${rcUserNumber}&hostname=${hostname}`;
         }
-        const res = await axios_default2.get(oauthCallbackUrl);
+        const res = await axios_default.get(oauthCallbackUrl);
         const crmUserInfo = { name: res.data.name };
         await chrome.storage.local.set({ crmUserInfo });
         setAuth(true, crmUserInfo.name);
-        (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully authorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
+        (0, import_util.showNotification)({ level: "success", message: "Successfully authorized.", ttl: 3e3 });
         await chrome.storage.local.set({
           ["rcUnifiedCrmExtJwt"]: res.data.jwtToken
         });
         (0, import_analytics.trackCrmLogin)();
         return res.data.jwtToken;
       }
-      async function unAuthorize({ serverUrl, platformName: platformName2, rcUnifiedCrmExtJwt }) {
+      async function unAuthorize(rcUnifiedCrmExtJwt) {
         try {
-          const res = await axios_default2.post(`${serverUrl}/unAuthorize?jwtToken=${rcUnifiedCrmExtJwt}`);
-          if (platformName2 === "bullhorn") {
-            await chrome.storage.local.remove("crm_extension_bullhornUsername");
-            await chrome.storage.local.remove("crm_extension_bullhorn_user_urls");
-          }
-          (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully unauthorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
+          await axios_default.post(`${import_config.default.serverUrl}/unAuthorize?jwtToken=${rcUnifiedCrmExtJwt}`);
+          const platformModule = await getModule();
+          await platformModule.onUnauthorize();
           (0, import_analytics.trackCrmLogout)();
         } catch (e) {
           console.log(e);
@@ -6560,6 +7329,21 @@
           authorizedAccount: accountName ?? ""
         });
       }
+      async function getModule() {
+        const platformInfo = await chrome.storage.local.get("platform-info");
+        switch (platformInfo["platform-info"].platformName) {
+          case "pipedrive":
+            return import_pipedrive.default;
+          case "insightly":
+            return import_insightly.default;
+          case "clio":
+            return import_clio.default;
+          case "redtail":
+            return import_redtail.default;
+          case "bullhorn":
+            return import_bullhorn.default;
+        }
+      }
       exports.submitPlatformSelection = submitPlatformSelection;
       exports.apiKeyLogin = apiKeyLogin2;
       exports.onAuthCallback = onAuthCallback;
@@ -6569,4051 +7353,99 @@
     }
   });
 
-  // node_modules/moment/moment.js
-  var require_moment = __commonJS({
-    "node_modules/moment/moment.js"(exports, module) {
-      (function(global, factory) {
-        typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : global.moment = factory();
-      })(exports, function() {
-        "use strict";
-        var hookCallback;
-        function hooks() {
-          return hookCallback.apply(null, arguments);
-        }
-        function setHookCallback(callback) {
-          hookCallback = callback;
-        }
-        function isArray2(input) {
-          return input instanceof Array || Object.prototype.toString.call(input) === "[object Array]";
-        }
-        function isObject2(input) {
-          return input != null && Object.prototype.toString.call(input) === "[object Object]";
-        }
-        function hasOwnProp(a, b) {
-          return Object.prototype.hasOwnProperty.call(a, b);
-        }
-        function isObjectEmpty2(obj) {
-          if (Object.getOwnPropertyNames) {
-            return Object.getOwnPropertyNames(obj).length === 0;
-          } else {
-            var k;
-            for (k in obj) {
-              if (hasOwnProp(obj, k)) {
-                return false;
-              }
-            }
-            return true;
-          }
-        }
-        function isUndefined2(input) {
-          return input === void 0;
-        }
-        function isNumber2(input) {
-          return typeof input === "number" || Object.prototype.toString.call(input) === "[object Number]";
-        }
-        function isDate2(input) {
-          return input instanceof Date || Object.prototype.toString.call(input) === "[object Date]";
-        }
-        function map(arr, fn) {
-          var res = [], i, arrLen = arr.length;
-          for (i = 0; i < arrLen; ++i) {
-            res.push(fn(arr[i], i));
-          }
-          return res;
-        }
-        function extend2(a, b) {
-          for (var i in b) {
-            if (hasOwnProp(b, i)) {
-              a[i] = b[i];
-            }
-          }
-          if (hasOwnProp(b, "toString")) {
-            a.toString = b.toString;
-          }
-          if (hasOwnProp(b, "valueOf")) {
-            a.valueOf = b.valueOf;
-          }
-          return a;
-        }
-        function createUTC(input, format2, locale2, strict) {
-          return createLocalOrUTC(input, format2, locale2, strict, true).utc();
-        }
-        function defaultParsingFlags() {
-          return {
-            empty: false,
-            unusedTokens: [],
-            unusedInput: [],
-            overflow: -2,
-            charsLeftOver: 0,
-            nullInput: false,
-            invalidEra: null,
-            invalidMonth: null,
-            invalidFormat: false,
-            userInvalidated: false,
-            iso: false,
-            parsedDateParts: [],
-            era: null,
-            meridiem: null,
-            rfc2822: false,
-            weekdayMismatch: false
-          };
-        }
-        function getParsingFlags(m) {
-          if (m._pf == null) {
-            m._pf = defaultParsingFlags();
-          }
-          return m._pf;
-        }
-        var some;
-        if (Array.prototype.some) {
-          some = Array.prototype.some;
-        } else {
-          some = function(fun) {
-            var t = Object(this), len = t.length >>> 0, i;
-            for (i = 0; i < len; i++) {
-              if (i in t && fun.call(this, t[i], i, t)) {
-                return true;
-              }
-            }
-            return false;
-          };
-        }
-        function isValid(m) {
-          if (m._isValid == null) {
-            var flags = getParsingFlags(m), parsedParts = some.call(flags.parsedDateParts, function(i) {
-              return i != null;
-            }), isNowValid = !isNaN(m._d.getTime()) && flags.overflow < 0 && !flags.empty && !flags.invalidEra && !flags.invalidMonth && !flags.invalidWeekday && !flags.weekdayMismatch && !flags.nullInput && !flags.invalidFormat && !flags.userInvalidated && (!flags.meridiem || flags.meridiem && parsedParts);
-            if (m._strict) {
-              isNowValid = isNowValid && flags.charsLeftOver === 0 && flags.unusedTokens.length === 0 && flags.bigHour === void 0;
-            }
-            if (Object.isFrozen == null || !Object.isFrozen(m)) {
-              m._isValid = isNowValid;
-            } else {
-              return isNowValid;
-            }
-          }
-          return m._isValid;
-        }
-        function createInvalid(flags) {
-          var m = createUTC(NaN);
-          if (flags != null) {
-            extend2(getParsingFlags(m), flags);
-          } else {
-            getParsingFlags(m).userInvalidated = true;
-          }
-          return m;
-        }
-        var momentProperties = hooks.momentProperties = [], updateInProgress = false;
-        function copyConfig(to2, from2) {
-          var i, prop, val, momentPropertiesLen = momentProperties.length;
-          if (!isUndefined2(from2._isAMomentObject)) {
-            to2._isAMomentObject = from2._isAMomentObject;
-          }
-          if (!isUndefined2(from2._i)) {
-            to2._i = from2._i;
-          }
-          if (!isUndefined2(from2._f)) {
-            to2._f = from2._f;
-          }
-          if (!isUndefined2(from2._l)) {
-            to2._l = from2._l;
-          }
-          if (!isUndefined2(from2._strict)) {
-            to2._strict = from2._strict;
-          }
-          if (!isUndefined2(from2._tzm)) {
-            to2._tzm = from2._tzm;
-          }
-          if (!isUndefined2(from2._isUTC)) {
-            to2._isUTC = from2._isUTC;
-          }
-          if (!isUndefined2(from2._offset)) {
-            to2._offset = from2._offset;
-          }
-          if (!isUndefined2(from2._pf)) {
-            to2._pf = getParsingFlags(from2);
-          }
-          if (!isUndefined2(from2._locale)) {
-            to2._locale = from2._locale;
-          }
-          if (momentPropertiesLen > 0) {
-            for (i = 0; i < momentPropertiesLen; i++) {
-              prop = momentProperties[i];
-              val = from2[prop];
-              if (!isUndefined2(val)) {
-                to2[prop] = val;
-              }
-            }
-          }
-          return to2;
-        }
-        function Moment(config) {
-          copyConfig(this, config);
-          this._d = new Date(config._d != null ? config._d.getTime() : NaN);
-          if (!this.isValid()) {
-            this._d = /* @__PURE__ */ new Date(NaN);
-          }
-          if (updateInProgress === false) {
-            updateInProgress = true;
-            hooks.updateOffset(this);
-            updateInProgress = false;
-          }
-        }
-        function isMoment(obj) {
-          return obj instanceof Moment || obj != null && obj._isAMomentObject != null;
-        }
-        function warn(msg) {
-          if (hooks.suppressDeprecationWarnings === false && typeof console !== "undefined" && console.warn) {
-            console.warn("Deprecation warning: " + msg);
-          }
-        }
-        function deprecate(msg, fn) {
-          var firstTime = true;
-          return extend2(function() {
-            if (hooks.deprecationHandler != null) {
-              hooks.deprecationHandler(null, msg);
-            }
-            if (firstTime) {
-              var args = [], arg, i, key, argLen = arguments.length;
-              for (i = 0; i < argLen; i++) {
-                arg = "";
-                if (typeof arguments[i] === "object") {
-                  arg += "\n[" + i + "] ";
-                  for (key in arguments[0]) {
-                    if (hasOwnProp(arguments[0], key)) {
-                      arg += key + ": " + arguments[0][key] + ", ";
-                    }
-                  }
-                  arg = arg.slice(0, -2);
-                } else {
-                  arg = arguments[i];
-                }
-                args.push(arg);
-              }
-              warn(
-                msg + "\nArguments: " + Array.prototype.slice.call(args).join("") + "\n" + new Error().stack
-              );
-              firstTime = false;
-            }
-            return fn.apply(this, arguments);
-          }, fn);
-        }
-        var deprecations = {};
-        function deprecateSimple(name, msg) {
-          if (hooks.deprecationHandler != null) {
-            hooks.deprecationHandler(name, msg);
-          }
-          if (!deprecations[name]) {
-            warn(msg);
-            deprecations[name] = true;
-          }
-        }
-        hooks.suppressDeprecationWarnings = false;
-        hooks.deprecationHandler = null;
-        function isFunction2(input) {
-          return typeof Function !== "undefined" && input instanceof Function || Object.prototype.toString.call(input) === "[object Function]";
-        }
-        function set(config) {
-          var prop, i;
-          for (i in config) {
-            if (hasOwnProp(config, i)) {
-              prop = config[i];
-              if (isFunction2(prop)) {
-                this[i] = prop;
-              } else {
-                this["_" + i] = prop;
-              }
-            }
-          }
-          this._config = config;
-          this._dayOfMonthOrdinalParseLenient = new RegExp(
-            (this._dayOfMonthOrdinalParse.source || this._ordinalParse.source) + "|" + /\d{1,2}/.source
-          );
-        }
-        function mergeConfigs(parentConfig, childConfig) {
-          var res = extend2({}, parentConfig), prop;
-          for (prop in childConfig) {
-            if (hasOwnProp(childConfig, prop)) {
-              if (isObject2(parentConfig[prop]) && isObject2(childConfig[prop])) {
-                res[prop] = {};
-                extend2(res[prop], parentConfig[prop]);
-                extend2(res[prop], childConfig[prop]);
-              } else if (childConfig[prop] != null) {
-                res[prop] = childConfig[prop];
-              } else {
-                delete res[prop];
-              }
-            }
-          }
-          for (prop in parentConfig) {
-            if (hasOwnProp(parentConfig, prop) && !hasOwnProp(childConfig, prop) && isObject2(parentConfig[prop])) {
-              res[prop] = extend2({}, res[prop]);
-            }
-          }
-          return res;
-        }
-        function Locale(config) {
-          if (config != null) {
-            this.set(config);
-          }
-        }
-        var keys;
-        if (Object.keys) {
-          keys = Object.keys;
-        } else {
-          keys = function(obj) {
-            var i, res = [];
-            for (i in obj) {
-              if (hasOwnProp(obj, i)) {
-                res.push(i);
-              }
-            }
-            return res;
-          };
-        }
-        var defaultCalendar = {
-          sameDay: "[Today at] LT",
-          nextDay: "[Tomorrow at] LT",
-          nextWeek: "dddd [at] LT",
-          lastDay: "[Yesterday at] LT",
-          lastWeek: "[Last] dddd [at] LT",
-          sameElse: "L"
-        };
-        function calendar(key, mom, now2) {
-          var output = this._calendar[key] || this._calendar["sameElse"];
-          return isFunction2(output) ? output.call(mom, now2) : output;
-        }
-        function zeroFill(number, targetLength, forceSign) {
-          var absNumber = "" + Math.abs(number), zerosToFill = targetLength - absNumber.length, sign2 = number >= 0;
-          return (sign2 ? forceSign ? "+" : "" : "-") + Math.pow(10, Math.max(0, zerosToFill)).toString().substr(1) + absNumber;
-        }
-        var formattingTokens = /(\[[^\[]*\])|(\\)?([Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Qo?|N{1,5}|YYYYYY|YYYYY|YYYY|YY|y{2,4}|yo?|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|kk?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?|.)/g, localFormattingTokens = /(\[[^\[]*\])|(\\)?(LTS|LT|LL?L?L?|l{1,4})/g, formatFunctions = {}, formatTokenFunctions = {};
-        function addFormatToken(token2, padded, ordinal2, callback) {
-          var func = callback;
-          if (typeof callback === "string") {
-            func = function() {
-              return this[callback]();
-            };
-          }
-          if (token2) {
-            formatTokenFunctions[token2] = func;
-          }
-          if (padded) {
-            formatTokenFunctions[padded[0]] = function() {
-              return zeroFill(func.apply(this, arguments), padded[1], padded[2]);
-            };
-          }
-          if (ordinal2) {
-            formatTokenFunctions[ordinal2] = function() {
-              return this.localeData().ordinal(
-                func.apply(this, arguments),
-                token2
-              );
-            };
-          }
-        }
-        function removeFormattingTokens(input) {
-          if (input.match(/\[[\s\S]/)) {
-            return input.replace(/^\[|\]$/g, "");
-          }
-          return input.replace(/\\/g, "");
-        }
-        function makeFormatFunction(format2) {
-          var array = format2.match(formattingTokens), i, length;
-          for (i = 0, length = array.length; i < length; i++) {
-            if (formatTokenFunctions[array[i]]) {
-              array[i] = formatTokenFunctions[array[i]];
-            } else {
-              array[i] = removeFormattingTokens(array[i]);
-            }
-          }
-          return function(mom) {
-            var output = "", i2;
-            for (i2 = 0; i2 < length; i2++) {
-              output += isFunction2(array[i2]) ? array[i2].call(mom, format2) : array[i2];
-            }
-            return output;
-          };
-        }
-        function formatMoment(m, format2) {
-          if (!m.isValid()) {
-            return m.localeData().invalidDate();
-          }
-          format2 = expandFormat(format2, m.localeData());
-          formatFunctions[format2] = formatFunctions[format2] || makeFormatFunction(format2);
-          return formatFunctions[format2](m);
-        }
-        function expandFormat(format2, locale2) {
-          var i = 5;
-          function replaceLongDateFormatTokens(input) {
-            return locale2.longDateFormat(input) || input;
-          }
-          localFormattingTokens.lastIndex = 0;
-          while (i >= 0 && localFormattingTokens.test(format2)) {
-            format2 = format2.replace(
-              localFormattingTokens,
-              replaceLongDateFormatTokens
-            );
-            localFormattingTokens.lastIndex = 0;
-            i -= 1;
-          }
-          return format2;
-        }
-        var defaultLongDateFormat = {
-          LTS: "h:mm:ss A",
-          LT: "h:mm A",
-          L: "MM/DD/YYYY",
-          LL: "MMMM D, YYYY",
-          LLL: "MMMM D, YYYY h:mm A",
-          LLLL: "dddd, MMMM D, YYYY h:mm A"
-        };
-        function longDateFormat(key) {
-          var format2 = this._longDateFormat[key], formatUpper = this._longDateFormat[key.toUpperCase()];
-          if (format2 || !formatUpper) {
-            return format2;
-          }
-          this._longDateFormat[key] = formatUpper.match(formattingTokens).map(function(tok) {
-            if (tok === "MMMM" || tok === "MM" || tok === "DD" || tok === "dddd") {
-              return tok.slice(1);
-            }
-            return tok;
-          }).join("");
-          return this._longDateFormat[key];
-        }
-        var defaultInvalidDate = "Invalid date";
-        function invalidDate() {
-          return this._invalidDate;
-        }
-        var defaultOrdinal = "%d", defaultDayOfMonthOrdinalParse = /\d{1,2}/;
-        function ordinal(number) {
-          return this._ordinal.replace("%d", number);
-        }
-        var defaultRelativeTime = {
-          future: "in %s",
-          past: "%s ago",
-          s: "a few seconds",
-          ss: "%d seconds",
-          m: "a minute",
-          mm: "%d minutes",
-          h: "an hour",
-          hh: "%d hours",
-          d: "a day",
-          dd: "%d days",
-          w: "a week",
-          ww: "%d weeks",
-          M: "a month",
-          MM: "%d months",
-          y: "a year",
-          yy: "%d years"
-        };
-        function relativeTime(number, withoutSuffix, string, isFuture) {
-          var output = this._relativeTime[string];
-          return isFunction2(output) ? output(number, withoutSuffix, string, isFuture) : output.replace(/%d/i, number);
-        }
-        function pastFuture(diff2, output) {
-          var format2 = this._relativeTime[diff2 > 0 ? "future" : "past"];
-          return isFunction2(format2) ? format2(output) : format2.replace(/%s/i, output);
-        }
-        var aliases = {};
-        function addUnitAlias(unit, shorthand) {
-          var lowerCase = unit.toLowerCase();
-          aliases[lowerCase] = aliases[lowerCase + "s"] = aliases[shorthand] = unit;
-        }
-        function normalizeUnits(units) {
-          return typeof units === "string" ? aliases[units] || aliases[units.toLowerCase()] : void 0;
-        }
-        function normalizeObjectUnits(inputObject) {
-          var normalizedInput = {}, normalizedProp, prop;
-          for (prop in inputObject) {
-            if (hasOwnProp(inputObject, prop)) {
-              normalizedProp = normalizeUnits(prop);
-              if (normalizedProp) {
-                normalizedInput[normalizedProp] = inputObject[prop];
-              }
-            }
-          }
-          return normalizedInput;
-        }
-        var priorities = {};
-        function addUnitPriority(unit, priority) {
-          priorities[unit] = priority;
-        }
-        function getPrioritizedUnits(unitsObj) {
-          var units = [], u;
-          for (u in unitsObj) {
-            if (hasOwnProp(unitsObj, u)) {
-              units.push({ unit: u, priority: priorities[u] });
-            }
-          }
-          units.sort(function(a, b) {
-            return a.priority - b.priority;
-          });
-          return units;
-        }
-        function isLeapYear(year) {
-          return year % 4 === 0 && year % 100 !== 0 || year % 400 === 0;
-        }
-        function absFloor(number) {
-          if (number < 0) {
-            return Math.ceil(number) || 0;
-          } else {
-            return Math.floor(number);
-          }
-        }
-        function toInt(argumentForCoercion) {
-          var coercedNumber = +argumentForCoercion, value = 0;
-          if (coercedNumber !== 0 && isFinite(coercedNumber)) {
-            value = absFloor(coercedNumber);
-          }
-          return value;
-        }
-        function makeGetSet(unit, keepTime) {
-          return function(value) {
-            if (value != null) {
-              set$1(this, unit, value);
-              hooks.updateOffset(this, keepTime);
-              return this;
-            } else {
-              return get(this, unit);
-            }
-          };
-        }
-        function get(mom, unit) {
-          return mom.isValid() ? mom._d["get" + (mom._isUTC ? "UTC" : "") + unit]() : NaN;
-        }
-        function set$1(mom, unit, value) {
-          if (mom.isValid() && !isNaN(value)) {
-            if (unit === "FullYear" && isLeapYear(mom.year()) && mom.month() === 1 && mom.date() === 29) {
-              value = toInt(value);
-              mom._d["set" + (mom._isUTC ? "UTC" : "") + unit](
-                value,
-                mom.month(),
-                daysInMonth(value, mom.month())
-              );
-            } else {
-              mom._d["set" + (mom._isUTC ? "UTC" : "") + unit](value);
-            }
-          }
-        }
-        function stringGet(units) {
-          units = normalizeUnits(units);
-          if (isFunction2(this[units])) {
-            return this[units]();
-          }
-          return this;
-        }
-        function stringSet(units, value) {
-          if (typeof units === "object") {
-            units = normalizeObjectUnits(units);
-            var prioritized = getPrioritizedUnits(units), i, prioritizedLen = prioritized.length;
-            for (i = 0; i < prioritizedLen; i++) {
-              this[prioritized[i].unit](units[prioritized[i].unit]);
-            }
-          } else {
-            units = normalizeUnits(units);
-            if (isFunction2(this[units])) {
-              return this[units](value);
-            }
-          }
-          return this;
-        }
-        var match1 = /\d/, match2 = /\d\d/, match3 = /\d{3}/, match4 = /\d{4}/, match6 = /[+-]?\d{6}/, match1to2 = /\d\d?/, match3to4 = /\d\d\d\d?/, match5to6 = /\d\d\d\d\d\d?/, match1to3 = /\d{1,3}/, match1to4 = /\d{1,4}/, match1to6 = /[+-]?\d{1,6}/, matchUnsigned = /\d+/, matchSigned = /[+-]?\d+/, matchOffset = /Z|[+-]\d\d:?\d\d/gi, matchShortOffset = /Z|[+-]\d\d(?::?\d\d)?/gi, matchTimestamp = /[+-]?\d+(\.\d{1,3})?/, matchWord = /[0-9]{0,256}['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFF07\uFF10-\uFFEF]{1,256}|[\u0600-\u06FF\/]{1,256}(\s*?[\u0600-\u06FF]{1,256}){1,2}/i, regexes;
-        regexes = {};
-        function addRegexToken(token2, regex, strictRegex) {
-          regexes[token2] = isFunction2(regex) ? regex : function(isStrict, localeData2) {
-            return isStrict && strictRegex ? strictRegex : regex;
-          };
-        }
-        function getParseRegexForToken(token2, config) {
-          if (!hasOwnProp(regexes, token2)) {
-            return new RegExp(unescapeFormat(token2));
-          }
-          return regexes[token2](config._strict, config._locale);
-        }
-        function unescapeFormat(s) {
-          return regexEscape(
-            s.replace("\\", "").replace(
-              /\\(\[)|\\(\])|\[([^\]\[]*)\]|\\(.)/g,
-              function(matched, p1, p2, p3, p4) {
-                return p1 || p2 || p3 || p4;
-              }
-            )
-          );
-        }
-        function regexEscape(s) {
-          return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-        }
-        var tokens = {};
-        function addParseToken(token2, callback) {
-          var i, func = callback, tokenLen;
-          if (typeof token2 === "string") {
-            token2 = [token2];
-          }
-          if (isNumber2(callback)) {
-            func = function(input, array) {
-              array[callback] = toInt(input);
-            };
-          }
-          tokenLen = token2.length;
-          for (i = 0; i < tokenLen; i++) {
-            tokens[token2[i]] = func;
-          }
-        }
-        function addWeekParseToken(token2, callback) {
-          addParseToken(token2, function(input, array, config, token3) {
-            config._w = config._w || {};
-            callback(input, config._w, config, token3);
-          });
-        }
-        function addTimeToArrayFromToken(token2, input, config) {
-          if (input != null && hasOwnProp(tokens, token2)) {
-            tokens[token2](input, config._a, config, token2);
-          }
-        }
-        var YEAR = 0, MONTH = 1, DATE = 2, HOUR = 3, MINUTE = 4, SECOND = 5, MILLISECOND = 6, WEEK = 7, WEEKDAY = 8;
-        function mod(n, x) {
-          return (n % x + x) % x;
-        }
-        var indexOf;
-        if (Array.prototype.indexOf) {
-          indexOf = Array.prototype.indexOf;
-        } else {
-          indexOf = function(o) {
-            var i;
-            for (i = 0; i < this.length; ++i) {
-              if (this[i] === o) {
-                return i;
-              }
-            }
-            return -1;
-          };
-        }
-        function daysInMonth(year, month) {
-          if (isNaN(year) || isNaN(month)) {
-            return NaN;
-          }
-          var modMonth = mod(month, 12);
-          year += (month - modMonth) / 12;
-          return modMonth === 1 ? isLeapYear(year) ? 29 : 28 : 31 - modMonth % 7 % 2;
-        }
-        addFormatToken("M", ["MM", 2], "Mo", function() {
-          return this.month() + 1;
-        });
-        addFormatToken("MMM", 0, 0, function(format2) {
-          return this.localeData().monthsShort(this, format2);
-        });
-        addFormatToken("MMMM", 0, 0, function(format2) {
-          return this.localeData().months(this, format2);
-        });
-        addUnitAlias("month", "M");
-        addUnitPriority("month", 8);
-        addRegexToken("M", match1to2);
-        addRegexToken("MM", match1to2, match2);
-        addRegexToken("MMM", function(isStrict, locale2) {
-          return locale2.monthsShortRegex(isStrict);
-        });
-        addRegexToken("MMMM", function(isStrict, locale2) {
-          return locale2.monthsRegex(isStrict);
-        });
-        addParseToken(["M", "MM"], function(input, array) {
-          array[MONTH] = toInt(input) - 1;
-        });
-        addParseToken(["MMM", "MMMM"], function(input, array, config, token2) {
-          var month = config._locale.monthsParse(input, token2, config._strict);
-          if (month != null) {
-            array[MONTH] = month;
-          } else {
-            getParsingFlags(config).invalidMonth = input;
-          }
-        });
-        var defaultLocaleMonths = "January_February_March_April_May_June_July_August_September_October_November_December".split(
-          "_"
-        ), defaultLocaleMonthsShort = "Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec".split("_"), MONTHS_IN_FORMAT = /D[oD]?(\[[^\[\]]*\]|\s)+MMMM?/, defaultMonthsShortRegex = matchWord, defaultMonthsRegex = matchWord;
-        function localeMonths(m, format2) {
-          if (!m) {
-            return isArray2(this._months) ? this._months : this._months["standalone"];
-          }
-          return isArray2(this._months) ? this._months[m.month()] : this._months[(this._months.isFormat || MONTHS_IN_FORMAT).test(format2) ? "format" : "standalone"][m.month()];
-        }
-        function localeMonthsShort(m, format2) {
-          if (!m) {
-            return isArray2(this._monthsShort) ? this._monthsShort : this._monthsShort["standalone"];
-          }
-          return isArray2(this._monthsShort) ? this._monthsShort[m.month()] : this._monthsShort[MONTHS_IN_FORMAT.test(format2) ? "format" : "standalone"][m.month()];
-        }
-        function handleStrictParse(monthName, format2, strict) {
-          var i, ii, mom, llc = monthName.toLocaleLowerCase();
-          if (!this._monthsParse) {
-            this._monthsParse = [];
-            this._longMonthsParse = [];
-            this._shortMonthsParse = [];
-            for (i = 0; i < 12; ++i) {
-              mom = createUTC([2e3, i]);
-              this._shortMonthsParse[i] = this.monthsShort(
-                mom,
-                ""
-              ).toLocaleLowerCase();
-              this._longMonthsParse[i] = this.months(mom, "").toLocaleLowerCase();
-            }
-          }
-          if (strict) {
-            if (format2 === "MMM") {
-              ii = indexOf.call(this._shortMonthsParse, llc);
-              return ii !== -1 ? ii : null;
-            } else {
-              ii = indexOf.call(this._longMonthsParse, llc);
-              return ii !== -1 ? ii : null;
-            }
-          } else {
-            if (format2 === "MMM") {
-              ii = indexOf.call(this._shortMonthsParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._longMonthsParse, llc);
-              return ii !== -1 ? ii : null;
-            } else {
-              ii = indexOf.call(this._longMonthsParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._shortMonthsParse, llc);
-              return ii !== -1 ? ii : null;
-            }
-          }
-        }
-        function localeMonthsParse(monthName, format2, strict) {
-          var i, mom, regex;
-          if (this._monthsParseExact) {
-            return handleStrictParse.call(this, monthName, format2, strict);
-          }
-          if (!this._monthsParse) {
-            this._monthsParse = [];
-            this._longMonthsParse = [];
-            this._shortMonthsParse = [];
-          }
-          for (i = 0; i < 12; i++) {
-            mom = createUTC([2e3, i]);
-            if (strict && !this._longMonthsParse[i]) {
-              this._longMonthsParse[i] = new RegExp(
-                "^" + this.months(mom, "").replace(".", "") + "$",
-                "i"
-              );
-              this._shortMonthsParse[i] = new RegExp(
-                "^" + this.monthsShort(mom, "").replace(".", "") + "$",
-                "i"
-              );
-            }
-            if (!strict && !this._monthsParse[i]) {
-              regex = "^" + this.months(mom, "") + "|^" + this.monthsShort(mom, "");
-              this._monthsParse[i] = new RegExp(regex.replace(".", ""), "i");
-            }
-            if (strict && format2 === "MMMM" && this._longMonthsParse[i].test(monthName)) {
-              return i;
-            } else if (strict && format2 === "MMM" && this._shortMonthsParse[i].test(monthName)) {
-              return i;
-            } else if (!strict && this._monthsParse[i].test(monthName)) {
-              return i;
-            }
-          }
-        }
-        function setMonth(mom, value) {
-          var dayOfMonth;
-          if (!mom.isValid()) {
-            return mom;
-          }
-          if (typeof value === "string") {
-            if (/^\d+$/.test(value)) {
-              value = toInt(value);
-            } else {
-              value = mom.localeData().monthsParse(value);
-              if (!isNumber2(value)) {
-                return mom;
-              }
-            }
-          }
-          dayOfMonth = Math.min(mom.date(), daysInMonth(mom.year(), value));
-          mom._d["set" + (mom._isUTC ? "UTC" : "") + "Month"](value, dayOfMonth);
-          return mom;
-        }
-        function getSetMonth(value) {
-          if (value != null) {
-            setMonth(this, value);
-            hooks.updateOffset(this, true);
-            return this;
-          } else {
-            return get(this, "Month");
-          }
-        }
-        function getDaysInMonth() {
-          return daysInMonth(this.year(), this.month());
-        }
-        function monthsShortRegex(isStrict) {
-          if (this._monthsParseExact) {
-            if (!hasOwnProp(this, "_monthsRegex")) {
-              computeMonthsParse.call(this);
-            }
-            if (isStrict) {
-              return this._monthsShortStrictRegex;
-            } else {
-              return this._monthsShortRegex;
-            }
-          } else {
-            if (!hasOwnProp(this, "_monthsShortRegex")) {
-              this._monthsShortRegex = defaultMonthsShortRegex;
-            }
-            return this._monthsShortStrictRegex && isStrict ? this._monthsShortStrictRegex : this._monthsShortRegex;
-          }
-        }
-        function monthsRegex(isStrict) {
-          if (this._monthsParseExact) {
-            if (!hasOwnProp(this, "_monthsRegex")) {
-              computeMonthsParse.call(this);
-            }
-            if (isStrict) {
-              return this._monthsStrictRegex;
-            } else {
-              return this._monthsRegex;
-            }
-          } else {
-            if (!hasOwnProp(this, "_monthsRegex")) {
-              this._monthsRegex = defaultMonthsRegex;
-            }
-            return this._monthsStrictRegex && isStrict ? this._monthsStrictRegex : this._monthsRegex;
-          }
-        }
-        function computeMonthsParse() {
-          function cmpLenRev(a, b) {
-            return b.length - a.length;
-          }
-          var shortPieces = [], longPieces = [], mixedPieces = [], i, mom;
-          for (i = 0; i < 12; i++) {
-            mom = createUTC([2e3, i]);
-            shortPieces.push(this.monthsShort(mom, ""));
-            longPieces.push(this.months(mom, ""));
-            mixedPieces.push(this.months(mom, ""));
-            mixedPieces.push(this.monthsShort(mom, ""));
-          }
-          shortPieces.sort(cmpLenRev);
-          longPieces.sort(cmpLenRev);
-          mixedPieces.sort(cmpLenRev);
-          for (i = 0; i < 12; i++) {
-            shortPieces[i] = regexEscape(shortPieces[i]);
-            longPieces[i] = regexEscape(longPieces[i]);
-          }
-          for (i = 0; i < 24; i++) {
-            mixedPieces[i] = regexEscape(mixedPieces[i]);
-          }
-          this._monthsRegex = new RegExp("^(" + mixedPieces.join("|") + ")", "i");
-          this._monthsShortRegex = this._monthsRegex;
-          this._monthsStrictRegex = new RegExp(
-            "^(" + longPieces.join("|") + ")",
-            "i"
-          );
-          this._monthsShortStrictRegex = new RegExp(
-            "^(" + shortPieces.join("|") + ")",
-            "i"
-          );
-        }
-        addFormatToken("Y", 0, 0, function() {
-          var y = this.year();
-          return y <= 9999 ? zeroFill(y, 4) : "+" + y;
-        });
-        addFormatToken(0, ["YY", 2], 0, function() {
-          return this.year() % 100;
-        });
-        addFormatToken(0, ["YYYY", 4], 0, "year");
-        addFormatToken(0, ["YYYYY", 5], 0, "year");
-        addFormatToken(0, ["YYYYYY", 6, true], 0, "year");
-        addUnitAlias("year", "y");
-        addUnitPriority("year", 1);
-        addRegexToken("Y", matchSigned);
-        addRegexToken("YY", match1to2, match2);
-        addRegexToken("YYYY", match1to4, match4);
-        addRegexToken("YYYYY", match1to6, match6);
-        addRegexToken("YYYYYY", match1to6, match6);
-        addParseToken(["YYYYY", "YYYYYY"], YEAR);
-        addParseToken("YYYY", function(input, array) {
-          array[YEAR] = input.length === 2 ? hooks.parseTwoDigitYear(input) : toInt(input);
-        });
-        addParseToken("YY", function(input, array) {
-          array[YEAR] = hooks.parseTwoDigitYear(input);
-        });
-        addParseToken("Y", function(input, array) {
-          array[YEAR] = parseInt(input, 10);
-        });
-        function daysInYear(year) {
-          return isLeapYear(year) ? 366 : 365;
-        }
-        hooks.parseTwoDigitYear = function(input) {
-          return toInt(input) + (toInt(input) > 68 ? 1900 : 2e3);
-        };
-        var getSetYear = makeGetSet("FullYear", true);
-        function getIsLeapYear() {
-          return isLeapYear(this.year());
-        }
-        function createDate(y, m, d, h, M, s, ms) {
-          var date;
-          if (y < 100 && y >= 0) {
-            date = new Date(y + 400, m, d, h, M, s, ms);
-            if (isFinite(date.getFullYear())) {
-              date.setFullYear(y);
-            }
-          } else {
-            date = new Date(y, m, d, h, M, s, ms);
-          }
-          return date;
-        }
-        function createUTCDate(y) {
-          var date, args;
-          if (y < 100 && y >= 0) {
-            args = Array.prototype.slice.call(arguments);
-            args[0] = y + 400;
-            date = new Date(Date.UTC.apply(null, args));
-            if (isFinite(date.getUTCFullYear())) {
-              date.setUTCFullYear(y);
-            }
-          } else {
-            date = new Date(Date.UTC.apply(null, arguments));
-          }
-          return date;
-        }
-        function firstWeekOffset(year, dow, doy) {
-          var fwd = 7 + dow - doy, fwdlw = (7 + createUTCDate(year, 0, fwd).getUTCDay() - dow) % 7;
-          return -fwdlw + fwd - 1;
-        }
-        function dayOfYearFromWeeks(year, week, weekday, dow, doy) {
-          var localWeekday = (7 + weekday - dow) % 7, weekOffset = firstWeekOffset(year, dow, doy), dayOfYear = 1 + 7 * (week - 1) + localWeekday + weekOffset, resYear, resDayOfYear;
-          if (dayOfYear <= 0) {
-            resYear = year - 1;
-            resDayOfYear = daysInYear(resYear) + dayOfYear;
-          } else if (dayOfYear > daysInYear(year)) {
-            resYear = year + 1;
-            resDayOfYear = dayOfYear - daysInYear(year);
-          } else {
-            resYear = year;
-            resDayOfYear = dayOfYear;
-          }
-          return {
-            year: resYear,
-            dayOfYear: resDayOfYear
-          };
-        }
-        function weekOfYear(mom, dow, doy) {
-          var weekOffset = firstWeekOffset(mom.year(), dow, doy), week = Math.floor((mom.dayOfYear() - weekOffset - 1) / 7) + 1, resWeek, resYear;
-          if (week < 1) {
-            resYear = mom.year() - 1;
-            resWeek = week + weeksInYear(resYear, dow, doy);
-          } else if (week > weeksInYear(mom.year(), dow, doy)) {
-            resWeek = week - weeksInYear(mom.year(), dow, doy);
-            resYear = mom.year() + 1;
-          } else {
-            resYear = mom.year();
-            resWeek = week;
-          }
-          return {
-            week: resWeek,
-            year: resYear
-          };
-        }
-        function weeksInYear(year, dow, doy) {
-          var weekOffset = firstWeekOffset(year, dow, doy), weekOffsetNext = firstWeekOffset(year + 1, dow, doy);
-          return (daysInYear(year) - weekOffset + weekOffsetNext) / 7;
-        }
-        addFormatToken("w", ["ww", 2], "wo", "week");
-        addFormatToken("W", ["WW", 2], "Wo", "isoWeek");
-        addUnitAlias("week", "w");
-        addUnitAlias("isoWeek", "W");
-        addUnitPriority("week", 5);
-        addUnitPriority("isoWeek", 5);
-        addRegexToken("w", match1to2);
-        addRegexToken("ww", match1to2, match2);
-        addRegexToken("W", match1to2);
-        addRegexToken("WW", match1to2, match2);
-        addWeekParseToken(
-          ["w", "ww", "W", "WW"],
-          function(input, week, config, token2) {
-            week[token2.substr(0, 1)] = toInt(input);
-          }
-        );
-        function localeWeek(mom) {
-          return weekOfYear(mom, this._week.dow, this._week.doy).week;
-        }
-        var defaultLocaleWeek = {
-          dow: 0,
-          // Sunday is the first day of the week.
-          doy: 6
-          // The week that contains Jan 6th is the first week of the year.
-        };
-        function localeFirstDayOfWeek() {
-          return this._week.dow;
-        }
-        function localeFirstDayOfYear() {
-          return this._week.doy;
-        }
-        function getSetWeek(input) {
-          var week = this.localeData().week(this);
-          return input == null ? week : this.add((input - week) * 7, "d");
-        }
-        function getSetISOWeek(input) {
-          var week = weekOfYear(this, 1, 4).week;
-          return input == null ? week : this.add((input - week) * 7, "d");
-        }
-        addFormatToken("d", 0, "do", "day");
-        addFormatToken("dd", 0, 0, function(format2) {
-          return this.localeData().weekdaysMin(this, format2);
-        });
-        addFormatToken("ddd", 0, 0, function(format2) {
-          return this.localeData().weekdaysShort(this, format2);
-        });
-        addFormatToken("dddd", 0, 0, function(format2) {
-          return this.localeData().weekdays(this, format2);
-        });
-        addFormatToken("e", 0, 0, "weekday");
-        addFormatToken("E", 0, 0, "isoWeekday");
-        addUnitAlias("day", "d");
-        addUnitAlias("weekday", "e");
-        addUnitAlias("isoWeekday", "E");
-        addUnitPriority("day", 11);
-        addUnitPriority("weekday", 11);
-        addUnitPriority("isoWeekday", 11);
-        addRegexToken("d", match1to2);
-        addRegexToken("e", match1to2);
-        addRegexToken("E", match1to2);
-        addRegexToken("dd", function(isStrict, locale2) {
-          return locale2.weekdaysMinRegex(isStrict);
-        });
-        addRegexToken("ddd", function(isStrict, locale2) {
-          return locale2.weekdaysShortRegex(isStrict);
-        });
-        addRegexToken("dddd", function(isStrict, locale2) {
-          return locale2.weekdaysRegex(isStrict);
-        });
-        addWeekParseToken(["dd", "ddd", "dddd"], function(input, week, config, token2) {
-          var weekday = config._locale.weekdaysParse(input, token2, config._strict);
-          if (weekday != null) {
-            week.d = weekday;
-          } else {
-            getParsingFlags(config).invalidWeekday = input;
-          }
-        });
-        addWeekParseToken(["d", "e", "E"], function(input, week, config, token2) {
-          week[token2] = toInt(input);
-        });
-        function parseWeekday(input, locale2) {
-          if (typeof input !== "string") {
-            return input;
-          }
-          if (!isNaN(input)) {
-            return parseInt(input, 10);
-          }
-          input = locale2.weekdaysParse(input);
-          if (typeof input === "number") {
-            return input;
-          }
-          return null;
-        }
-        function parseIsoWeekday(input, locale2) {
-          if (typeof input === "string") {
-            return locale2.weekdaysParse(input) % 7 || 7;
-          }
-          return isNaN(input) ? null : input;
-        }
-        function shiftWeekdays(ws, n) {
-          return ws.slice(n, 7).concat(ws.slice(0, n));
-        }
-        var defaultLocaleWeekdays = "Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday".split("_"), defaultLocaleWeekdaysShort = "Sun_Mon_Tue_Wed_Thu_Fri_Sat".split("_"), defaultLocaleWeekdaysMin = "Su_Mo_Tu_We_Th_Fr_Sa".split("_"), defaultWeekdaysRegex = matchWord, defaultWeekdaysShortRegex = matchWord, defaultWeekdaysMinRegex = matchWord;
-        function localeWeekdays(m, format2) {
-          var weekdays = isArray2(this._weekdays) ? this._weekdays : this._weekdays[m && m !== true && this._weekdays.isFormat.test(format2) ? "format" : "standalone"];
-          return m === true ? shiftWeekdays(weekdays, this._week.dow) : m ? weekdays[m.day()] : weekdays;
-        }
-        function localeWeekdaysShort(m) {
-          return m === true ? shiftWeekdays(this._weekdaysShort, this._week.dow) : m ? this._weekdaysShort[m.day()] : this._weekdaysShort;
-        }
-        function localeWeekdaysMin(m) {
-          return m === true ? shiftWeekdays(this._weekdaysMin, this._week.dow) : m ? this._weekdaysMin[m.day()] : this._weekdaysMin;
-        }
-        function handleStrictParse$1(weekdayName, format2, strict) {
-          var i, ii, mom, llc = weekdayName.toLocaleLowerCase();
-          if (!this._weekdaysParse) {
-            this._weekdaysParse = [];
-            this._shortWeekdaysParse = [];
-            this._minWeekdaysParse = [];
-            for (i = 0; i < 7; ++i) {
-              mom = createUTC([2e3, 1]).day(i);
-              this._minWeekdaysParse[i] = this.weekdaysMin(
-                mom,
-                ""
-              ).toLocaleLowerCase();
-              this._shortWeekdaysParse[i] = this.weekdaysShort(
-                mom,
-                ""
-              ).toLocaleLowerCase();
-              this._weekdaysParse[i] = this.weekdays(mom, "").toLocaleLowerCase();
-            }
-          }
-          if (strict) {
-            if (format2 === "dddd") {
-              ii = indexOf.call(this._weekdaysParse, llc);
-              return ii !== -1 ? ii : null;
-            } else if (format2 === "ddd") {
-              ii = indexOf.call(this._shortWeekdaysParse, llc);
-              return ii !== -1 ? ii : null;
-            } else {
-              ii = indexOf.call(this._minWeekdaysParse, llc);
-              return ii !== -1 ? ii : null;
-            }
-          } else {
-            if (format2 === "dddd") {
-              ii = indexOf.call(this._weekdaysParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._shortWeekdaysParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._minWeekdaysParse, llc);
-              return ii !== -1 ? ii : null;
-            } else if (format2 === "ddd") {
-              ii = indexOf.call(this._shortWeekdaysParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._weekdaysParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._minWeekdaysParse, llc);
-              return ii !== -1 ? ii : null;
-            } else {
-              ii = indexOf.call(this._minWeekdaysParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._weekdaysParse, llc);
-              if (ii !== -1) {
-                return ii;
-              }
-              ii = indexOf.call(this._shortWeekdaysParse, llc);
-              return ii !== -1 ? ii : null;
-            }
-          }
-        }
-        function localeWeekdaysParse(weekdayName, format2, strict) {
-          var i, mom, regex;
-          if (this._weekdaysParseExact) {
-            return handleStrictParse$1.call(this, weekdayName, format2, strict);
-          }
-          if (!this._weekdaysParse) {
-            this._weekdaysParse = [];
-            this._minWeekdaysParse = [];
-            this._shortWeekdaysParse = [];
-            this._fullWeekdaysParse = [];
-          }
-          for (i = 0; i < 7; i++) {
-            mom = createUTC([2e3, 1]).day(i);
-            if (strict && !this._fullWeekdaysParse[i]) {
-              this._fullWeekdaysParse[i] = new RegExp(
-                "^" + this.weekdays(mom, "").replace(".", "\\.?") + "$",
-                "i"
-              );
-              this._shortWeekdaysParse[i] = new RegExp(
-                "^" + this.weekdaysShort(mom, "").replace(".", "\\.?") + "$",
-                "i"
-              );
-              this._minWeekdaysParse[i] = new RegExp(
-                "^" + this.weekdaysMin(mom, "").replace(".", "\\.?") + "$",
-                "i"
-              );
-            }
-            if (!this._weekdaysParse[i]) {
-              regex = "^" + this.weekdays(mom, "") + "|^" + this.weekdaysShort(mom, "") + "|^" + this.weekdaysMin(mom, "");
-              this._weekdaysParse[i] = new RegExp(regex.replace(".", ""), "i");
-            }
-            if (strict && format2 === "dddd" && this._fullWeekdaysParse[i].test(weekdayName)) {
-              return i;
-            } else if (strict && format2 === "ddd" && this._shortWeekdaysParse[i].test(weekdayName)) {
-              return i;
-            } else if (strict && format2 === "dd" && this._minWeekdaysParse[i].test(weekdayName)) {
-              return i;
-            } else if (!strict && this._weekdaysParse[i].test(weekdayName)) {
-              return i;
-            }
-          }
-        }
-        function getSetDayOfWeek(input) {
-          if (!this.isValid()) {
-            return input != null ? this : NaN;
-          }
-          var day = this._isUTC ? this._d.getUTCDay() : this._d.getDay();
-          if (input != null) {
-            input = parseWeekday(input, this.localeData());
-            return this.add(input - day, "d");
-          } else {
-            return day;
-          }
-        }
-        function getSetLocaleDayOfWeek(input) {
-          if (!this.isValid()) {
-            return input != null ? this : NaN;
-          }
-          var weekday = (this.day() + 7 - this.localeData()._week.dow) % 7;
-          return input == null ? weekday : this.add(input - weekday, "d");
-        }
-        function getSetISODayOfWeek(input) {
-          if (!this.isValid()) {
-            return input != null ? this : NaN;
-          }
-          if (input != null) {
-            var weekday = parseIsoWeekday(input, this.localeData());
-            return this.day(this.day() % 7 ? weekday : weekday - 7);
-          } else {
-            return this.day() || 7;
-          }
-        }
-        function weekdaysRegex(isStrict) {
-          if (this._weekdaysParseExact) {
-            if (!hasOwnProp(this, "_weekdaysRegex")) {
-              computeWeekdaysParse.call(this);
-            }
-            if (isStrict) {
-              return this._weekdaysStrictRegex;
-            } else {
-              return this._weekdaysRegex;
-            }
-          } else {
-            if (!hasOwnProp(this, "_weekdaysRegex")) {
-              this._weekdaysRegex = defaultWeekdaysRegex;
-            }
-            return this._weekdaysStrictRegex && isStrict ? this._weekdaysStrictRegex : this._weekdaysRegex;
-          }
-        }
-        function weekdaysShortRegex(isStrict) {
-          if (this._weekdaysParseExact) {
-            if (!hasOwnProp(this, "_weekdaysRegex")) {
-              computeWeekdaysParse.call(this);
-            }
-            if (isStrict) {
-              return this._weekdaysShortStrictRegex;
-            } else {
-              return this._weekdaysShortRegex;
-            }
-          } else {
-            if (!hasOwnProp(this, "_weekdaysShortRegex")) {
-              this._weekdaysShortRegex = defaultWeekdaysShortRegex;
-            }
-            return this._weekdaysShortStrictRegex && isStrict ? this._weekdaysShortStrictRegex : this._weekdaysShortRegex;
-          }
-        }
-        function weekdaysMinRegex(isStrict) {
-          if (this._weekdaysParseExact) {
-            if (!hasOwnProp(this, "_weekdaysRegex")) {
-              computeWeekdaysParse.call(this);
-            }
-            if (isStrict) {
-              return this._weekdaysMinStrictRegex;
-            } else {
-              return this._weekdaysMinRegex;
-            }
-          } else {
-            if (!hasOwnProp(this, "_weekdaysMinRegex")) {
-              this._weekdaysMinRegex = defaultWeekdaysMinRegex;
-            }
-            return this._weekdaysMinStrictRegex && isStrict ? this._weekdaysMinStrictRegex : this._weekdaysMinRegex;
-          }
-        }
-        function computeWeekdaysParse() {
-          function cmpLenRev(a, b) {
-            return b.length - a.length;
-          }
-          var minPieces = [], shortPieces = [], longPieces = [], mixedPieces = [], i, mom, minp, shortp, longp;
-          for (i = 0; i < 7; i++) {
-            mom = createUTC([2e3, 1]).day(i);
-            minp = regexEscape(this.weekdaysMin(mom, ""));
-            shortp = regexEscape(this.weekdaysShort(mom, ""));
-            longp = regexEscape(this.weekdays(mom, ""));
-            minPieces.push(minp);
-            shortPieces.push(shortp);
-            longPieces.push(longp);
-            mixedPieces.push(minp);
-            mixedPieces.push(shortp);
-            mixedPieces.push(longp);
-          }
-          minPieces.sort(cmpLenRev);
-          shortPieces.sort(cmpLenRev);
-          longPieces.sort(cmpLenRev);
-          mixedPieces.sort(cmpLenRev);
-          this._weekdaysRegex = new RegExp("^(" + mixedPieces.join("|") + ")", "i");
-          this._weekdaysShortRegex = this._weekdaysRegex;
-          this._weekdaysMinRegex = this._weekdaysRegex;
-          this._weekdaysStrictRegex = new RegExp(
-            "^(" + longPieces.join("|") + ")",
-            "i"
-          );
-          this._weekdaysShortStrictRegex = new RegExp(
-            "^(" + shortPieces.join("|") + ")",
-            "i"
-          );
-          this._weekdaysMinStrictRegex = new RegExp(
-            "^(" + minPieces.join("|") + ")",
-            "i"
-          );
-        }
-        function hFormat() {
-          return this.hours() % 12 || 12;
-        }
-        function kFormat() {
-          return this.hours() || 24;
-        }
-        addFormatToken("H", ["HH", 2], 0, "hour");
-        addFormatToken("h", ["hh", 2], 0, hFormat);
-        addFormatToken("k", ["kk", 2], 0, kFormat);
-        addFormatToken("hmm", 0, 0, function() {
-          return "" + hFormat.apply(this) + zeroFill(this.minutes(), 2);
-        });
-        addFormatToken("hmmss", 0, 0, function() {
-          return "" + hFormat.apply(this) + zeroFill(this.minutes(), 2) + zeroFill(this.seconds(), 2);
-        });
-        addFormatToken("Hmm", 0, 0, function() {
-          return "" + this.hours() + zeroFill(this.minutes(), 2);
-        });
-        addFormatToken("Hmmss", 0, 0, function() {
-          return "" + this.hours() + zeroFill(this.minutes(), 2) + zeroFill(this.seconds(), 2);
-        });
-        function meridiem(token2, lowercase) {
-          addFormatToken(token2, 0, 0, function() {
-            return this.localeData().meridiem(
-              this.hours(),
-              this.minutes(),
-              lowercase
-            );
-          });
-        }
-        meridiem("a", true);
-        meridiem("A", false);
-        addUnitAlias("hour", "h");
-        addUnitPriority("hour", 13);
-        function matchMeridiem(isStrict, locale2) {
-          return locale2._meridiemParse;
-        }
-        addRegexToken("a", matchMeridiem);
-        addRegexToken("A", matchMeridiem);
-        addRegexToken("H", match1to2);
-        addRegexToken("h", match1to2);
-        addRegexToken("k", match1to2);
-        addRegexToken("HH", match1to2, match2);
-        addRegexToken("hh", match1to2, match2);
-        addRegexToken("kk", match1to2, match2);
-        addRegexToken("hmm", match3to4);
-        addRegexToken("hmmss", match5to6);
-        addRegexToken("Hmm", match3to4);
-        addRegexToken("Hmmss", match5to6);
-        addParseToken(["H", "HH"], HOUR);
-        addParseToken(["k", "kk"], function(input, array, config) {
-          var kInput = toInt(input);
-          array[HOUR] = kInput === 24 ? 0 : kInput;
-        });
-        addParseToken(["a", "A"], function(input, array, config) {
-          config._isPm = config._locale.isPM(input);
-          config._meridiem = input;
-        });
-        addParseToken(["h", "hh"], function(input, array, config) {
-          array[HOUR] = toInt(input);
-          getParsingFlags(config).bigHour = true;
-        });
-        addParseToken("hmm", function(input, array, config) {
-          var pos = input.length - 2;
-          array[HOUR] = toInt(input.substr(0, pos));
-          array[MINUTE] = toInt(input.substr(pos));
-          getParsingFlags(config).bigHour = true;
-        });
-        addParseToken("hmmss", function(input, array, config) {
-          var pos1 = input.length - 4, pos2 = input.length - 2;
-          array[HOUR] = toInt(input.substr(0, pos1));
-          array[MINUTE] = toInt(input.substr(pos1, 2));
-          array[SECOND] = toInt(input.substr(pos2));
-          getParsingFlags(config).bigHour = true;
-        });
-        addParseToken("Hmm", function(input, array, config) {
-          var pos = input.length - 2;
-          array[HOUR] = toInt(input.substr(0, pos));
-          array[MINUTE] = toInt(input.substr(pos));
-        });
-        addParseToken("Hmmss", function(input, array, config) {
-          var pos1 = input.length - 4, pos2 = input.length - 2;
-          array[HOUR] = toInt(input.substr(0, pos1));
-          array[MINUTE] = toInt(input.substr(pos1, 2));
-          array[SECOND] = toInt(input.substr(pos2));
-        });
-        function localeIsPM(input) {
-          return (input + "").toLowerCase().charAt(0) === "p";
-        }
-        var defaultLocaleMeridiemParse = /[ap]\.?m?\.?/i, getSetHour = makeGetSet("Hours", true);
-        function localeMeridiem(hours2, minutes2, isLower) {
-          if (hours2 > 11) {
-            return isLower ? "pm" : "PM";
-          } else {
-            return isLower ? "am" : "AM";
-          }
-        }
-        var baseConfig = {
-          calendar: defaultCalendar,
-          longDateFormat: defaultLongDateFormat,
-          invalidDate: defaultInvalidDate,
-          ordinal: defaultOrdinal,
-          dayOfMonthOrdinalParse: defaultDayOfMonthOrdinalParse,
-          relativeTime: defaultRelativeTime,
-          months: defaultLocaleMonths,
-          monthsShort: defaultLocaleMonthsShort,
-          week: defaultLocaleWeek,
-          weekdays: defaultLocaleWeekdays,
-          weekdaysMin: defaultLocaleWeekdaysMin,
-          weekdaysShort: defaultLocaleWeekdaysShort,
-          meridiemParse: defaultLocaleMeridiemParse
-        };
-        var locales = {}, localeFamilies = {}, globalLocale;
-        function commonPrefix(arr1, arr2) {
-          var i, minl = Math.min(arr1.length, arr2.length);
-          for (i = 0; i < minl; i += 1) {
-            if (arr1[i] !== arr2[i]) {
-              return i;
-            }
-          }
-          return minl;
-        }
-        function normalizeLocale(key) {
-          return key ? key.toLowerCase().replace("_", "-") : key;
-        }
-        function chooseLocale(names) {
-          var i = 0, j, next, locale2, split;
-          while (i < names.length) {
-            split = normalizeLocale(names[i]).split("-");
-            j = split.length;
-            next = normalizeLocale(names[i + 1]);
-            next = next ? next.split("-") : null;
-            while (j > 0) {
-              locale2 = loadLocale(split.slice(0, j).join("-"));
-              if (locale2) {
-                return locale2;
-              }
-              if (next && next.length >= j && commonPrefix(split, next) >= j - 1) {
-                break;
-              }
-              j--;
-            }
-            i++;
-          }
-          return globalLocale;
-        }
-        function isLocaleNameSane(name) {
-          return name.match("^[^/\\\\]*$") != null;
-        }
-        function loadLocale(name) {
-          var oldLocale = null, aliasedRequire;
-          if (locales[name] === void 0 && typeof module !== "undefined" && module && module.exports && isLocaleNameSane(name)) {
-            try {
-              oldLocale = globalLocale._abbr;
-              aliasedRequire = __require;
-              aliasedRequire("./locale/" + name);
-              getSetGlobalLocale(oldLocale);
-            } catch (e) {
-              locales[name] = null;
-            }
-          }
-          return locales[name];
-        }
-        function getSetGlobalLocale(key, values) {
-          var data;
-          if (key) {
-            if (isUndefined2(values)) {
-              data = getLocale(key);
-            } else {
-              data = defineLocale(key, values);
-            }
-            if (data) {
-              globalLocale = data;
-            } else {
-              if (typeof console !== "undefined" && console.warn) {
-                console.warn(
-                  "Locale " + key + " not found. Did you forget to load it?"
-                );
-              }
-            }
-          }
-          return globalLocale._abbr;
-        }
-        function defineLocale(name, config) {
-          if (config !== null) {
-            var locale2, parentConfig = baseConfig;
-            config.abbr = name;
-            if (locales[name] != null) {
-              deprecateSimple(
-                "defineLocaleOverride",
-                "use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info."
-              );
-              parentConfig = locales[name]._config;
-            } else if (config.parentLocale != null) {
-              if (locales[config.parentLocale] != null) {
-                parentConfig = locales[config.parentLocale]._config;
-              } else {
-                locale2 = loadLocale(config.parentLocale);
-                if (locale2 != null) {
-                  parentConfig = locale2._config;
-                } else {
-                  if (!localeFamilies[config.parentLocale]) {
-                    localeFamilies[config.parentLocale] = [];
-                  }
-                  localeFamilies[config.parentLocale].push({
-                    name,
-                    config
-                  });
-                  return null;
-                }
-              }
-            }
-            locales[name] = new Locale(mergeConfigs(parentConfig, config));
-            if (localeFamilies[name]) {
-              localeFamilies[name].forEach(function(x) {
-                defineLocale(x.name, x.config);
-              });
-            }
-            getSetGlobalLocale(name);
-            return locales[name];
-          } else {
-            delete locales[name];
-            return null;
-          }
-        }
-        function updateLocale(name, config) {
-          if (config != null) {
-            var locale2, tmpLocale, parentConfig = baseConfig;
-            if (locales[name] != null && locales[name].parentLocale != null) {
-              locales[name].set(mergeConfigs(locales[name]._config, config));
-            } else {
-              tmpLocale = loadLocale(name);
-              if (tmpLocale != null) {
-                parentConfig = tmpLocale._config;
-              }
-              config = mergeConfigs(parentConfig, config);
-              if (tmpLocale == null) {
-                config.abbr = name;
-              }
-              locale2 = new Locale(config);
-              locale2.parentLocale = locales[name];
-              locales[name] = locale2;
-            }
-            getSetGlobalLocale(name);
-          } else {
-            if (locales[name] != null) {
-              if (locales[name].parentLocale != null) {
-                locales[name] = locales[name].parentLocale;
-                if (name === getSetGlobalLocale()) {
-                  getSetGlobalLocale(name);
-                }
-              } else if (locales[name] != null) {
-                delete locales[name];
-              }
-            }
-          }
-          return locales[name];
-        }
-        function getLocale(key) {
-          var locale2;
-          if (key && key._locale && key._locale._abbr) {
-            key = key._locale._abbr;
-          }
-          if (!key) {
-            return globalLocale;
-          }
-          if (!isArray2(key)) {
-            locale2 = loadLocale(key);
-            if (locale2) {
-              return locale2;
-            }
-            key = [key];
-          }
-          return chooseLocale(key);
-        }
-        function listLocales() {
-          return keys(locales);
-        }
-        function checkOverflow(m) {
-          var overflow, a = m._a;
-          if (a && getParsingFlags(m).overflow === -2) {
-            overflow = a[MONTH] < 0 || a[MONTH] > 11 ? MONTH : a[DATE] < 1 || a[DATE] > daysInMonth(a[YEAR], a[MONTH]) ? DATE : a[HOUR] < 0 || a[HOUR] > 24 || a[HOUR] === 24 && (a[MINUTE] !== 0 || a[SECOND] !== 0 || a[MILLISECOND] !== 0) ? HOUR : a[MINUTE] < 0 || a[MINUTE] > 59 ? MINUTE : a[SECOND] < 0 || a[SECOND] > 59 ? SECOND : a[MILLISECOND] < 0 || a[MILLISECOND] > 999 ? MILLISECOND : -1;
-            if (getParsingFlags(m)._overflowDayOfYear && (overflow < YEAR || overflow > DATE)) {
-              overflow = DATE;
-            }
-            if (getParsingFlags(m)._overflowWeeks && overflow === -1) {
-              overflow = WEEK;
-            }
-            if (getParsingFlags(m)._overflowWeekday && overflow === -1) {
-              overflow = WEEKDAY;
-            }
-            getParsingFlags(m).overflow = overflow;
-          }
-          return m;
-        }
-        var extendedIsoRegex = /^\s*((?:[+-]\d{6}|\d{4})-(?:\d\d-\d\d|W\d\d-\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?::\d\d(?::\d\d(?:[.,]\d+)?)?)?)([+-]\d\d(?::?\d\d)?|\s*Z)?)?$/, basicIsoRegex = /^\s*((?:[+-]\d{6}|\d{4})(?:\d\d\d\d|W\d\d\d|W\d\d|\d\d\d|\d\d|))(?:(T| )(\d\d(?:\d\d(?:\d\d(?:[.,]\d+)?)?)?)([+-]\d\d(?::?\d\d)?|\s*Z)?)?$/, tzRegex = /Z|[+-]\d\d(?::?\d\d)?/, isoDates = [
-          ["YYYYYY-MM-DD", /[+-]\d{6}-\d\d-\d\d/],
-          ["YYYY-MM-DD", /\d{4}-\d\d-\d\d/],
-          ["GGGG-[W]WW-E", /\d{4}-W\d\d-\d/],
-          ["GGGG-[W]WW", /\d{4}-W\d\d/, false],
-          ["YYYY-DDD", /\d{4}-\d{3}/],
-          ["YYYY-MM", /\d{4}-\d\d/, false],
-          ["YYYYYYMMDD", /[+-]\d{10}/],
-          ["YYYYMMDD", /\d{8}/],
-          ["GGGG[W]WWE", /\d{4}W\d{3}/],
-          ["GGGG[W]WW", /\d{4}W\d{2}/, false],
-          ["YYYYDDD", /\d{7}/],
-          ["YYYYMM", /\d{6}/, false],
-          ["YYYY", /\d{4}/, false]
-        ], isoTimes = [
-          ["HH:mm:ss.SSSS", /\d\d:\d\d:\d\d\.\d+/],
-          ["HH:mm:ss,SSSS", /\d\d:\d\d:\d\d,\d+/],
-          ["HH:mm:ss", /\d\d:\d\d:\d\d/],
-          ["HH:mm", /\d\d:\d\d/],
-          ["HHmmss.SSSS", /\d\d\d\d\d\d\.\d+/],
-          ["HHmmss,SSSS", /\d\d\d\d\d\d,\d+/],
-          ["HHmmss", /\d\d\d\d\d\d/],
-          ["HHmm", /\d\d\d\d/],
-          ["HH", /\d\d/]
-        ], aspNetJsonRegex = /^\/?Date\((-?\d+)/i, rfc2822 = /^(?:(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s)?(\d{1,2})\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\d{2,4})\s(\d\d):(\d\d)(?::(\d\d))?\s(?:(UT|GMT|[ECMP][SD]T)|([Zz])|([+-]\d{4}))$/, obsOffsets = {
-          UT: 0,
-          GMT: 0,
-          EDT: -4 * 60,
-          EST: -5 * 60,
-          CDT: -5 * 60,
-          CST: -6 * 60,
-          MDT: -6 * 60,
-          MST: -7 * 60,
-          PDT: -7 * 60,
-          PST: -8 * 60
-        };
-        function configFromISO(config) {
-          var i, l, string = config._i, match = extendedIsoRegex.exec(string) || basicIsoRegex.exec(string), allowTime, dateFormat, timeFormat, tzFormat, isoDatesLen = isoDates.length, isoTimesLen = isoTimes.length;
-          if (match) {
-            getParsingFlags(config).iso = true;
-            for (i = 0, l = isoDatesLen; i < l; i++) {
-              if (isoDates[i][1].exec(match[1])) {
-                dateFormat = isoDates[i][0];
-                allowTime = isoDates[i][2] !== false;
-                break;
-              }
-            }
-            if (dateFormat == null) {
-              config._isValid = false;
-              return;
-            }
-            if (match[3]) {
-              for (i = 0, l = isoTimesLen; i < l; i++) {
-                if (isoTimes[i][1].exec(match[3])) {
-                  timeFormat = (match[2] || " ") + isoTimes[i][0];
-                  break;
-                }
-              }
-              if (timeFormat == null) {
-                config._isValid = false;
-                return;
-              }
-            }
-            if (!allowTime && timeFormat != null) {
-              config._isValid = false;
-              return;
-            }
-            if (match[4]) {
-              if (tzRegex.exec(match[4])) {
-                tzFormat = "Z";
-              } else {
-                config._isValid = false;
-                return;
-              }
-            }
-            config._f = dateFormat + (timeFormat || "") + (tzFormat || "");
-            configFromStringAndFormat(config);
-          } else {
-            config._isValid = false;
-          }
-        }
-        function extractFromRFC2822Strings(yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr) {
-          var result = [
-            untruncateYear(yearStr),
-            defaultLocaleMonthsShort.indexOf(monthStr),
-            parseInt(dayStr, 10),
-            parseInt(hourStr, 10),
-            parseInt(minuteStr, 10)
-          ];
-          if (secondStr) {
-            result.push(parseInt(secondStr, 10));
-          }
-          return result;
-        }
-        function untruncateYear(yearStr) {
-          var year = parseInt(yearStr, 10);
-          if (year <= 49) {
-            return 2e3 + year;
-          } else if (year <= 999) {
-            return 1900 + year;
-          }
-          return year;
-        }
-        function preprocessRFC2822(s) {
-          return s.replace(/\([^()]*\)|[\n\t]/g, " ").replace(/(\s\s+)/g, " ").replace(/^\s\s*/, "").replace(/\s\s*$/, "");
-        }
-        function checkWeekday(weekdayStr, parsedInput, config) {
-          if (weekdayStr) {
-            var weekdayProvided = defaultLocaleWeekdaysShort.indexOf(weekdayStr), weekdayActual = new Date(
-              parsedInput[0],
-              parsedInput[1],
-              parsedInput[2]
-            ).getDay();
-            if (weekdayProvided !== weekdayActual) {
-              getParsingFlags(config).weekdayMismatch = true;
-              config._isValid = false;
-              return false;
-            }
-          }
-          return true;
-        }
-        function calculateOffset(obsOffset, militaryOffset, numOffset) {
-          if (obsOffset) {
-            return obsOffsets[obsOffset];
-          } else if (militaryOffset) {
-            return 0;
-          } else {
-            var hm = parseInt(numOffset, 10), m = hm % 100, h = (hm - m) / 100;
-            return h * 60 + m;
-          }
-        }
-        function configFromRFC2822(config) {
-          var match = rfc2822.exec(preprocessRFC2822(config._i)), parsedArray;
-          if (match) {
-            parsedArray = extractFromRFC2822Strings(
-              match[4],
-              match[3],
-              match[2],
-              match[5],
-              match[6],
-              match[7]
-            );
-            if (!checkWeekday(match[1], parsedArray, config)) {
-              return;
-            }
-            config._a = parsedArray;
-            config._tzm = calculateOffset(match[8], match[9], match[10]);
-            config._d = createUTCDate.apply(null, config._a);
-            config._d.setUTCMinutes(config._d.getUTCMinutes() - config._tzm);
-            getParsingFlags(config).rfc2822 = true;
-          } else {
-            config._isValid = false;
-          }
-        }
-        function configFromString(config) {
-          var matched = aspNetJsonRegex.exec(config._i);
-          if (matched !== null) {
-            config._d = /* @__PURE__ */ new Date(+matched[1]);
-            return;
-          }
-          configFromISO(config);
-          if (config._isValid === false) {
-            delete config._isValid;
-          } else {
-            return;
-          }
-          configFromRFC2822(config);
-          if (config._isValid === false) {
-            delete config._isValid;
-          } else {
-            return;
-          }
-          if (config._strict) {
-            config._isValid = false;
-          } else {
-            hooks.createFromInputFallback(config);
-          }
-        }
-        hooks.createFromInputFallback = deprecate(
-          "value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.",
-          function(config) {
-            config._d = /* @__PURE__ */ new Date(config._i + (config._useUTC ? " UTC" : ""));
-          }
-        );
-        function defaults2(a, b, c) {
-          if (a != null) {
-            return a;
-          }
-          if (b != null) {
-            return b;
-          }
-          return c;
-        }
-        function currentDateArray(config) {
-          var nowValue = new Date(hooks.now());
-          if (config._useUTC) {
-            return [
-              nowValue.getUTCFullYear(),
-              nowValue.getUTCMonth(),
-              nowValue.getUTCDate()
-            ];
-          }
-          return [nowValue.getFullYear(), nowValue.getMonth(), nowValue.getDate()];
-        }
-        function configFromArray(config) {
-          var i, date, input = [], currentDate, expectedWeekday, yearToUse;
-          if (config._d) {
-            return;
-          }
-          currentDate = currentDateArray(config);
-          if (config._w && config._a[DATE] == null && config._a[MONTH] == null) {
-            dayOfYearFromWeekInfo(config);
-          }
-          if (config._dayOfYear != null) {
-            yearToUse = defaults2(config._a[YEAR], currentDate[YEAR]);
-            if (config._dayOfYear > daysInYear(yearToUse) || config._dayOfYear === 0) {
-              getParsingFlags(config)._overflowDayOfYear = true;
-            }
-            date = createUTCDate(yearToUse, 0, config._dayOfYear);
-            config._a[MONTH] = date.getUTCMonth();
-            config._a[DATE] = date.getUTCDate();
-          }
-          for (i = 0; i < 3 && config._a[i] == null; ++i) {
-            config._a[i] = input[i] = currentDate[i];
-          }
-          for (; i < 7; i++) {
-            config._a[i] = input[i] = config._a[i] == null ? i === 2 ? 1 : 0 : config._a[i];
-          }
-          if (config._a[HOUR] === 24 && config._a[MINUTE] === 0 && config._a[SECOND] === 0 && config._a[MILLISECOND] === 0) {
-            config._nextDay = true;
-            config._a[HOUR] = 0;
-          }
-          config._d = (config._useUTC ? createUTCDate : createDate).apply(
-            null,
-            input
-          );
-          expectedWeekday = config._useUTC ? config._d.getUTCDay() : config._d.getDay();
-          if (config._tzm != null) {
-            config._d.setUTCMinutes(config._d.getUTCMinutes() - config._tzm);
-          }
-          if (config._nextDay) {
-            config._a[HOUR] = 24;
-          }
-          if (config._w && typeof config._w.d !== "undefined" && config._w.d !== expectedWeekday) {
-            getParsingFlags(config).weekdayMismatch = true;
-          }
-        }
-        function dayOfYearFromWeekInfo(config) {
-          var w, weekYear, week, weekday, dow, doy, temp, weekdayOverflow, curWeek;
-          w = config._w;
-          if (w.GG != null || w.W != null || w.E != null) {
-            dow = 1;
-            doy = 4;
-            weekYear = defaults2(
-              w.GG,
-              config._a[YEAR],
-              weekOfYear(createLocal(), 1, 4).year
-            );
-            week = defaults2(w.W, 1);
-            weekday = defaults2(w.E, 1);
-            if (weekday < 1 || weekday > 7) {
-              weekdayOverflow = true;
-            }
-          } else {
-            dow = config._locale._week.dow;
-            doy = config._locale._week.doy;
-            curWeek = weekOfYear(createLocal(), dow, doy);
-            weekYear = defaults2(w.gg, config._a[YEAR], curWeek.year);
-            week = defaults2(w.w, curWeek.week);
-            if (w.d != null) {
-              weekday = w.d;
-              if (weekday < 0 || weekday > 6) {
-                weekdayOverflow = true;
-              }
-            } else if (w.e != null) {
-              weekday = w.e + dow;
-              if (w.e < 0 || w.e > 6) {
-                weekdayOverflow = true;
-              }
-            } else {
-              weekday = dow;
-            }
-          }
-          if (week < 1 || week > weeksInYear(weekYear, dow, doy)) {
-            getParsingFlags(config)._overflowWeeks = true;
-          } else if (weekdayOverflow != null) {
-            getParsingFlags(config)._overflowWeekday = true;
-          } else {
-            temp = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy);
-            config._a[YEAR] = temp.year;
-            config._dayOfYear = temp.dayOfYear;
-          }
-        }
-        hooks.ISO_8601 = function() {
-        };
-        hooks.RFC_2822 = function() {
-        };
-        function configFromStringAndFormat(config) {
-          if (config._f === hooks.ISO_8601) {
-            configFromISO(config);
-            return;
-          }
-          if (config._f === hooks.RFC_2822) {
-            configFromRFC2822(config);
-            return;
-          }
-          config._a = [];
-          getParsingFlags(config).empty = true;
-          var string = "" + config._i, i, parsedInput, tokens2, token2, skipped, stringLength = string.length, totalParsedInputLength = 0, era, tokenLen;
-          tokens2 = expandFormat(config._f, config._locale).match(formattingTokens) || [];
-          tokenLen = tokens2.length;
-          for (i = 0; i < tokenLen; i++) {
-            token2 = tokens2[i];
-            parsedInput = (string.match(getParseRegexForToken(token2, config)) || [])[0];
-            if (parsedInput) {
-              skipped = string.substr(0, string.indexOf(parsedInput));
-              if (skipped.length > 0) {
-                getParsingFlags(config).unusedInput.push(skipped);
-              }
-              string = string.slice(
-                string.indexOf(parsedInput) + parsedInput.length
-              );
-              totalParsedInputLength += parsedInput.length;
-            }
-            if (formatTokenFunctions[token2]) {
-              if (parsedInput) {
-                getParsingFlags(config).empty = false;
-              } else {
-                getParsingFlags(config).unusedTokens.push(token2);
-              }
-              addTimeToArrayFromToken(token2, parsedInput, config);
-            } else if (config._strict && !parsedInput) {
-              getParsingFlags(config).unusedTokens.push(token2);
-            }
-          }
-          getParsingFlags(config).charsLeftOver = stringLength - totalParsedInputLength;
-          if (string.length > 0) {
-            getParsingFlags(config).unusedInput.push(string);
-          }
-          if (config._a[HOUR] <= 12 && getParsingFlags(config).bigHour === true && config._a[HOUR] > 0) {
-            getParsingFlags(config).bigHour = void 0;
-          }
-          getParsingFlags(config).parsedDateParts = config._a.slice(0);
-          getParsingFlags(config).meridiem = config._meridiem;
-          config._a[HOUR] = meridiemFixWrap(
-            config._locale,
-            config._a[HOUR],
-            config._meridiem
-          );
-          era = getParsingFlags(config).era;
-          if (era !== null) {
-            config._a[YEAR] = config._locale.erasConvertYear(era, config._a[YEAR]);
-          }
-          configFromArray(config);
-          checkOverflow(config);
-        }
-        function meridiemFixWrap(locale2, hour, meridiem2) {
-          var isPm;
-          if (meridiem2 == null) {
-            return hour;
-          }
-          if (locale2.meridiemHour != null) {
-            return locale2.meridiemHour(hour, meridiem2);
-          } else if (locale2.isPM != null) {
-            isPm = locale2.isPM(meridiem2);
-            if (isPm && hour < 12) {
-              hour += 12;
-            }
-            if (!isPm && hour === 12) {
-              hour = 0;
-            }
-            return hour;
-          } else {
-            return hour;
-          }
-        }
-        function configFromStringAndArray(config) {
-          var tempConfig, bestMoment, scoreToBeat, i, currentScore, validFormatFound, bestFormatIsValid = false, configfLen = config._f.length;
-          if (configfLen === 0) {
-            getParsingFlags(config).invalidFormat = true;
-            config._d = /* @__PURE__ */ new Date(NaN);
-            return;
-          }
-          for (i = 0; i < configfLen; i++) {
-            currentScore = 0;
-            validFormatFound = false;
-            tempConfig = copyConfig({}, config);
-            if (config._useUTC != null) {
-              tempConfig._useUTC = config._useUTC;
-            }
-            tempConfig._f = config._f[i];
-            configFromStringAndFormat(tempConfig);
-            if (isValid(tempConfig)) {
-              validFormatFound = true;
-            }
-            currentScore += getParsingFlags(tempConfig).charsLeftOver;
-            currentScore += getParsingFlags(tempConfig).unusedTokens.length * 10;
-            getParsingFlags(tempConfig).score = currentScore;
-            if (!bestFormatIsValid) {
-              if (scoreToBeat == null || currentScore < scoreToBeat || validFormatFound) {
-                scoreToBeat = currentScore;
-                bestMoment = tempConfig;
-                if (validFormatFound) {
-                  bestFormatIsValid = true;
-                }
-              }
-            } else {
-              if (currentScore < scoreToBeat) {
-                scoreToBeat = currentScore;
-                bestMoment = tempConfig;
-              }
-            }
-          }
-          extend2(config, bestMoment || tempConfig);
-        }
-        function configFromObject(config) {
-          if (config._d) {
-            return;
-          }
-          var i = normalizeObjectUnits(config._i), dayOrDate = i.day === void 0 ? i.date : i.day;
-          config._a = map(
-            [i.year, i.month, dayOrDate, i.hour, i.minute, i.second, i.millisecond],
-            function(obj) {
-              return obj && parseInt(obj, 10);
-            }
-          );
-          configFromArray(config);
-        }
-        function createFromConfig(config) {
-          var res = new Moment(checkOverflow(prepareConfig(config)));
-          if (res._nextDay) {
-            res.add(1, "d");
-            res._nextDay = void 0;
-          }
-          return res;
-        }
-        function prepareConfig(config) {
-          var input = config._i, format2 = config._f;
-          config._locale = config._locale || getLocale(config._l);
-          if (input === null || format2 === void 0 && input === "") {
-            return createInvalid({ nullInput: true });
-          }
-          if (typeof input === "string") {
-            config._i = input = config._locale.preparse(input);
-          }
-          if (isMoment(input)) {
-            return new Moment(checkOverflow(input));
-          } else if (isDate2(input)) {
-            config._d = input;
-          } else if (isArray2(format2)) {
-            configFromStringAndArray(config);
-          } else if (format2) {
-            configFromStringAndFormat(config);
-          } else {
-            configFromInput(config);
-          }
-          if (!isValid(config)) {
-            config._d = null;
-          }
-          return config;
-        }
-        function configFromInput(config) {
-          var input = config._i;
-          if (isUndefined2(input)) {
-            config._d = new Date(hooks.now());
-          } else if (isDate2(input)) {
-            config._d = new Date(input.valueOf());
-          } else if (typeof input === "string") {
-            configFromString(config);
-          } else if (isArray2(input)) {
-            config._a = map(input.slice(0), function(obj) {
-              return parseInt(obj, 10);
-            });
-            configFromArray(config);
-          } else if (isObject2(input)) {
-            configFromObject(config);
-          } else if (isNumber2(input)) {
-            config._d = new Date(input);
-          } else {
-            hooks.createFromInputFallback(config);
-          }
-        }
-        function createLocalOrUTC(input, format2, locale2, strict, isUTC) {
-          var c = {};
-          if (format2 === true || format2 === false) {
-            strict = format2;
-            format2 = void 0;
-          }
-          if (locale2 === true || locale2 === false) {
-            strict = locale2;
-            locale2 = void 0;
-          }
-          if (isObject2(input) && isObjectEmpty2(input) || isArray2(input) && input.length === 0) {
-            input = void 0;
-          }
-          c._isAMomentObject = true;
-          c._useUTC = c._isUTC = isUTC;
-          c._l = locale2;
-          c._i = input;
-          c._f = format2;
-          c._strict = strict;
-          return createFromConfig(c);
-        }
-        function createLocal(input, format2, locale2, strict) {
-          return createLocalOrUTC(input, format2, locale2, strict, false);
-        }
-        var prototypeMin = deprecate(
-          "moment().min is deprecated, use moment.max instead. http://momentjs.com/guides/#/warnings/min-max/",
-          function() {
-            var other = createLocal.apply(null, arguments);
-            if (this.isValid() && other.isValid()) {
-              return other < this ? this : other;
-            } else {
-              return createInvalid();
-            }
-          }
-        ), prototypeMax = deprecate(
-          "moment().max is deprecated, use moment.min instead. http://momentjs.com/guides/#/warnings/min-max/",
-          function() {
-            var other = createLocal.apply(null, arguments);
-            if (this.isValid() && other.isValid()) {
-              return other > this ? this : other;
-            } else {
-              return createInvalid();
-            }
-          }
-        );
-        function pickBy(fn, moments) {
-          var res, i;
-          if (moments.length === 1 && isArray2(moments[0])) {
-            moments = moments[0];
-          }
-          if (!moments.length) {
-            return createLocal();
-          }
-          res = moments[0];
-          for (i = 1; i < moments.length; ++i) {
-            if (!moments[i].isValid() || moments[i][fn](res)) {
-              res = moments[i];
-            }
-          }
-          return res;
-        }
-        function min() {
-          var args = [].slice.call(arguments, 0);
-          return pickBy("isBefore", args);
-        }
-        function max() {
-          var args = [].slice.call(arguments, 0);
-          return pickBy("isAfter", args);
-        }
-        var now = function() {
-          return Date.now ? Date.now() : +/* @__PURE__ */ new Date();
-        };
-        var ordering = [
-          "year",
-          "quarter",
-          "month",
-          "week",
-          "day",
-          "hour",
-          "minute",
-          "second",
-          "millisecond"
-        ];
-        function isDurationValid(m) {
-          var key, unitHasDecimal = false, i, orderLen = ordering.length;
-          for (key in m) {
-            if (hasOwnProp(m, key) && !(indexOf.call(ordering, key) !== -1 && (m[key] == null || !isNaN(m[key])))) {
-              return false;
-            }
-          }
-          for (i = 0; i < orderLen; ++i) {
-            if (m[ordering[i]]) {
-              if (unitHasDecimal) {
-                return false;
-              }
-              if (parseFloat(m[ordering[i]]) !== toInt(m[ordering[i]])) {
-                unitHasDecimal = true;
-              }
-            }
-          }
-          return true;
-        }
-        function isValid$1() {
-          return this._isValid;
-        }
-        function createInvalid$1() {
-          return createDuration(NaN);
-        }
-        function Duration(duration) {
-          var normalizedInput = normalizeObjectUnits(duration), years2 = normalizedInput.year || 0, quarters = normalizedInput.quarter || 0, months2 = normalizedInput.month || 0, weeks2 = normalizedInput.week || normalizedInput.isoWeek || 0, days2 = normalizedInput.day || 0, hours2 = normalizedInput.hour || 0, minutes2 = normalizedInput.minute || 0, seconds2 = normalizedInput.second || 0, milliseconds2 = normalizedInput.millisecond || 0;
-          this._isValid = isDurationValid(normalizedInput);
-          this._milliseconds = +milliseconds2 + seconds2 * 1e3 + // 1000
-          minutes2 * 6e4 + // 1000 * 60
-          hours2 * 1e3 * 60 * 60;
-          this._days = +days2 + weeks2 * 7;
-          this._months = +months2 + quarters * 3 + years2 * 12;
-          this._data = {};
-          this._locale = getLocale();
-          this._bubble();
-        }
-        function isDuration(obj) {
-          return obj instanceof Duration;
-        }
-        function absRound(number) {
-          if (number < 0) {
-            return Math.round(-1 * number) * -1;
-          } else {
-            return Math.round(number);
-          }
-        }
-        function compareArrays(array1, array2, dontConvert) {
-          var len = Math.min(array1.length, array2.length), lengthDiff = Math.abs(array1.length - array2.length), diffs = 0, i;
-          for (i = 0; i < len; i++) {
-            if (dontConvert && array1[i] !== array2[i] || !dontConvert && toInt(array1[i]) !== toInt(array2[i])) {
-              diffs++;
-            }
-          }
-          return diffs + lengthDiff;
-        }
-        function offset(token2, separator) {
-          addFormatToken(token2, 0, 0, function() {
-            var offset2 = this.utcOffset(), sign2 = "+";
-            if (offset2 < 0) {
-              offset2 = -offset2;
-              sign2 = "-";
-            }
-            return sign2 + zeroFill(~~(offset2 / 60), 2) + separator + zeroFill(~~offset2 % 60, 2);
-          });
-        }
-        offset("Z", ":");
-        offset("ZZ", "");
-        addRegexToken("Z", matchShortOffset);
-        addRegexToken("ZZ", matchShortOffset);
-        addParseToken(["Z", "ZZ"], function(input, array, config) {
-          config._useUTC = true;
-          config._tzm = offsetFromString(matchShortOffset, input);
-        });
-        var chunkOffset = /([\+\-]|\d\d)/gi;
-        function offsetFromString(matcher, string) {
-          var matches = (string || "").match(matcher), chunk, parts, minutes2;
-          if (matches === null) {
-            return null;
-          }
-          chunk = matches[matches.length - 1] || [];
-          parts = (chunk + "").match(chunkOffset) || ["-", 0, 0];
-          minutes2 = +(parts[1] * 60) + toInt(parts[2]);
-          return minutes2 === 0 ? 0 : parts[0] === "+" ? minutes2 : -minutes2;
-        }
-        function cloneWithOffset(input, model) {
-          var res, diff2;
-          if (model._isUTC) {
-            res = model.clone();
-            diff2 = (isMoment(input) || isDate2(input) ? input.valueOf() : createLocal(input).valueOf()) - res.valueOf();
-            res._d.setTime(res._d.valueOf() + diff2);
-            hooks.updateOffset(res, false);
-            return res;
-          } else {
-            return createLocal(input).local();
-          }
-        }
-        function getDateOffset(m) {
-          return -Math.round(m._d.getTimezoneOffset());
-        }
-        hooks.updateOffset = function() {
-        };
-        function getSetOffset(input, keepLocalTime, keepMinutes) {
-          var offset2 = this._offset || 0, localAdjust;
-          if (!this.isValid()) {
-            return input != null ? this : NaN;
-          }
-          if (input != null) {
-            if (typeof input === "string") {
-              input = offsetFromString(matchShortOffset, input);
-              if (input === null) {
-                return this;
-              }
-            } else if (Math.abs(input) < 16 && !keepMinutes) {
-              input = input * 60;
-            }
-            if (!this._isUTC && keepLocalTime) {
-              localAdjust = getDateOffset(this);
-            }
-            this._offset = input;
-            this._isUTC = true;
-            if (localAdjust != null) {
-              this.add(localAdjust, "m");
-            }
-            if (offset2 !== input) {
-              if (!keepLocalTime || this._changeInProgress) {
-                addSubtract(
-                  this,
-                  createDuration(input - offset2, "m"),
-                  1,
-                  false
-                );
-              } else if (!this._changeInProgress) {
-                this._changeInProgress = true;
-                hooks.updateOffset(this, true);
-                this._changeInProgress = null;
-              }
-            }
-            return this;
-          } else {
-            return this._isUTC ? offset2 : getDateOffset(this);
-          }
-        }
-        function getSetZone(input, keepLocalTime) {
-          if (input != null) {
-            if (typeof input !== "string") {
-              input = -input;
-            }
-            this.utcOffset(input, keepLocalTime);
-            return this;
-          } else {
-            return -this.utcOffset();
-          }
-        }
-        function setOffsetToUTC(keepLocalTime) {
-          return this.utcOffset(0, keepLocalTime);
-        }
-        function setOffsetToLocal(keepLocalTime) {
-          if (this._isUTC) {
-            this.utcOffset(0, keepLocalTime);
-            this._isUTC = false;
-            if (keepLocalTime) {
-              this.subtract(getDateOffset(this), "m");
-            }
-          }
-          return this;
-        }
-        function setOffsetToParsedOffset() {
-          if (this._tzm != null) {
-            this.utcOffset(this._tzm, false, true);
-          } else if (typeof this._i === "string") {
-            var tZone = offsetFromString(matchOffset, this._i);
-            if (tZone != null) {
-              this.utcOffset(tZone);
-            } else {
-              this.utcOffset(0, true);
-            }
-          }
-          return this;
-        }
-        function hasAlignedHourOffset(input) {
-          if (!this.isValid()) {
-            return false;
-          }
-          input = input ? createLocal(input).utcOffset() : 0;
-          return (this.utcOffset() - input) % 60 === 0;
-        }
-        function isDaylightSavingTime() {
-          return this.utcOffset() > this.clone().month(0).utcOffset() || this.utcOffset() > this.clone().month(5).utcOffset();
-        }
-        function isDaylightSavingTimeShifted() {
-          if (!isUndefined2(this._isDSTShifted)) {
-            return this._isDSTShifted;
-          }
-          var c = {}, other;
-          copyConfig(c, this);
-          c = prepareConfig(c);
-          if (c._a) {
-            other = c._isUTC ? createUTC(c._a) : createLocal(c._a);
-            this._isDSTShifted = this.isValid() && compareArrays(c._a, other.toArray()) > 0;
-          } else {
-            this._isDSTShifted = false;
-          }
-          return this._isDSTShifted;
-        }
-        function isLocal() {
-          return this.isValid() ? !this._isUTC : false;
-        }
-        function isUtcOffset() {
-          return this.isValid() ? this._isUTC : false;
-        }
-        function isUtc() {
-          return this.isValid() ? this._isUTC && this._offset === 0 : false;
-        }
-        var aspNetRegex = /^(-|\+)?(?:(\d*)[. ])?(\d+):(\d+)(?::(\d+)(\.\d*)?)?$/, isoRegex = /^(-|\+)?P(?:([-+]?[0-9,.]*)Y)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)W)?(?:([-+]?[0-9,.]*)D)?(?:T(?:([-+]?[0-9,.]*)H)?(?:([-+]?[0-9,.]*)M)?(?:([-+]?[0-9,.]*)S)?)?$/;
-        function createDuration(input, key) {
-          var duration = input, match = null, sign2, ret, diffRes;
-          if (isDuration(input)) {
-            duration = {
-              ms: input._milliseconds,
-              d: input._days,
-              M: input._months
-            };
-          } else if (isNumber2(input) || !isNaN(+input)) {
-            duration = {};
-            if (key) {
-              duration[key] = +input;
-            } else {
-              duration.milliseconds = +input;
-            }
-          } else if (match = aspNetRegex.exec(input)) {
-            sign2 = match[1] === "-" ? -1 : 1;
-            duration = {
-              y: 0,
-              d: toInt(match[DATE]) * sign2,
-              h: toInt(match[HOUR]) * sign2,
-              m: toInt(match[MINUTE]) * sign2,
-              s: toInt(match[SECOND]) * sign2,
-              ms: toInt(absRound(match[MILLISECOND] * 1e3)) * sign2
-              // the millisecond decimal point is included in the match
-            };
-          } else if (match = isoRegex.exec(input)) {
-            sign2 = match[1] === "-" ? -1 : 1;
-            duration = {
-              y: parseIso(match[2], sign2),
-              M: parseIso(match[3], sign2),
-              w: parseIso(match[4], sign2),
-              d: parseIso(match[5], sign2),
-              h: parseIso(match[6], sign2),
-              m: parseIso(match[7], sign2),
-              s: parseIso(match[8], sign2)
-            };
-          } else if (duration == null) {
-            duration = {};
-          } else if (typeof duration === "object" && ("from" in duration || "to" in duration)) {
-            diffRes = momentsDifference(
-              createLocal(duration.from),
-              createLocal(duration.to)
-            );
-            duration = {};
-            duration.ms = diffRes.milliseconds;
-            duration.M = diffRes.months;
-          }
-          ret = new Duration(duration);
-          if (isDuration(input) && hasOwnProp(input, "_locale")) {
-            ret._locale = input._locale;
-          }
-          if (isDuration(input) && hasOwnProp(input, "_isValid")) {
-            ret._isValid = input._isValid;
-          }
-          return ret;
-        }
-        createDuration.fn = Duration.prototype;
-        createDuration.invalid = createInvalid$1;
-        function parseIso(inp, sign2) {
-          var res = inp && parseFloat(inp.replace(",", "."));
-          return (isNaN(res) ? 0 : res) * sign2;
-        }
-        function positiveMomentsDifference(base, other) {
-          var res = {};
-          res.months = other.month() - base.month() + (other.year() - base.year()) * 12;
-          if (base.clone().add(res.months, "M").isAfter(other)) {
-            --res.months;
-          }
-          res.milliseconds = +other - +base.clone().add(res.months, "M");
-          return res;
-        }
-        function momentsDifference(base, other) {
-          var res;
-          if (!(base.isValid() && other.isValid())) {
-            return { milliseconds: 0, months: 0 };
-          }
-          other = cloneWithOffset(other, base);
-          if (base.isBefore(other)) {
-            res = positiveMomentsDifference(base, other);
-          } else {
-            res = positiveMomentsDifference(other, base);
-            res.milliseconds = -res.milliseconds;
-            res.months = -res.months;
-          }
-          return res;
-        }
-        function createAdder(direction, name) {
-          return function(val, period) {
-            var dur, tmp;
-            if (period !== null && !isNaN(+period)) {
-              deprecateSimple(
-                name,
-                "moment()." + name + "(period, number) is deprecated. Please use moment()." + name + "(number, period). See http://momentjs.com/guides/#/warnings/add-inverted-param/ for more info."
-              );
-              tmp = val;
-              val = period;
-              period = tmp;
-            }
-            dur = createDuration(val, period);
-            addSubtract(this, dur, direction);
-            return this;
-          };
-        }
-        function addSubtract(mom, duration, isAdding, updateOffset) {
-          var milliseconds2 = duration._milliseconds, days2 = absRound(duration._days), months2 = absRound(duration._months);
-          if (!mom.isValid()) {
-            return;
-          }
-          updateOffset = updateOffset == null ? true : updateOffset;
-          if (months2) {
-            setMonth(mom, get(mom, "Month") + months2 * isAdding);
-          }
-          if (days2) {
-            set$1(mom, "Date", get(mom, "Date") + days2 * isAdding);
-          }
-          if (milliseconds2) {
-            mom._d.setTime(mom._d.valueOf() + milliseconds2 * isAdding);
-          }
-          if (updateOffset) {
-            hooks.updateOffset(mom, days2 || months2);
-          }
-        }
-        var add = createAdder(1, "add"), subtract = createAdder(-1, "subtract");
-        function isString2(input) {
-          return typeof input === "string" || input instanceof String;
-        }
-        function isMomentInput(input) {
-          return isMoment(input) || isDate2(input) || isString2(input) || isNumber2(input) || isNumberOrStringArray(input) || isMomentInputObject(input) || input === null || input === void 0;
-        }
-        function isMomentInputObject(input) {
-          var objectTest = isObject2(input) && !isObjectEmpty2(input), propertyTest = false, properties = [
-            "years",
-            "year",
-            "y",
-            "months",
-            "month",
-            "M",
-            "days",
-            "day",
-            "d",
-            "dates",
-            "date",
-            "D",
-            "hours",
-            "hour",
-            "h",
-            "minutes",
-            "minute",
-            "m",
-            "seconds",
-            "second",
-            "s",
-            "milliseconds",
-            "millisecond",
-            "ms"
-          ], i, property, propertyLen = properties.length;
-          for (i = 0; i < propertyLen; i += 1) {
-            property = properties[i];
-            propertyTest = propertyTest || hasOwnProp(input, property);
-          }
-          return objectTest && propertyTest;
-        }
-        function isNumberOrStringArray(input) {
-          var arrayTest = isArray2(input), dataTypeTest = false;
-          if (arrayTest) {
-            dataTypeTest = input.filter(function(item) {
-              return !isNumber2(item) && isString2(input);
-            }).length === 0;
-          }
-          return arrayTest && dataTypeTest;
-        }
-        function isCalendarSpec(input) {
-          var objectTest = isObject2(input) && !isObjectEmpty2(input), propertyTest = false, properties = [
-            "sameDay",
-            "nextDay",
-            "lastDay",
-            "nextWeek",
-            "lastWeek",
-            "sameElse"
-          ], i, property;
-          for (i = 0; i < properties.length; i += 1) {
-            property = properties[i];
-            propertyTest = propertyTest || hasOwnProp(input, property);
-          }
-          return objectTest && propertyTest;
-        }
-        function getCalendarFormat(myMoment, now2) {
-          var diff2 = myMoment.diff(now2, "days", true);
-          return diff2 < -6 ? "sameElse" : diff2 < -1 ? "lastWeek" : diff2 < 0 ? "lastDay" : diff2 < 1 ? "sameDay" : diff2 < 2 ? "nextDay" : diff2 < 7 ? "nextWeek" : "sameElse";
-        }
-        function calendar$1(time, formats) {
-          if (arguments.length === 1) {
-            if (!arguments[0]) {
-              time = void 0;
-              formats = void 0;
-            } else if (isMomentInput(arguments[0])) {
-              time = arguments[0];
-              formats = void 0;
-            } else if (isCalendarSpec(arguments[0])) {
-              formats = arguments[0];
-              time = void 0;
-            }
-          }
-          var now2 = time || createLocal(), sod = cloneWithOffset(now2, this).startOf("day"), format2 = hooks.calendarFormat(this, sod) || "sameElse", output = formats && (isFunction2(formats[format2]) ? formats[format2].call(this, now2) : formats[format2]);
-          return this.format(
-            output || this.localeData().calendar(format2, this, createLocal(now2))
-          );
-        }
-        function clone() {
-          return new Moment(this);
-        }
-        function isAfter(input, units) {
-          var localInput = isMoment(input) ? input : createLocal(input);
-          if (!(this.isValid() && localInput.isValid())) {
-            return false;
-          }
-          units = normalizeUnits(units) || "millisecond";
-          if (units === "millisecond") {
-            return this.valueOf() > localInput.valueOf();
-          } else {
-            return localInput.valueOf() < this.clone().startOf(units).valueOf();
-          }
-        }
-        function isBefore(input, units) {
-          var localInput = isMoment(input) ? input : createLocal(input);
-          if (!(this.isValid() && localInput.isValid())) {
-            return false;
-          }
-          units = normalizeUnits(units) || "millisecond";
-          if (units === "millisecond") {
-            return this.valueOf() < localInput.valueOf();
-          } else {
-            return this.clone().endOf(units).valueOf() < localInput.valueOf();
-          }
-        }
-        function isBetween(from2, to2, units, inclusivity) {
-          var localFrom = isMoment(from2) ? from2 : createLocal(from2), localTo = isMoment(to2) ? to2 : createLocal(to2);
-          if (!(this.isValid() && localFrom.isValid() && localTo.isValid())) {
-            return false;
-          }
-          inclusivity = inclusivity || "()";
-          return (inclusivity[0] === "(" ? this.isAfter(localFrom, units) : !this.isBefore(localFrom, units)) && (inclusivity[1] === ")" ? this.isBefore(localTo, units) : !this.isAfter(localTo, units));
-        }
-        function isSame(input, units) {
-          var localInput = isMoment(input) ? input : createLocal(input), inputMs;
-          if (!(this.isValid() && localInput.isValid())) {
-            return false;
-          }
-          units = normalizeUnits(units) || "millisecond";
-          if (units === "millisecond") {
-            return this.valueOf() === localInput.valueOf();
-          } else {
-            inputMs = localInput.valueOf();
-            return this.clone().startOf(units).valueOf() <= inputMs && inputMs <= this.clone().endOf(units).valueOf();
-          }
-        }
-        function isSameOrAfter(input, units) {
-          return this.isSame(input, units) || this.isAfter(input, units);
-        }
-        function isSameOrBefore(input, units) {
-          return this.isSame(input, units) || this.isBefore(input, units);
-        }
-        function diff(input, units, asFloat) {
-          var that, zoneDelta, output;
-          if (!this.isValid()) {
-            return NaN;
-          }
-          that = cloneWithOffset(input, this);
-          if (!that.isValid()) {
-            return NaN;
-          }
-          zoneDelta = (that.utcOffset() - this.utcOffset()) * 6e4;
-          units = normalizeUnits(units);
-          switch (units) {
-            case "year":
-              output = monthDiff(this, that) / 12;
-              break;
-            case "month":
-              output = monthDiff(this, that);
-              break;
-            case "quarter":
-              output = monthDiff(this, that) / 3;
-              break;
-            case "second":
-              output = (this - that) / 1e3;
-              break;
-            case "minute":
-              output = (this - that) / 6e4;
-              break;
-            case "hour":
-              output = (this - that) / 36e5;
-              break;
-            case "day":
-              output = (this - that - zoneDelta) / 864e5;
-              break;
-            case "week":
-              output = (this - that - zoneDelta) / 6048e5;
-              break;
-            default:
-              output = this - that;
-          }
-          return asFloat ? output : absFloor(output);
-        }
-        function monthDiff(a, b) {
-          if (a.date() < b.date()) {
-            return -monthDiff(b, a);
-          }
-          var wholeMonthDiff = (b.year() - a.year()) * 12 + (b.month() - a.month()), anchor = a.clone().add(wholeMonthDiff, "months"), anchor2, adjust;
-          if (b - anchor < 0) {
-            anchor2 = a.clone().add(wholeMonthDiff - 1, "months");
-            adjust = (b - anchor) / (anchor - anchor2);
-          } else {
-            anchor2 = a.clone().add(wholeMonthDiff + 1, "months");
-            adjust = (b - anchor) / (anchor2 - anchor);
-          }
-          return -(wholeMonthDiff + adjust) || 0;
-        }
-        hooks.defaultFormat = "YYYY-MM-DDTHH:mm:ssZ";
-        hooks.defaultFormatUtc = "YYYY-MM-DDTHH:mm:ss[Z]";
-        function toString3() {
-          return this.clone().locale("en").format("ddd MMM DD YYYY HH:mm:ss [GMT]ZZ");
-        }
-        function toISOString(keepOffset) {
-          if (!this.isValid()) {
-            return null;
-          }
-          var utc = keepOffset !== true, m = utc ? this.clone().utc() : this;
-          if (m.year() < 0 || m.year() > 9999) {
-            return formatMoment(
-              m,
-              utc ? "YYYYYY-MM-DD[T]HH:mm:ss.SSS[Z]" : "YYYYYY-MM-DD[T]HH:mm:ss.SSSZ"
-            );
-          }
-          if (isFunction2(Date.prototype.toISOString)) {
-            if (utc) {
-              return this.toDate().toISOString();
-            } else {
-              return new Date(this.valueOf() + this.utcOffset() * 60 * 1e3).toISOString().replace("Z", formatMoment(m, "Z"));
-            }
-          }
-          return formatMoment(
-            m,
-            utc ? "YYYY-MM-DD[T]HH:mm:ss.SSS[Z]" : "YYYY-MM-DD[T]HH:mm:ss.SSSZ"
-          );
-        }
-        function inspect() {
-          if (!this.isValid()) {
-            return "moment.invalid(/* " + this._i + " */)";
-          }
-          var func = "moment", zone = "", prefix, year, datetime, suffix;
-          if (!this.isLocal()) {
-            func = this.utcOffset() === 0 ? "moment.utc" : "moment.parseZone";
-            zone = "Z";
-          }
-          prefix = "[" + func + '("]';
-          year = 0 <= this.year() && this.year() <= 9999 ? "YYYY" : "YYYYYY";
-          datetime = "-MM-DD[T]HH:mm:ss.SSS";
-          suffix = zone + '[")]';
-          return this.format(prefix + year + datetime + suffix);
-        }
-        function format(inputString) {
-          if (!inputString) {
-            inputString = this.isUtc() ? hooks.defaultFormatUtc : hooks.defaultFormat;
-          }
-          var output = formatMoment(this, inputString);
-          return this.localeData().postformat(output);
-        }
-        function from(time, withoutSuffix) {
-          if (this.isValid() && (isMoment(time) && time.isValid() || createLocal(time).isValid())) {
-            return createDuration({ to: this, from: time }).locale(this.locale()).humanize(!withoutSuffix);
-          } else {
-            return this.localeData().invalidDate();
-          }
-        }
-        function fromNow(withoutSuffix) {
-          return this.from(createLocal(), withoutSuffix);
-        }
-        function to(time, withoutSuffix) {
-          if (this.isValid() && (isMoment(time) && time.isValid() || createLocal(time).isValid())) {
-            return createDuration({ from: this, to: time }).locale(this.locale()).humanize(!withoutSuffix);
-          } else {
-            return this.localeData().invalidDate();
-          }
-        }
-        function toNow(withoutSuffix) {
-          return this.to(createLocal(), withoutSuffix);
-        }
-        function locale(key) {
-          var newLocaleData;
-          if (key === void 0) {
-            return this._locale._abbr;
-          } else {
-            newLocaleData = getLocale(key);
-            if (newLocaleData != null) {
-              this._locale = newLocaleData;
-            }
-            return this;
-          }
-        }
-        var lang = deprecate(
-          "moment().lang() is deprecated. Instead, use moment().localeData() to get the language configuration. Use moment().locale() to change languages.",
-          function(key) {
-            if (key === void 0) {
-              return this.localeData();
-            } else {
-              return this.locale(key);
-            }
-          }
-        );
-        function localeData() {
-          return this._locale;
-        }
-        var MS_PER_SECOND = 1e3, MS_PER_MINUTE = 60 * MS_PER_SECOND, MS_PER_HOUR = 60 * MS_PER_MINUTE, MS_PER_400_YEARS = (365 * 400 + 97) * 24 * MS_PER_HOUR;
-        function mod$1(dividend, divisor) {
-          return (dividend % divisor + divisor) % divisor;
-        }
-        function localStartOfDate(y, m, d) {
-          if (y < 100 && y >= 0) {
-            return new Date(y + 400, m, d) - MS_PER_400_YEARS;
-          } else {
-            return new Date(y, m, d).valueOf();
-          }
-        }
-        function utcStartOfDate(y, m, d) {
-          if (y < 100 && y >= 0) {
-            return Date.UTC(y + 400, m, d) - MS_PER_400_YEARS;
-          } else {
-            return Date.UTC(y, m, d);
-          }
-        }
-        function startOf(units) {
-          var time, startOfDate;
-          units = normalizeUnits(units);
-          if (units === void 0 || units === "millisecond" || !this.isValid()) {
-            return this;
-          }
-          startOfDate = this._isUTC ? utcStartOfDate : localStartOfDate;
-          switch (units) {
-            case "year":
-              time = startOfDate(this.year(), 0, 1);
-              break;
-            case "quarter":
-              time = startOfDate(
-                this.year(),
-                this.month() - this.month() % 3,
-                1
-              );
-              break;
-            case "month":
-              time = startOfDate(this.year(), this.month(), 1);
-              break;
-            case "week":
-              time = startOfDate(
-                this.year(),
-                this.month(),
-                this.date() - this.weekday()
-              );
-              break;
-            case "isoWeek":
-              time = startOfDate(
-                this.year(),
-                this.month(),
-                this.date() - (this.isoWeekday() - 1)
-              );
-              break;
-            case "day":
-            case "date":
-              time = startOfDate(this.year(), this.month(), this.date());
-              break;
-            case "hour":
-              time = this._d.valueOf();
-              time -= mod$1(
-                time + (this._isUTC ? 0 : this.utcOffset() * MS_PER_MINUTE),
-                MS_PER_HOUR
-              );
-              break;
-            case "minute":
-              time = this._d.valueOf();
-              time -= mod$1(time, MS_PER_MINUTE);
-              break;
-            case "second":
-              time = this._d.valueOf();
-              time -= mod$1(time, MS_PER_SECOND);
-              break;
-          }
-          this._d.setTime(time);
-          hooks.updateOffset(this, true);
-          return this;
-        }
-        function endOf(units) {
-          var time, startOfDate;
-          units = normalizeUnits(units);
-          if (units === void 0 || units === "millisecond" || !this.isValid()) {
-            return this;
-          }
-          startOfDate = this._isUTC ? utcStartOfDate : localStartOfDate;
-          switch (units) {
-            case "year":
-              time = startOfDate(this.year() + 1, 0, 1) - 1;
-              break;
-            case "quarter":
-              time = startOfDate(
-                this.year(),
-                this.month() - this.month() % 3 + 3,
-                1
-              ) - 1;
-              break;
-            case "month":
-              time = startOfDate(this.year(), this.month() + 1, 1) - 1;
-              break;
-            case "week":
-              time = startOfDate(
-                this.year(),
-                this.month(),
-                this.date() - this.weekday() + 7
-              ) - 1;
-              break;
-            case "isoWeek":
-              time = startOfDate(
-                this.year(),
-                this.month(),
-                this.date() - (this.isoWeekday() - 1) + 7
-              ) - 1;
-              break;
-            case "day":
-            case "date":
-              time = startOfDate(this.year(), this.month(), this.date() + 1) - 1;
-              break;
-            case "hour":
-              time = this._d.valueOf();
-              time += MS_PER_HOUR - mod$1(
-                time + (this._isUTC ? 0 : this.utcOffset() * MS_PER_MINUTE),
-                MS_PER_HOUR
-              ) - 1;
-              break;
-            case "minute":
-              time = this._d.valueOf();
-              time += MS_PER_MINUTE - mod$1(time, MS_PER_MINUTE) - 1;
-              break;
-            case "second":
-              time = this._d.valueOf();
-              time += MS_PER_SECOND - mod$1(time, MS_PER_SECOND) - 1;
-              break;
-          }
-          this._d.setTime(time);
-          hooks.updateOffset(this, true);
-          return this;
-        }
-        function valueOf() {
-          return this._d.valueOf() - (this._offset || 0) * 6e4;
-        }
-        function unix() {
-          return Math.floor(this.valueOf() / 1e3);
-        }
-        function toDate() {
-          return new Date(this.valueOf());
-        }
-        function toArray2() {
-          var m = this;
-          return [
-            m.year(),
-            m.month(),
-            m.date(),
-            m.hour(),
-            m.minute(),
-            m.second(),
-            m.millisecond()
-          ];
-        }
-        function toObject() {
-          var m = this;
-          return {
-            years: m.year(),
-            months: m.month(),
-            date: m.date(),
-            hours: m.hours(),
-            minutes: m.minutes(),
-            seconds: m.seconds(),
-            milliseconds: m.milliseconds()
-          };
-        }
-        function toJSON2() {
-          return this.isValid() ? this.toISOString() : null;
-        }
-        function isValid$2() {
-          return isValid(this);
-        }
-        function parsingFlags() {
-          return extend2({}, getParsingFlags(this));
-        }
-        function invalidAt() {
-          return getParsingFlags(this).overflow;
-        }
-        function creationData() {
-          return {
-            input: this._i,
-            format: this._f,
-            locale: this._locale,
-            isUTC: this._isUTC,
-            strict: this._strict
-          };
-        }
-        addFormatToken("N", 0, 0, "eraAbbr");
-        addFormatToken("NN", 0, 0, "eraAbbr");
-        addFormatToken("NNN", 0, 0, "eraAbbr");
-        addFormatToken("NNNN", 0, 0, "eraName");
-        addFormatToken("NNNNN", 0, 0, "eraNarrow");
-        addFormatToken("y", ["y", 1], "yo", "eraYear");
-        addFormatToken("y", ["yy", 2], 0, "eraYear");
-        addFormatToken("y", ["yyy", 3], 0, "eraYear");
-        addFormatToken("y", ["yyyy", 4], 0, "eraYear");
-        addRegexToken("N", matchEraAbbr);
-        addRegexToken("NN", matchEraAbbr);
-        addRegexToken("NNN", matchEraAbbr);
-        addRegexToken("NNNN", matchEraName);
-        addRegexToken("NNNNN", matchEraNarrow);
-        addParseToken(
-          ["N", "NN", "NNN", "NNNN", "NNNNN"],
-          function(input, array, config, token2) {
-            var era = config._locale.erasParse(input, token2, config._strict);
-            if (era) {
-              getParsingFlags(config).era = era;
-            } else {
-              getParsingFlags(config).invalidEra = input;
-            }
-          }
-        );
-        addRegexToken("y", matchUnsigned);
-        addRegexToken("yy", matchUnsigned);
-        addRegexToken("yyy", matchUnsigned);
-        addRegexToken("yyyy", matchUnsigned);
-        addRegexToken("yo", matchEraYearOrdinal);
-        addParseToken(["y", "yy", "yyy", "yyyy"], YEAR);
-        addParseToken(["yo"], function(input, array, config, token2) {
-          var match;
-          if (config._locale._eraYearOrdinalRegex) {
-            match = input.match(config._locale._eraYearOrdinalRegex);
-          }
-          if (config._locale.eraYearOrdinalParse) {
-            array[YEAR] = config._locale.eraYearOrdinalParse(input, match);
-          } else {
-            array[YEAR] = parseInt(input, 10);
-          }
-        });
-        function localeEras(m, format2) {
-          var i, l, date, eras = this._eras || getLocale("en")._eras;
-          for (i = 0, l = eras.length; i < l; ++i) {
-            switch (typeof eras[i].since) {
-              case "string":
-                date = hooks(eras[i].since).startOf("day");
-                eras[i].since = date.valueOf();
-                break;
-            }
-            switch (typeof eras[i].until) {
-              case "undefined":
-                eras[i].until = Infinity;
-                break;
-              case "string":
-                date = hooks(eras[i].until).startOf("day").valueOf();
-                eras[i].until = date.valueOf();
-                break;
-            }
-          }
-          return eras;
-        }
-        function localeErasParse(eraName, format2, strict) {
-          var i, l, eras = this.eras(), name, abbr, narrow;
-          eraName = eraName.toUpperCase();
-          for (i = 0, l = eras.length; i < l; ++i) {
-            name = eras[i].name.toUpperCase();
-            abbr = eras[i].abbr.toUpperCase();
-            narrow = eras[i].narrow.toUpperCase();
-            if (strict) {
-              switch (format2) {
-                case "N":
-                case "NN":
-                case "NNN":
-                  if (abbr === eraName) {
-                    return eras[i];
-                  }
-                  break;
-                case "NNNN":
-                  if (name === eraName) {
-                    return eras[i];
-                  }
-                  break;
-                case "NNNNN":
-                  if (narrow === eraName) {
-                    return eras[i];
-                  }
-                  break;
-              }
-            } else if ([name, abbr, narrow].indexOf(eraName) >= 0) {
-              return eras[i];
-            }
-          }
-        }
-        function localeErasConvertYear(era, year) {
-          var dir = era.since <= era.until ? 1 : -1;
-          if (year === void 0) {
-            return hooks(era.since).year();
-          } else {
-            return hooks(era.since).year() + (year - era.offset) * dir;
-          }
-        }
-        function getEraName() {
-          var i, l, val, eras = this.localeData().eras();
-          for (i = 0, l = eras.length; i < l; ++i) {
-            val = this.clone().startOf("day").valueOf();
-            if (eras[i].since <= val && val <= eras[i].until) {
-              return eras[i].name;
-            }
-            if (eras[i].until <= val && val <= eras[i].since) {
-              return eras[i].name;
-            }
-          }
-          return "";
-        }
-        function getEraNarrow() {
-          var i, l, val, eras = this.localeData().eras();
-          for (i = 0, l = eras.length; i < l; ++i) {
-            val = this.clone().startOf("day").valueOf();
-            if (eras[i].since <= val && val <= eras[i].until) {
-              return eras[i].narrow;
-            }
-            if (eras[i].until <= val && val <= eras[i].since) {
-              return eras[i].narrow;
-            }
-          }
-          return "";
-        }
-        function getEraAbbr() {
-          var i, l, val, eras = this.localeData().eras();
-          for (i = 0, l = eras.length; i < l; ++i) {
-            val = this.clone().startOf("day").valueOf();
-            if (eras[i].since <= val && val <= eras[i].until) {
-              return eras[i].abbr;
-            }
-            if (eras[i].until <= val && val <= eras[i].since) {
-              return eras[i].abbr;
-            }
-          }
-          return "";
-        }
-        function getEraYear() {
-          var i, l, dir, val, eras = this.localeData().eras();
-          for (i = 0, l = eras.length; i < l; ++i) {
-            dir = eras[i].since <= eras[i].until ? 1 : -1;
-            val = this.clone().startOf("day").valueOf();
-            if (eras[i].since <= val && val <= eras[i].until || eras[i].until <= val && val <= eras[i].since) {
-              return (this.year() - hooks(eras[i].since).year()) * dir + eras[i].offset;
-            }
-          }
-          return this.year();
-        }
-        function erasNameRegex(isStrict) {
-          if (!hasOwnProp(this, "_erasNameRegex")) {
-            computeErasParse.call(this);
-          }
-          return isStrict ? this._erasNameRegex : this._erasRegex;
-        }
-        function erasAbbrRegex(isStrict) {
-          if (!hasOwnProp(this, "_erasAbbrRegex")) {
-            computeErasParse.call(this);
-          }
-          return isStrict ? this._erasAbbrRegex : this._erasRegex;
-        }
-        function erasNarrowRegex(isStrict) {
-          if (!hasOwnProp(this, "_erasNarrowRegex")) {
-            computeErasParse.call(this);
-          }
-          return isStrict ? this._erasNarrowRegex : this._erasRegex;
-        }
-        function matchEraAbbr(isStrict, locale2) {
-          return locale2.erasAbbrRegex(isStrict);
-        }
-        function matchEraName(isStrict, locale2) {
-          return locale2.erasNameRegex(isStrict);
-        }
-        function matchEraNarrow(isStrict, locale2) {
-          return locale2.erasNarrowRegex(isStrict);
-        }
-        function matchEraYearOrdinal(isStrict, locale2) {
-          return locale2._eraYearOrdinalRegex || matchUnsigned;
-        }
-        function computeErasParse() {
-          var abbrPieces = [], namePieces = [], narrowPieces = [], mixedPieces = [], i, l, eras = this.eras();
-          for (i = 0, l = eras.length; i < l; ++i) {
-            namePieces.push(regexEscape(eras[i].name));
-            abbrPieces.push(regexEscape(eras[i].abbr));
-            narrowPieces.push(regexEscape(eras[i].narrow));
-            mixedPieces.push(regexEscape(eras[i].name));
-            mixedPieces.push(regexEscape(eras[i].abbr));
-            mixedPieces.push(regexEscape(eras[i].narrow));
-          }
-          this._erasRegex = new RegExp("^(" + mixedPieces.join("|") + ")", "i");
-          this._erasNameRegex = new RegExp("^(" + namePieces.join("|") + ")", "i");
-          this._erasAbbrRegex = new RegExp("^(" + abbrPieces.join("|") + ")", "i");
-          this._erasNarrowRegex = new RegExp(
-            "^(" + narrowPieces.join("|") + ")",
-            "i"
-          );
-        }
-        addFormatToken(0, ["gg", 2], 0, function() {
-          return this.weekYear() % 100;
-        });
-        addFormatToken(0, ["GG", 2], 0, function() {
-          return this.isoWeekYear() % 100;
-        });
-        function addWeekYearFormatToken(token2, getter) {
-          addFormatToken(0, [token2, token2.length], 0, getter);
-        }
-        addWeekYearFormatToken("gggg", "weekYear");
-        addWeekYearFormatToken("ggggg", "weekYear");
-        addWeekYearFormatToken("GGGG", "isoWeekYear");
-        addWeekYearFormatToken("GGGGG", "isoWeekYear");
-        addUnitAlias("weekYear", "gg");
-        addUnitAlias("isoWeekYear", "GG");
-        addUnitPriority("weekYear", 1);
-        addUnitPriority("isoWeekYear", 1);
-        addRegexToken("G", matchSigned);
-        addRegexToken("g", matchSigned);
-        addRegexToken("GG", match1to2, match2);
-        addRegexToken("gg", match1to2, match2);
-        addRegexToken("GGGG", match1to4, match4);
-        addRegexToken("gggg", match1to4, match4);
-        addRegexToken("GGGGG", match1to6, match6);
-        addRegexToken("ggggg", match1to6, match6);
-        addWeekParseToken(
-          ["gggg", "ggggg", "GGGG", "GGGGG"],
-          function(input, week, config, token2) {
-            week[token2.substr(0, 2)] = toInt(input);
-          }
-        );
-        addWeekParseToken(["gg", "GG"], function(input, week, config, token2) {
-          week[token2] = hooks.parseTwoDigitYear(input);
-        });
-        function getSetWeekYear(input) {
-          return getSetWeekYearHelper.call(
-            this,
-            input,
-            this.week(),
-            this.weekday(),
-            this.localeData()._week.dow,
-            this.localeData()._week.doy
-          );
-        }
-        function getSetISOWeekYear(input) {
-          return getSetWeekYearHelper.call(
-            this,
-            input,
-            this.isoWeek(),
-            this.isoWeekday(),
-            1,
-            4
-          );
-        }
-        function getISOWeeksInYear() {
-          return weeksInYear(this.year(), 1, 4);
-        }
-        function getISOWeeksInISOWeekYear() {
-          return weeksInYear(this.isoWeekYear(), 1, 4);
-        }
-        function getWeeksInYear() {
-          var weekInfo = this.localeData()._week;
-          return weeksInYear(this.year(), weekInfo.dow, weekInfo.doy);
-        }
-        function getWeeksInWeekYear() {
-          var weekInfo = this.localeData()._week;
-          return weeksInYear(this.weekYear(), weekInfo.dow, weekInfo.doy);
-        }
-        function getSetWeekYearHelper(input, week, weekday, dow, doy) {
-          var weeksTarget;
-          if (input == null) {
-            return weekOfYear(this, dow, doy).year;
-          } else {
-            weeksTarget = weeksInYear(input, dow, doy);
-            if (week > weeksTarget) {
-              week = weeksTarget;
-            }
-            return setWeekAll.call(this, input, week, weekday, dow, doy);
-          }
-        }
-        function setWeekAll(weekYear, week, weekday, dow, doy) {
-          var dayOfYearData = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy), date = createUTCDate(dayOfYearData.year, 0, dayOfYearData.dayOfYear);
-          this.year(date.getUTCFullYear());
-          this.month(date.getUTCMonth());
-          this.date(date.getUTCDate());
-          return this;
-        }
-        addFormatToken("Q", 0, "Qo", "quarter");
-        addUnitAlias("quarter", "Q");
-        addUnitPriority("quarter", 7);
-        addRegexToken("Q", match1);
-        addParseToken("Q", function(input, array) {
-          array[MONTH] = (toInt(input) - 1) * 3;
-        });
-        function getSetQuarter(input) {
-          return input == null ? Math.ceil((this.month() + 1) / 3) : this.month((input - 1) * 3 + this.month() % 3);
-        }
-        addFormatToken("D", ["DD", 2], "Do", "date");
-        addUnitAlias("date", "D");
-        addUnitPriority("date", 9);
-        addRegexToken("D", match1to2);
-        addRegexToken("DD", match1to2, match2);
-        addRegexToken("Do", function(isStrict, locale2) {
-          return isStrict ? locale2._dayOfMonthOrdinalParse || locale2._ordinalParse : locale2._dayOfMonthOrdinalParseLenient;
-        });
-        addParseToken(["D", "DD"], DATE);
-        addParseToken("Do", function(input, array) {
-          array[DATE] = toInt(input.match(match1to2)[0]);
-        });
-        var getSetDayOfMonth = makeGetSet("Date", true);
-        addFormatToken("DDD", ["DDDD", 3], "DDDo", "dayOfYear");
-        addUnitAlias("dayOfYear", "DDD");
-        addUnitPriority("dayOfYear", 4);
-        addRegexToken("DDD", match1to3);
-        addRegexToken("DDDD", match3);
-        addParseToken(["DDD", "DDDD"], function(input, array, config) {
-          config._dayOfYear = toInt(input);
-        });
-        function getSetDayOfYear(input) {
-          var dayOfYear = Math.round(
-            (this.clone().startOf("day") - this.clone().startOf("year")) / 864e5
-          ) + 1;
-          return input == null ? dayOfYear : this.add(input - dayOfYear, "d");
-        }
-        addFormatToken("m", ["mm", 2], 0, "minute");
-        addUnitAlias("minute", "m");
-        addUnitPriority("minute", 14);
-        addRegexToken("m", match1to2);
-        addRegexToken("mm", match1to2, match2);
-        addParseToken(["m", "mm"], MINUTE);
-        var getSetMinute = makeGetSet("Minutes", false);
-        addFormatToken("s", ["ss", 2], 0, "second");
-        addUnitAlias("second", "s");
-        addUnitPriority("second", 15);
-        addRegexToken("s", match1to2);
-        addRegexToken("ss", match1to2, match2);
-        addParseToken(["s", "ss"], SECOND);
-        var getSetSecond = makeGetSet("Seconds", false);
-        addFormatToken("S", 0, 0, function() {
-          return ~~(this.millisecond() / 100);
-        });
-        addFormatToken(0, ["SS", 2], 0, function() {
-          return ~~(this.millisecond() / 10);
-        });
-        addFormatToken(0, ["SSS", 3], 0, "millisecond");
-        addFormatToken(0, ["SSSS", 4], 0, function() {
-          return this.millisecond() * 10;
-        });
-        addFormatToken(0, ["SSSSS", 5], 0, function() {
-          return this.millisecond() * 100;
-        });
-        addFormatToken(0, ["SSSSSS", 6], 0, function() {
-          return this.millisecond() * 1e3;
-        });
-        addFormatToken(0, ["SSSSSSS", 7], 0, function() {
-          return this.millisecond() * 1e4;
-        });
-        addFormatToken(0, ["SSSSSSSS", 8], 0, function() {
-          return this.millisecond() * 1e5;
-        });
-        addFormatToken(0, ["SSSSSSSSS", 9], 0, function() {
-          return this.millisecond() * 1e6;
-        });
-        addUnitAlias("millisecond", "ms");
-        addUnitPriority("millisecond", 16);
-        addRegexToken("S", match1to3, match1);
-        addRegexToken("SS", match1to3, match2);
-        addRegexToken("SSS", match1to3, match3);
-        var token, getSetMillisecond;
-        for (token = "SSSS"; token.length <= 9; token += "S") {
-          addRegexToken(token, matchUnsigned);
-        }
-        function parseMs(input, array) {
-          array[MILLISECOND] = toInt(("0." + input) * 1e3);
-        }
-        for (token = "S"; token.length <= 9; token += "S") {
-          addParseToken(token, parseMs);
-        }
-        getSetMillisecond = makeGetSet("Milliseconds", false);
-        addFormatToken("z", 0, 0, "zoneAbbr");
-        addFormatToken("zz", 0, 0, "zoneName");
-        function getZoneAbbr() {
-          return this._isUTC ? "UTC" : "";
-        }
-        function getZoneName() {
-          return this._isUTC ? "Coordinated Universal Time" : "";
-        }
-        var proto = Moment.prototype;
-        proto.add = add;
-        proto.calendar = calendar$1;
-        proto.clone = clone;
-        proto.diff = diff;
-        proto.endOf = endOf;
-        proto.format = format;
-        proto.from = from;
-        proto.fromNow = fromNow;
-        proto.to = to;
-        proto.toNow = toNow;
-        proto.get = stringGet;
-        proto.invalidAt = invalidAt;
-        proto.isAfter = isAfter;
-        proto.isBefore = isBefore;
-        proto.isBetween = isBetween;
-        proto.isSame = isSame;
-        proto.isSameOrAfter = isSameOrAfter;
-        proto.isSameOrBefore = isSameOrBefore;
-        proto.isValid = isValid$2;
-        proto.lang = lang;
-        proto.locale = locale;
-        proto.localeData = localeData;
-        proto.max = prototypeMax;
-        proto.min = prototypeMin;
-        proto.parsingFlags = parsingFlags;
-        proto.set = stringSet;
-        proto.startOf = startOf;
-        proto.subtract = subtract;
-        proto.toArray = toArray2;
-        proto.toObject = toObject;
-        proto.toDate = toDate;
-        proto.toISOString = toISOString;
-        proto.inspect = inspect;
-        if (typeof Symbol !== "undefined" && Symbol.for != null) {
-          proto[Symbol.for("nodejs.util.inspect.custom")] = function() {
-            return "Moment<" + this.format() + ">";
-          };
-        }
-        proto.toJSON = toJSON2;
-        proto.toString = toString3;
-        proto.unix = unix;
-        proto.valueOf = valueOf;
-        proto.creationData = creationData;
-        proto.eraName = getEraName;
-        proto.eraNarrow = getEraNarrow;
-        proto.eraAbbr = getEraAbbr;
-        proto.eraYear = getEraYear;
-        proto.year = getSetYear;
-        proto.isLeapYear = getIsLeapYear;
-        proto.weekYear = getSetWeekYear;
-        proto.isoWeekYear = getSetISOWeekYear;
-        proto.quarter = proto.quarters = getSetQuarter;
-        proto.month = getSetMonth;
-        proto.daysInMonth = getDaysInMonth;
-        proto.week = proto.weeks = getSetWeek;
-        proto.isoWeek = proto.isoWeeks = getSetISOWeek;
-        proto.weeksInYear = getWeeksInYear;
-        proto.weeksInWeekYear = getWeeksInWeekYear;
-        proto.isoWeeksInYear = getISOWeeksInYear;
-        proto.isoWeeksInISOWeekYear = getISOWeeksInISOWeekYear;
-        proto.date = getSetDayOfMonth;
-        proto.day = proto.days = getSetDayOfWeek;
-        proto.weekday = getSetLocaleDayOfWeek;
-        proto.isoWeekday = getSetISODayOfWeek;
-        proto.dayOfYear = getSetDayOfYear;
-        proto.hour = proto.hours = getSetHour;
-        proto.minute = proto.minutes = getSetMinute;
-        proto.second = proto.seconds = getSetSecond;
-        proto.millisecond = proto.milliseconds = getSetMillisecond;
-        proto.utcOffset = getSetOffset;
-        proto.utc = setOffsetToUTC;
-        proto.local = setOffsetToLocal;
-        proto.parseZone = setOffsetToParsedOffset;
-        proto.hasAlignedHourOffset = hasAlignedHourOffset;
-        proto.isDST = isDaylightSavingTime;
-        proto.isLocal = isLocal;
-        proto.isUtcOffset = isUtcOffset;
-        proto.isUtc = isUtc;
-        proto.isUTC = isUtc;
-        proto.zoneAbbr = getZoneAbbr;
-        proto.zoneName = getZoneName;
-        proto.dates = deprecate(
-          "dates accessor is deprecated. Use date instead.",
-          getSetDayOfMonth
-        );
-        proto.months = deprecate(
-          "months accessor is deprecated. Use month instead",
-          getSetMonth
-        );
-        proto.years = deprecate(
-          "years accessor is deprecated. Use year instead",
-          getSetYear
-        );
-        proto.zone = deprecate(
-          "moment().zone is deprecated, use moment().utcOffset instead. http://momentjs.com/guides/#/warnings/zone/",
-          getSetZone
-        );
-        proto.isDSTShifted = deprecate(
-          "isDSTShifted is deprecated. See http://momentjs.com/guides/#/warnings/dst-shifted/ for more information",
-          isDaylightSavingTimeShifted
-        );
-        function createUnix(input) {
-          return createLocal(input * 1e3);
-        }
-        function createInZone() {
-          return createLocal.apply(null, arguments).parseZone();
-        }
-        function preParsePostFormat(string) {
-          return string;
-        }
-        var proto$1 = Locale.prototype;
-        proto$1.calendar = calendar;
-        proto$1.longDateFormat = longDateFormat;
-        proto$1.invalidDate = invalidDate;
-        proto$1.ordinal = ordinal;
-        proto$1.preparse = preParsePostFormat;
-        proto$1.postformat = preParsePostFormat;
-        proto$1.relativeTime = relativeTime;
-        proto$1.pastFuture = pastFuture;
-        proto$1.set = set;
-        proto$1.eras = localeEras;
-        proto$1.erasParse = localeErasParse;
-        proto$1.erasConvertYear = localeErasConvertYear;
-        proto$1.erasAbbrRegex = erasAbbrRegex;
-        proto$1.erasNameRegex = erasNameRegex;
-        proto$1.erasNarrowRegex = erasNarrowRegex;
-        proto$1.months = localeMonths;
-        proto$1.monthsShort = localeMonthsShort;
-        proto$1.monthsParse = localeMonthsParse;
-        proto$1.monthsRegex = monthsRegex;
-        proto$1.monthsShortRegex = monthsShortRegex;
-        proto$1.week = localeWeek;
-        proto$1.firstDayOfYear = localeFirstDayOfYear;
-        proto$1.firstDayOfWeek = localeFirstDayOfWeek;
-        proto$1.weekdays = localeWeekdays;
-        proto$1.weekdaysMin = localeWeekdaysMin;
-        proto$1.weekdaysShort = localeWeekdaysShort;
-        proto$1.weekdaysParse = localeWeekdaysParse;
-        proto$1.weekdaysRegex = weekdaysRegex;
-        proto$1.weekdaysShortRegex = weekdaysShortRegex;
-        proto$1.weekdaysMinRegex = weekdaysMinRegex;
-        proto$1.isPM = localeIsPM;
-        proto$1.meridiem = localeMeridiem;
-        function get$1(format2, index, field, setter) {
-          var locale2 = getLocale(), utc = createUTC().set(setter, index);
-          return locale2[field](utc, format2);
-        }
-        function listMonthsImpl(format2, index, field) {
-          if (isNumber2(format2)) {
-            index = format2;
-            format2 = void 0;
-          }
-          format2 = format2 || "";
-          if (index != null) {
-            return get$1(format2, index, field, "month");
-          }
-          var i, out = [];
-          for (i = 0; i < 12; i++) {
-            out[i] = get$1(format2, i, field, "month");
-          }
-          return out;
-        }
-        function listWeekdaysImpl(localeSorted, format2, index, field) {
-          if (typeof localeSorted === "boolean") {
-            if (isNumber2(format2)) {
-              index = format2;
-              format2 = void 0;
-            }
-            format2 = format2 || "";
-          } else {
-            format2 = localeSorted;
-            index = format2;
-            localeSorted = false;
-            if (isNumber2(format2)) {
-              index = format2;
-              format2 = void 0;
-            }
-            format2 = format2 || "";
-          }
-          var locale2 = getLocale(), shift = localeSorted ? locale2._week.dow : 0, i, out = [];
-          if (index != null) {
-            return get$1(format2, (index + shift) % 7, field, "day");
-          }
-          for (i = 0; i < 7; i++) {
-            out[i] = get$1(format2, (i + shift) % 7, field, "day");
-          }
-          return out;
-        }
-        function listMonths(format2, index) {
-          return listMonthsImpl(format2, index, "months");
-        }
-        function listMonthsShort(format2, index) {
-          return listMonthsImpl(format2, index, "monthsShort");
-        }
-        function listWeekdays(localeSorted, format2, index) {
-          return listWeekdaysImpl(localeSorted, format2, index, "weekdays");
-        }
-        function listWeekdaysShort(localeSorted, format2, index) {
-          return listWeekdaysImpl(localeSorted, format2, index, "weekdaysShort");
-        }
-        function listWeekdaysMin(localeSorted, format2, index) {
-          return listWeekdaysImpl(localeSorted, format2, index, "weekdaysMin");
-        }
-        getSetGlobalLocale("en", {
-          eras: [
-            {
-              since: "0001-01-01",
-              until: Infinity,
-              offset: 1,
-              name: "Anno Domini",
-              narrow: "AD",
-              abbr: "AD"
-            },
-            {
-              since: "0000-12-31",
-              until: -Infinity,
-              offset: 1,
-              name: "Before Christ",
-              narrow: "BC",
-              abbr: "BC"
-            }
-          ],
-          dayOfMonthOrdinalParse: /\d{1,2}(th|st|nd|rd)/,
-          ordinal: function(number) {
-            var b = number % 10, output = toInt(number % 100 / 10) === 1 ? "th" : b === 1 ? "st" : b === 2 ? "nd" : b === 3 ? "rd" : "th";
-            return number + output;
-          }
-        });
-        hooks.lang = deprecate(
-          "moment.lang is deprecated. Use moment.locale instead.",
-          getSetGlobalLocale
-        );
-        hooks.langData = deprecate(
-          "moment.langData is deprecated. Use moment.localeData instead.",
-          getLocale
-        );
-        var mathAbs = Math.abs;
-        function abs() {
-          var data = this._data;
-          this._milliseconds = mathAbs(this._milliseconds);
-          this._days = mathAbs(this._days);
-          this._months = mathAbs(this._months);
-          data.milliseconds = mathAbs(data.milliseconds);
-          data.seconds = mathAbs(data.seconds);
-          data.minutes = mathAbs(data.minutes);
-          data.hours = mathAbs(data.hours);
-          data.months = mathAbs(data.months);
-          data.years = mathAbs(data.years);
-          return this;
-        }
-        function addSubtract$1(duration, input, value, direction) {
-          var other = createDuration(input, value);
-          duration._milliseconds += direction * other._milliseconds;
-          duration._days += direction * other._days;
-          duration._months += direction * other._months;
-          return duration._bubble();
-        }
-        function add$1(input, value) {
-          return addSubtract$1(this, input, value, 1);
-        }
-        function subtract$1(input, value) {
-          return addSubtract$1(this, input, value, -1);
-        }
-        function absCeil(number) {
-          if (number < 0) {
-            return Math.floor(number);
-          } else {
-            return Math.ceil(number);
-          }
-        }
-        function bubble() {
-          var milliseconds2 = this._milliseconds, days2 = this._days, months2 = this._months, data = this._data, seconds2, minutes2, hours2, years2, monthsFromDays;
-          if (!(milliseconds2 >= 0 && days2 >= 0 && months2 >= 0 || milliseconds2 <= 0 && days2 <= 0 && months2 <= 0)) {
-            milliseconds2 += absCeil(monthsToDays(months2) + days2) * 864e5;
-            days2 = 0;
-            months2 = 0;
-          }
-          data.milliseconds = milliseconds2 % 1e3;
-          seconds2 = absFloor(milliseconds2 / 1e3);
-          data.seconds = seconds2 % 60;
-          minutes2 = absFloor(seconds2 / 60);
-          data.minutes = minutes2 % 60;
-          hours2 = absFloor(minutes2 / 60);
-          data.hours = hours2 % 24;
-          days2 += absFloor(hours2 / 24);
-          monthsFromDays = absFloor(daysToMonths(days2));
-          months2 += monthsFromDays;
-          days2 -= absCeil(monthsToDays(monthsFromDays));
-          years2 = absFloor(months2 / 12);
-          months2 %= 12;
-          data.days = days2;
-          data.months = months2;
-          data.years = years2;
-          return this;
-        }
-        function daysToMonths(days2) {
-          return days2 * 4800 / 146097;
-        }
-        function monthsToDays(months2) {
-          return months2 * 146097 / 4800;
-        }
-        function as(units) {
-          if (!this.isValid()) {
-            return NaN;
-          }
-          var days2, months2, milliseconds2 = this._milliseconds;
-          units = normalizeUnits(units);
-          if (units === "month" || units === "quarter" || units === "year") {
-            days2 = this._days + milliseconds2 / 864e5;
-            months2 = this._months + daysToMonths(days2);
-            switch (units) {
-              case "month":
-                return months2;
-              case "quarter":
-                return months2 / 3;
-              case "year":
-                return months2 / 12;
-            }
-          } else {
-            days2 = this._days + Math.round(monthsToDays(this._months));
-            switch (units) {
-              case "week":
-                return days2 / 7 + milliseconds2 / 6048e5;
-              case "day":
-                return days2 + milliseconds2 / 864e5;
-              case "hour":
-                return days2 * 24 + milliseconds2 / 36e5;
-              case "minute":
-                return days2 * 1440 + milliseconds2 / 6e4;
-              case "second":
-                return days2 * 86400 + milliseconds2 / 1e3;
-              case "millisecond":
-                return Math.floor(days2 * 864e5) + milliseconds2;
-              default:
-                throw new Error("Unknown unit " + units);
-            }
-          }
-        }
-        function valueOf$1() {
-          if (!this.isValid()) {
-            return NaN;
-          }
-          return this._milliseconds + this._days * 864e5 + this._months % 12 * 2592e6 + toInt(this._months / 12) * 31536e6;
-        }
-        function makeAs(alias) {
-          return function() {
-            return this.as(alias);
-          };
-        }
-        var asMilliseconds = makeAs("ms"), asSeconds = makeAs("s"), asMinutes = makeAs("m"), asHours = makeAs("h"), asDays = makeAs("d"), asWeeks = makeAs("w"), asMonths = makeAs("M"), asQuarters = makeAs("Q"), asYears = makeAs("y");
-        function clone$1() {
-          return createDuration(this);
-        }
-        function get$2(units) {
-          units = normalizeUnits(units);
-          return this.isValid() ? this[units + "s"]() : NaN;
-        }
-        function makeGetter(name) {
-          return function() {
-            return this.isValid() ? this._data[name] : NaN;
-          };
-        }
-        var milliseconds = makeGetter("milliseconds"), seconds = makeGetter("seconds"), minutes = makeGetter("minutes"), hours = makeGetter("hours"), days = makeGetter("days"), months = makeGetter("months"), years = makeGetter("years");
-        function weeks() {
-          return absFloor(this.days() / 7);
-        }
-        var round = Math.round, thresholds = {
-          ss: 44,
-          // a few seconds to seconds
-          s: 45,
-          // seconds to minute
-          m: 45,
-          // minutes to hour
-          h: 22,
-          // hours to day
-          d: 26,
-          // days to month/week
-          w: null,
-          // weeks to month
-          M: 11
-          // months to year
-        };
-        function substituteTimeAgo(string, number, withoutSuffix, isFuture, locale2) {
-          return locale2.relativeTime(number || 1, !!withoutSuffix, string, isFuture);
-        }
-        function relativeTime$1(posNegDuration, withoutSuffix, thresholds2, locale2) {
-          var duration = createDuration(posNegDuration).abs(), seconds2 = round(duration.as("s")), minutes2 = round(duration.as("m")), hours2 = round(duration.as("h")), days2 = round(duration.as("d")), months2 = round(duration.as("M")), weeks2 = round(duration.as("w")), years2 = round(duration.as("y")), a = seconds2 <= thresholds2.ss && ["s", seconds2] || seconds2 < thresholds2.s && ["ss", seconds2] || minutes2 <= 1 && ["m"] || minutes2 < thresholds2.m && ["mm", minutes2] || hours2 <= 1 && ["h"] || hours2 < thresholds2.h && ["hh", hours2] || days2 <= 1 && ["d"] || days2 < thresholds2.d && ["dd", days2];
-          if (thresholds2.w != null) {
-            a = a || weeks2 <= 1 && ["w"] || weeks2 < thresholds2.w && ["ww", weeks2];
-          }
-          a = a || months2 <= 1 && ["M"] || months2 < thresholds2.M && ["MM", months2] || years2 <= 1 && ["y"] || ["yy", years2];
-          a[2] = withoutSuffix;
-          a[3] = +posNegDuration > 0;
-          a[4] = locale2;
-          return substituteTimeAgo.apply(null, a);
-        }
-        function getSetRelativeTimeRounding(roundingFunction) {
-          if (roundingFunction === void 0) {
-            return round;
-          }
-          if (typeof roundingFunction === "function") {
-            round = roundingFunction;
-            return true;
-          }
-          return false;
-        }
-        function getSetRelativeTimeThreshold(threshold, limit) {
-          if (thresholds[threshold] === void 0) {
-            return false;
-          }
-          if (limit === void 0) {
-            return thresholds[threshold];
-          }
-          thresholds[threshold] = limit;
-          if (threshold === "s") {
-            thresholds.ss = limit - 1;
-          }
-          return true;
-        }
-        function humanize(argWithSuffix, argThresholds) {
-          if (!this.isValid()) {
-            return this.localeData().invalidDate();
-          }
-          var withSuffix = false, th = thresholds, locale2, output;
-          if (typeof argWithSuffix === "object") {
-            argThresholds = argWithSuffix;
-            argWithSuffix = false;
-          }
-          if (typeof argWithSuffix === "boolean") {
-            withSuffix = argWithSuffix;
-          }
-          if (typeof argThresholds === "object") {
-            th = Object.assign({}, thresholds, argThresholds);
-            if (argThresholds.s != null && argThresholds.ss == null) {
-              th.ss = argThresholds.s - 1;
-            }
-          }
-          locale2 = this.localeData();
-          output = relativeTime$1(this, !withSuffix, th, locale2);
-          if (withSuffix) {
-            output = locale2.pastFuture(+this, output);
-          }
-          return locale2.postformat(output);
-        }
-        var abs$1 = Math.abs;
-        function sign(x) {
-          return (x > 0) - (x < 0) || +x;
-        }
-        function toISOString$1() {
-          if (!this.isValid()) {
-            return this.localeData().invalidDate();
-          }
-          var seconds2 = abs$1(this._milliseconds) / 1e3, days2 = abs$1(this._days), months2 = abs$1(this._months), minutes2, hours2, years2, s, total = this.asSeconds(), totalSign, ymSign, daysSign, hmsSign;
-          if (!total) {
-            return "P0D";
-          }
-          minutes2 = absFloor(seconds2 / 60);
-          hours2 = absFloor(minutes2 / 60);
-          seconds2 %= 60;
-          minutes2 %= 60;
-          years2 = absFloor(months2 / 12);
-          months2 %= 12;
-          s = seconds2 ? seconds2.toFixed(3).replace(/\.?0+$/, "") : "";
-          totalSign = total < 0 ? "-" : "";
-          ymSign = sign(this._months) !== sign(total) ? "-" : "";
-          daysSign = sign(this._days) !== sign(total) ? "-" : "";
-          hmsSign = sign(this._milliseconds) !== sign(total) ? "-" : "";
-          return totalSign + "P" + (years2 ? ymSign + years2 + "Y" : "") + (months2 ? ymSign + months2 + "M" : "") + (days2 ? daysSign + days2 + "D" : "") + (hours2 || minutes2 || seconds2 ? "T" : "") + (hours2 ? hmsSign + hours2 + "H" : "") + (minutes2 ? hmsSign + minutes2 + "M" : "") + (seconds2 ? hmsSign + s + "S" : "");
-        }
-        var proto$2 = Duration.prototype;
-        proto$2.isValid = isValid$1;
-        proto$2.abs = abs;
-        proto$2.add = add$1;
-        proto$2.subtract = subtract$1;
-        proto$2.as = as;
-        proto$2.asMilliseconds = asMilliseconds;
-        proto$2.asSeconds = asSeconds;
-        proto$2.asMinutes = asMinutes;
-        proto$2.asHours = asHours;
-        proto$2.asDays = asDays;
-        proto$2.asWeeks = asWeeks;
-        proto$2.asMonths = asMonths;
-        proto$2.asQuarters = asQuarters;
-        proto$2.asYears = asYears;
-        proto$2.valueOf = valueOf$1;
-        proto$2._bubble = bubble;
-        proto$2.clone = clone$1;
-        proto$2.get = get$2;
-        proto$2.milliseconds = milliseconds;
-        proto$2.seconds = seconds;
-        proto$2.minutes = minutes;
-        proto$2.hours = hours;
-        proto$2.days = days;
-        proto$2.weeks = weeks;
-        proto$2.months = months;
-        proto$2.years = years;
-        proto$2.humanize = humanize;
-        proto$2.toISOString = toISOString$1;
-        proto$2.toString = toISOString$1;
-        proto$2.toJSON = toISOString$1;
-        proto$2.locale = locale;
-        proto$2.localeData = localeData;
-        proto$2.toIsoString = deprecate(
-          "toIsoString() is deprecated. Please use toISOString() instead (notice the capitals)",
-          toISOString$1
-        );
-        proto$2.lang = lang;
-        addFormatToken("X", 0, 0, "unix");
-        addFormatToken("x", 0, 0, "valueOf");
-        addRegexToken("x", matchSigned);
-        addRegexToken("X", matchTimestamp);
-        addParseToken("X", function(input, array, config) {
-          config._d = new Date(parseFloat(input) * 1e3);
-        });
-        addParseToken("x", function(input, array, config) {
-          config._d = new Date(toInt(input));
-        });
-        hooks.version = "2.29.4";
-        setHookCallback(createLocal);
-        hooks.fn = proto;
-        hooks.min = min;
-        hooks.max = max;
-        hooks.now = now;
-        hooks.utc = createUTC;
-        hooks.unix = createUnix;
-        hooks.months = listMonths;
-        hooks.isDate = isDate2;
-        hooks.locale = getSetGlobalLocale;
-        hooks.invalid = createInvalid;
-        hooks.duration = createDuration;
-        hooks.isMoment = isMoment;
-        hooks.weekdays = listWeekdays;
-        hooks.parseZone = createInZone;
-        hooks.localeData = getLocale;
-        hooks.isDuration = isDuration;
-        hooks.monthsShort = listMonthsShort;
-        hooks.weekdaysMin = listWeekdaysMin;
-        hooks.defineLocale = defineLocale;
-        hooks.updateLocale = updateLocale;
-        hooks.locales = listLocales;
-        hooks.weekdaysShort = listWeekdaysShort;
-        hooks.normalizeUnits = normalizeUnits;
-        hooks.relativeTimeRounding = getSetRelativeTimeRounding;
-        hooks.relativeTimeThreshold = getSetRelativeTimeThreshold;
-        hooks.calendarFormat = getCalendarFormat;
-        hooks.prototype = proto;
-        hooks.HTML5_FMT = {
-          DATETIME_LOCAL: "YYYY-MM-DDTHH:mm",
-          // <input type="datetime-local" />
-          DATETIME_LOCAL_SECONDS: "YYYY-MM-DDTHH:mm:ss",
-          // <input type="datetime-local" step="1" />
-          DATETIME_LOCAL_MS: "YYYY-MM-DDTHH:mm:ss.SSS",
-          // <input type="datetime-local" step="0.001" />
-          DATE: "YYYY-MM-DD",
-          // <input type="date" />
-          TIME: "HH:mm",
-          // <input type="time" />
-          TIME_SECONDS: "HH:mm:ss",
-          // <input type="time" step="1" />
-          TIME_MS: "HH:mm:ss.SSS",
-          // <input type="time" step="0.001" />
-          WEEK: "GGGG-[W]WW",
-          // <input type="week" />
-          MONTH: "YYYY-MM"
-          // <input type="month" />
-        };
-        return hooks;
-      });
-    }
-  });
-
   // src/core/log.js
   var require_log = __commonJS({
     "src/core/log.js"(exports) {
       init_axios2();
-      var import_moment = __toESM(require_moment());
+      var import_config = __toESM(require_config());
       var import_util = __toESM(require_util());
       var import_analytics = __toESM(require_analytics());
-      async function addLog2({ serverUrl, logType, logInfo, isMain, subject, note, additionalSubmission, contactId, contactType, contactName }) {
+      var import_pipedrive = __toESM(require_pipedrive());
+      var import_insightly = __toESM(require_insightly());
+      var import_clio = __toESM(require_clio());
+      var import_redtail = __toESM(require_redtail());
+      var import_bullhorn = __toESM(require_bullhorn());
+      async function addLog({ logType, logInfo, isMain, note, additionalSubmission, overridingContactId, contactType, contactName }) {
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         const { overridingPhoneNumberFormat } = await chrome.storage.local.get({ overridingPhoneNumberFormat: "" });
-        if (!!subject) {
-          logInfo["customSubject"] = subject;
-        }
+        const rcUserInfo2 = await chrome.storage.local.get("rcUserInfo");
         if (!!rcUnifiedCrmExtJwt) {
           switch (logType) {
             case "Call":
-              const addCallLogRes = await axios_default2.post(`${serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}`, { logInfo, note, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, contactId, contactType, contactName });
+              const addCallLogRes = await axios_default.post(`${import_config.default.serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}`, { contactId: overridingContactId, logInfo, note, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, overridingContactId, contactType, contactName });
               document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                 type: "rc-adapter-trigger-call-logger-match",
                 sessionIds: [logInfo.sessionId]
               }, "*");
               if (addCallLogRes.data.successful) {
+                (0, import_util.showNotification)({ level: "success", message: "call log added", ttl: 3e3 });
                 (0, import_analytics.trackSyncCallLog)({ hasNote: note !== "" });
                 const recordingSessionId = `rec-link-${logInfo.sessionId}`;
                 const existingCallRecording = await chrome.storage.local.get(recordingSessionId);
                 if (!!existingCallRecording[recordingSessionId]) {
                   await updateLog2({ logType: "Call", sessionId: logInfo.sessionId, recordingLink: existingCallRecording[recordingSessionId].recordingLink });
                 }
-                await resolveCachedLog2({ type: "Call", id: logInfo.sessionId });
+              } else {
+                (0, import_util.showNotification)({ level: "warning", message: addCallLogRes.data.message, ttl: 3e3 });
               }
-              (0, import_util.showNotification)({ level: addCallLogRes.data.returnMessage?.messageType ?? "success", message: addCallLogRes.data.returnMessage?.message ?? "Call log added", ttl: addCallLogRes.data.returnMessage?.ttl ?? 3e3 });
-              await chrome.storage.local.set({ [`rc-crm-call-log-${logInfo.sessionId}`]: { contact: { id: contactId } } });
               break;
             case "Message":
-              if (!(0, import_moment.default)(logInfo.creationTime).isSame(/* @__PURE__ */ new Date(), "day")) {
-                const isLogged = await chrome.storage.local.get(`rc-crm-conversation-log-${logInfo.conversationLogId}`);
-                if (isLogged[`rc-crm-conversation-log-${logInfo.conversationLogId}`]?.logged) {
-                  console.log(`skipping logged conversation on date ${logInfo.date}`);
-                  break;
-                }
-              }
-              const messageLogRes = await axios_default2.post(`${serverUrl}/messageLog?jwtToken=${rcUnifiedCrmExtJwt}`, { logInfo, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, contactId, contactType, contactName });
+              const messageLogRes = await axios_default.post(`${import_config.default.serverUrl}/messageLog?jwtToken=${rcUnifiedCrmExtJwt}`, { contactId: overridingContactId, logInfo, additionalSubmission, overridingFormat: overridingPhoneNumberFormat, overridingContactId, contactType, contactName });
               if (messageLogRes.data.successful) {
-                if (isMain & messageLogRes.data.logIds.length > 0) {
+                if (isMain) {
+                  (0, import_util.showNotification)({ level: "success", message: "message log added", ttl: 3e3 });
                   (0, import_analytics.trackSyncMessageLog)();
-                  let messageLogPrefCache = {};
-                  messageLogPrefCache[`rc-crm-conversation-pref-${logInfo.conversationId}`] = {
-                    contact: {
-                      id: contactId,
-                      type: contactType,
-                      name: contactName
-                    },
-                    additionalSubmission
-                  };
-                  await chrome.storage.local.set(messageLogPrefCache);
                 }
-                (0, import_util.showNotification)({ level: messageLogRes.data.returnMessage?.messageType ?? "success", message: messageLogRes.data.returnMessage?.message ?? "Message log added", ttl: messageLogRes.data.returnMessage?.ttl ?? 3e3 });
-                await chrome.storage.local.set({ [`rc-crm-conversation-log-${logInfo.conversationLogId}`]: { logged: true } });
-                await resolveCachedLog2({ type: "Message", id: logInfo.conversationId });
               }
               break;
           }
         } else {
-          (0, import_util.showNotification)({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 3e3 });
+          (0, import_util.showNotification)({ level: "warning", message: "Please go to Settings and authorize CRM platform", ttl: 3e3 });
         }
       }
-      async function getLog2({ serverUrl, logType, sessionIds, requireDetails }) {
+      async function checkLog2({ logType, sessionIds }) {
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         if (!!rcUnifiedCrmExtJwt) {
           switch (logType) {
             case "Call":
-              const callLogRes = await axios_default2.get(`${serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}&sessionIds=${sessionIds}&requireDetails=${requireDetails}`);
-              (0, import_util.showNotification)({ level: callLogRes.data.returnMessage?.messageType, message: callLogRes.data.returnMessage?.message, ttl: callLogRes.data.returnMessage?.ttl });
+              const callLogRes = await axios_default.get(`${import_config.default.serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}&sessionIds=${sessionIds}`);
               return { successful: callLogRes.data.successful, callLogs: callLogRes.data.logs };
           }
         } else {
-          return { successful: false, message: "Please go to Settings and connect to CRM platform" };
+          return { successful: false, message: "Please go to Settings and authorize CRM platform" };
         }
       }
-      function openLog2({ manifest: manifest2, platformName: platformName2, hostname, logId, contactType }) {
-        const logPageUrl = manifest2.platforms[platformName2].logPageUrl.replace("{hostname}", hostname).replaceAll("{logId}", logId).replaceAll("{contactType}", contactType);
-        window.open(logPageUrl);
+      function openLog2({ platform: platform2, hostname, logId, contactType }) {
+        const platformModule = getModule({ platform: platform2 });
+        platformModule.openLogPage({ hostname, logId, contactType });
       }
-      async function updateLog2({ serverUrl, logType, sessionId, recordingLink, subject, note }) {
+      async function updateLog2({ logType, sessionId, recordingLink }) {
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         if (!!rcUnifiedCrmExtJwt) {
           switch (logType) {
             case "Call":
               const patchBody = {
                 sessionId,
-                recordingLink,
-                subject,
-                note
+                recordingLink
               };
-              const callLogRes = await axios_default2.patch(`${serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}`, patchBody);
+              const callLogRes = await axios_default.patch(`${import_config.default.serverUrl}/callLog?jwtToken=${rcUnifiedCrmExtJwt}`, patchBody);
               if (callLogRes.data.successful) {
-                if (!!recordingLink) {
-                  const recordingSessionId = `rec-link-${sessionId}`;
-                  const existingCallRecording = await chrome.storage.local.get(recordingSessionId);
-                  if (!!existingCallRecording[recordingSessionId]) {
-                    await chrome.storage.local.remove(recordingSessionId);
-                  }
-                  console.log("call recording update done");
-                } else {
-                  (0, import_util.showNotification)({ level: callLogRes.data.returnMessage?.messageType ?? "success", message: callLogRes.data.returnMessage?.message ?? "Call log updated", ttl: callLogRes.data.returnMessage?.ttl ?? 3e3 });
+                const recordingSessionId = `rec-link-${sessionId}`;
+                const existingCallRecording = await chrome.storage.local.get(recordingSessionId);
+                if (!!existingCallRecording[recordingSessionId]) {
+                  await chrome.storage.local.remove(recordingSessionId);
                 }
+                console.log("call recording update done");
               }
           }
         }
       }
-      async function cacheCallNote2({ sessionId, note }) {
+      async function cacheCallNote({ sessionId, note }) {
         let noteToCache = {};
         noteToCache[sessionId] = note;
         await chrome.storage.local.set(noteToCache);
       }
-      async function getCachedNote2({ sessionId }) {
+      async function getCachedNote({ sessionId }) {
         const cachedNote = await chrome.storage.local.get(sessionId);
         if ((0, import_util.isObjectEmpty)(cachedNote)) {
           return "";
@@ -10621,45 +7453,26 @@
           return cachedNote[sessionId];
         }
       }
-      async function cacheUnresolvedLog2({ type, id, phoneNumber, direction, contactInfo, subject, note, date }) {
-        let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`] = {
-          type,
-          phoneNumber,
-          direction,
-          contactInfo,
-          subject,
-          note,
-          date
-        };
-        await chrome.storage.local.set(existingUnresolvedLogs);
-        console.log(`log cached for ${type}-${id}`);
-      }
-      async function getLogCache2({ cacheId }) {
-        const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        return existingUnresolvedLogs?.unresolvedLogs[cacheId];
-      }
-      async function getAllUnresolvedLogs2() {
-        const existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        return existingUnresolvedLogs.unresolvedLogs;
-      }
-      async function resolveCachedLog2({ type, id }) {
-        let existingUnresolvedLogs = await chrome.storage.local.get({ unresolvedLogs: {} });
-        if (!!existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`]) {
-          delete existingUnresolvedLogs.unresolvedLogs[`${type}-${id}`];
-          await chrome.storage.local.set(existingUnresolvedLogs);
+      function getModule({ platform: platform2 }) {
+        switch (platform2) {
+          case "pipedrive":
+            return import_pipedrive.default;
+          case "insightly":
+            return import_insightly.default;
+          case "clio":
+            return import_clio.default;
+          case "redtail":
+            return import_redtail.default;
+          case "bullhorn":
+            return import_bullhorn.default;
         }
       }
-      exports.addLog = addLog2;
-      exports.getLog = getLog2;
+      exports.addLog = addLog;
+      exports.checkLog = checkLog2;
       exports.openLog = openLog2;
       exports.updateLog = updateLog2;
-      exports.cacheCallNote = cacheCallNote2;
-      exports.getCachedNote = getCachedNote2;
-      exports.cacheUnresolvedLog = cacheUnresolvedLog2;
-      exports.getLogCache = getLogCache2;
-      exports.getAllUnresolvedLogs = getAllUnresolvedLogs2;
-      exports.resolveCachedLog = resolveCachedLog2;
+      exports.cacheCallNote = cacheCallNote;
+      exports.getCachedNote = getCachedNote;
     }
   });
 
@@ -10667,8 +7480,15 @@
   var require_contact = __commonJS({
     "src/core/contact.js"(exports) {
       init_axios2();
+      var import_config = __toESM(require_config());
       var import_analytics = __toESM(require_analytics());
-      async function getContact2({ serverUrl, phoneNumber }) {
+      var import_pipedrive = __toESM(require_pipedrive());
+      var import_insightly = __toESM(require_insightly());
+      var import_clio = __toESM(require_clio());
+      var import_redtail = __toESM(require_redtail());
+      var import_bullhorn = __toESM(require_bullhorn());
+      var import_util = __toESM(require_util());
+      async function getContact2({ phoneNumber }) {
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         const { overridingPhoneNumberFormat, overridingPhoneNumberFormat2, overridingPhoneNumberFormat3 } = await chrome.storage.local.get({ overridingPhoneNumberFormat: "", overridingPhoneNumberFormat2: "", overridingPhoneNumberFormat3: "" });
         const overridingFormats = [];
@@ -10681,112 +7501,94 @@
         if (overridingPhoneNumberFormat3)
           overridingFormats.push(overridingPhoneNumberFormat3);
         if (!!rcUnifiedCrmExtJwt) {
-          const contactRes = await axios_default2.get(`${serverUrl}/contact?jwtToken=${rcUnifiedCrmExtJwt}&phoneNumber=${phoneNumber}&overridingFormat=${overridingFormats.toString()}`);
-          return {
-            matched: contactRes.data.successful,
-            returnMessage: contactRes.data.returnMessage,
-            contactInfo: contactRes.data.contact
-          };
+          const contactRes = await axios_default.get(`${import_config.default.serverUrl}/contactV2?jwtToken=${rcUnifiedCrmExtJwt}&phoneNumber=${phoneNumber}&overridingFormat=${overridingFormats.toString()}`);
+          let contactInfo = contactRes.data.contact;
+          for (let c of contactInfo) {
+            if (!!c.additionalInfo && (0, import_util.isObjectEmpty)(c.additionalInfo)) {
+              c.additionalInfo = null;
+            }
+          }
+          return { matched: contactRes.data.successful, message: contactRes.data.message, contactInfo };
         } else {
-          return {
-            matched: false,
-            returnMessage: {
-              message: "Please go to Settings and connect to CRM platform",
-              messageType: "warning",
-              ttl: 3e3
-            },
-            contactInfo: null
-          };
+          return { matched: false, message: "Please go to Settings and authorize CRM platform", contactInfo: null };
         }
       }
-      async function createContact2({ serverUrl, phoneNumber, newContactName, newContactType }) {
+      async function createContact({ phoneNumber, newContactName, newContactType }) {
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
         if (!!rcUnifiedCrmExtJwt) {
-          const contactRes = await axios_default2.post(
-            `${serverUrl}/contact?jwtToken=${rcUnifiedCrmExtJwt}`,
+          const contactRes = await axios_default.post(
+            `${import_config.default.serverUrl}/contact?jwtToken=${rcUnifiedCrmExtJwt}`,
             {
               phoneNumber,
               newContactName,
               newContactType
             }
           );
+          if (!!!contactRes.data?.successful && contactRes.data?.message === "Failed to create contact.") {
+            await chrome.runtime.sendMessage(
+              {
+                type: "notifyToReconnectCRM"
+              }
+            );
+          }
           document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
             type: "rc-adapter-trigger-contact-match",
             phoneNumbers: [phoneNumber]
           }, "*");
-          await chrome.storage.local.set({ tempContactMatchTask: { contactId: contactRes.data.contact.id, phoneNumber, contactName: newContactName, contactType: newContactType } });
+          await chrome.storage.local.set({ tempContactMatchTask: { contactId: contactRes.data.contact.id, phoneNumber, contactName: newContactName } });
           import_analytics.default.createNewContact();
-          return {
-            matched: contactRes.data.successful,
-            contactInfo: contactRes.data.contact,
-            returnMessage: contactRes.data.returnMessage
-          };
+          return { matched: contactRes.data.successful, contactInfo: contactRes.data.contact };
         } else {
-          return {
-            matched: false,
-            returnMessage: {
-              message: "Please go to Settings and connect to CRM platform",
-              messageType: "warning",
-              ttl: 3e3
-            },
-            contactInfo: null
-          };
+          return { matched: false, message: "Please go to Settings and authorize CRM platform", contactInfo: null };
         }
       }
-      async function openContactPage2({ manifest: manifest2, platformName: platformName2, phoneNumber, contactId, contactType }) {
+      async function openContactPage2({ phoneNumber }) {
+        const { matched: contactMatched, contactInfo } = await getContact2({ phoneNumber });
+        if (!contactMatched) {
+          return;
+        }
         const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
+        const platformModule = await getModule();
         let platformInfo = await chrome.storage.local.get("platform-info");
         if (platformInfo["platform-info"].hostname === "temp") {
-          const hostnameRes = await axios_default2.get(`${manifest2.serverUrl}/hostname?jwtToken=${rcUnifiedCrmExtJwt}`);
+          const hostnameRes = await axios_default.get(`${import_config.default.serverUrl}/hostname?jwtToken=${rcUnifiedCrmExtJwt}`);
           platformInfo["platform-info"].hostname = hostnameRes.data;
           await chrome.storage.local.set(platformInfo);
         }
-        const hostname = platformInfo["platform-info"].hostname;
-        if (!!contactId) {
-          if (platformName2 === "bullhorn") {
-            const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
-            if (crm_extension_bullhorn_user_urls?.atsUrl) {
-              const newTab = window.open(`${crm_extension_bullhorn_user_urls.atsUrl}/BullhornStaffing/OpenWindow.cfm?Entity=${contactType}&id=${contactId}&view=Overview`, "_blank", "popup");
-              newTab.blur();
-              window.focus();
-            }
-            return;
-          } else {
-            const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname).replaceAll("{contactId}", contactId).replaceAll("{contactType}", contactType);
-            window.open(contactPageUrl);
-          }
-        } else {
-          const { matched: contactMatched, contactInfo } = await getContact2({ serverUrl: manifest2.serverUrl, phoneNumber });
-          if (!contactMatched) {
-            return;
-          }
-          if (platformName2 === "bullhorn") {
-            const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
-            if (crm_extension_bullhorn_user_urls?.atsUrl) {
-              for (const c of contactInfo) {
-                if (c.isNewContact) {
-                  continue;
-                }
-                const newTab = window.open(`${crm_extension_bullhorn_user_urls.atsUrl}/BullhornStaffing/OpenWindow.cfm?Entity=${c.type}&id=${c.id}&view=Overview`, "_blank", "popup");
-                newTab.blur();
-                window.focus();
-              }
-            }
-            return;
-          }
-          for (const c of contactInfo) {
-            if (c.isNewContact) {
-              continue;
-            }
-            const hostname2 = platformInfo["platform-info"].hostname;
-            const contactPageUrl = manifest2.platforms[platformName2].contactPageUrl.replace("{hostname}", hostname2).replaceAll("{contactId}", c.id).replaceAll("{contactType}", c.type);
-            window.open(contactPageUrl);
-          }
+        for (const c of contactInfo) {
+          platformModule.openContactPage(platformInfo["platform-info"].hostname, c);
+        }
+      }
+      async function openContactPageById({ id, type }) {
+        const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
+        const platformModule = await getModule();
+        let platformInfo = await chrome.storage.local.get("platform-info");
+        if (platformInfo["platform-info"].hostname === "temp") {
+          const hostnameRes = await axios_default.get(`${import_config.default.serverUrl}/hostname?jwtToken=${rcUnifiedCrmExtJwt}`);
+          platformInfo["platform-info"].hostname = hostnameRes.data;
+          await chrome.storage.local.set(platformInfo);
+        }
+        platformModule.openContactPage(platformInfo["platform-info"].hostname, { id, type });
+      }
+      async function getModule() {
+        const platformInfo = await chrome.storage.local.get("platform-info");
+        switch (platformInfo["platform-info"].platformName) {
+          case "pipedrive":
+            return import_pipedrive.default;
+          case "insightly":
+            return import_insightly.default;
+          case "clio":
+            return import_clio.default;
+          case "redtail":
+            return import_redtail.default;
+          case "bullhorn":
+            return import_bullhorn.default;
         }
       }
       exports.getContact = getContact2;
-      exports.createContact = createContact2;
+      exports.createContact = createContact;
       exports.openContactPage = openContactPage2;
+      exports.openContactPageById = openContactPageById;
     }
   });
 
@@ -10794,9 +7596,10 @@
   var require_rcAPI = __commonJS({
     "src/lib/rcAPI.js"(exports) {
       init_axios2();
-      async function getUserInfo2({ serverUrl, extensionId, accountId }) {
-        const userInfoHashResponse = await axios_default2.get(
-          `${serverUrl}/userInfoHash?extensionId=${extensionId}&accountId=${accountId}`
+      var import_config = __toESM(require_config());
+      async function getUserInfo2({ extensionId, accountId }) {
+        const userInfoHashResponse = await axios_default.get(
+          `${import_config.default.serverUrl}/userInfoHash?extensionId=${extensionId}&accountId=${accountId}`
         );
         return userInfoHashResponse.data;
       }
@@ -10804,201 +7607,77 @@
     }
   });
 
-  // node_modules/idb/build/index.js
-  var build_exports = {};
-  __export(build_exports, {
-    deleteDB: () => deleteDB,
-    openDB: () => openDB,
-    unwrap: () => unwrap,
-    wrap: () => wrap
-  });
-  function getIdbProxyableTypes() {
-    return idbProxyableTypes || (idbProxyableTypes = [
-      IDBDatabase,
-      IDBObjectStore,
-      IDBIndex,
-      IDBCursor,
-      IDBTransaction
-    ]);
-  }
-  function getCursorAdvanceMethods() {
-    return cursorAdvanceMethods || (cursorAdvanceMethods = [
-      IDBCursor.prototype.advance,
-      IDBCursor.prototype.continue,
-      IDBCursor.prototype.continuePrimaryKey
-    ]);
-  }
-  function promisifyRequest(request) {
-    const promise = new Promise((resolve, reject) => {
-      const unlisten = () => {
-        request.removeEventListener("success", success);
-        request.removeEventListener("error", error);
-      };
-      const success = () => {
-        resolve(wrap(request.result));
-        unlisten();
-      };
-      const error = () => {
-        reject(request.error);
-        unlisten();
-      };
-      request.addEventListener("success", success);
-      request.addEventListener("error", error);
-    });
-    reverseTransformCache.set(promise, request);
-    return promise;
-  }
-  function cacheDonePromiseForTransaction(tx) {
-    if (transactionDoneMap.has(tx))
-      return;
-    const done = new Promise((resolve, reject) => {
-      const unlisten = () => {
-        tx.removeEventListener("complete", complete);
-        tx.removeEventListener("error", error);
-        tx.removeEventListener("abort", error);
-      };
-      const complete = () => {
-        resolve();
-        unlisten();
-      };
-      const error = () => {
-        reject(tx.error || new DOMException("AbortError", "AbortError"));
-        unlisten();
-      };
-      tx.addEventListener("complete", complete);
-      tx.addEventListener("error", error);
-      tx.addEventListener("abort", error);
-    });
-    transactionDoneMap.set(tx, done);
-  }
-  function replaceTraps(callback) {
-    idbProxyTraps = callback(idbProxyTraps);
-  }
-  function wrapFunction(func) {
-    if (getCursorAdvanceMethods().includes(func)) {
-      return function(...args) {
-        func.apply(unwrap(this), args);
-        return wrap(this.request);
-      };
-    }
-    return function(...args) {
-      return wrap(func.apply(unwrap(this), args));
-    };
-  }
-  function transformCachableValue(value) {
-    if (typeof value === "function")
-      return wrapFunction(value);
-    if (value instanceof IDBTransaction)
-      cacheDonePromiseForTransaction(value);
-    if (instanceOfAny(value, getIdbProxyableTypes()))
-      return new Proxy(value, idbProxyTraps);
-    return value;
-  }
-  function wrap(value) {
-    if (value instanceof IDBRequest)
-      return promisifyRequest(value);
-    if (transformCache.has(value))
-      return transformCache.get(value);
-    const newValue = transformCachableValue(value);
-    if (newValue !== value) {
-      transformCache.set(value, newValue);
-      reverseTransformCache.set(newValue, value);
-    }
-    return newValue;
-  }
-  function openDB(name, version, { blocked, upgrade, blocking, terminated } = {}) {
-    const request = indexedDB.open(name, version);
-    const openPromise = wrap(request);
-    if (upgrade) {
-      request.addEventListener("upgradeneeded", (event) => {
-        upgrade(wrap(request.result), event.oldVersion, event.newVersion, wrap(request.transaction), event);
-      });
-    }
-    if (blocked) {
-      request.addEventListener("blocked", (event) => blocked(
-        // Casting due to https://github.com/microsoft/TypeScript-DOM-lib-generator/pull/1405
-        event.oldVersion,
-        event.newVersion,
-        event
-      ));
-    }
-    openPromise.then((db) => {
-      if (terminated)
-        db.addEventListener("close", () => terminated());
-      if (blocking) {
-        db.addEventListener("versionchange", (event) => blocking(event.oldVersion, event.newVersion, event));
+  // node_modules/idb/build/index.cjs
+  var require_build = __commonJS({
+    "node_modules/idb/build/index.cjs"(exports) {
+      "use strict";
+      Object.defineProperty(exports, "__esModule", { value: true });
+      var instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
+      var idbProxyableTypes;
+      var cursorAdvanceMethods;
+      function getIdbProxyableTypes() {
+        return idbProxyableTypes || (idbProxyableTypes = [
+          IDBDatabase,
+          IDBObjectStore,
+          IDBIndex,
+          IDBCursor,
+          IDBTransaction
+        ]);
       }
-    }).catch(() => {
-    });
-    return openPromise;
-  }
-  function deleteDB(name, { blocked } = {}) {
-    const request = indexedDB.deleteDatabase(name);
-    if (blocked) {
-      request.addEventListener("blocked", (event) => blocked(
-        // Casting due to https://github.com/microsoft/TypeScript-DOM-lib-generator/pull/1405
-        event.oldVersion,
-        event
-      ));
-    }
-    return wrap(request).then(() => void 0);
-  }
-  function getMethod(target, prop) {
-    if (!(target instanceof IDBDatabase && !(prop in target) && typeof prop === "string")) {
-      return;
-    }
-    if (cachedMethods.get(prop))
-      return cachedMethods.get(prop);
-    const targetFuncName = prop.replace(/FromIndex$/, "");
-    const useIndex = prop !== targetFuncName;
-    const isWrite = writeMethods.includes(targetFuncName);
-    if (
-      // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
-      !(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) || !(isWrite || readMethods.includes(targetFuncName))
-    ) {
-      return;
-    }
-    const method = async function(storeName, ...args) {
-      const tx = this.transaction(storeName, isWrite ? "readwrite" : "readonly");
-      let target2 = tx.store;
-      if (useIndex)
-        target2 = target2.index(args.shift());
-      return (await Promise.all([
-        target2[targetFuncName](...args),
-        isWrite && tx.done
-      ]))[0];
-    };
-    cachedMethods.set(prop, method);
-    return method;
-  }
-  async function* iterate(...args) {
-    let cursor = this;
-    if (!(cursor instanceof IDBCursor)) {
-      cursor = await cursor.openCursor(...args);
-    }
-    if (!cursor)
-      return;
-    cursor = cursor;
-    const proxiedCursor = new Proxy(cursor, cursorIteratorTraps);
-    ittrProxiedCursorToOriginalProxy.set(proxiedCursor, cursor);
-    reverseTransformCache.set(proxiedCursor, unwrap(cursor));
-    while (cursor) {
-      yield proxiedCursor;
-      cursor = await (advanceResults.get(proxiedCursor) || cursor.continue());
-      advanceResults.delete(proxiedCursor);
-    }
-  }
-  function isIteratorProp(target, prop) {
-    return prop === Symbol.asyncIterator && instanceOfAny(target, [IDBIndex, IDBObjectStore, IDBCursor]) || prop === "iterate" && instanceOfAny(target, [IDBIndex, IDBObjectStore]);
-  }
-  var instanceOfAny, idbProxyableTypes, cursorAdvanceMethods, transactionDoneMap, transformCache, reverseTransformCache, idbProxyTraps, unwrap, readMethods, writeMethods, cachedMethods, advanceMethodProps, methodMap, advanceResults, ittrProxiedCursorToOriginalProxy, cursorIteratorTraps;
-  var init_build = __esm({
-    "node_modules/idb/build/index.js"() {
-      instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
-      transactionDoneMap = /* @__PURE__ */ new WeakMap();
-      transformCache = /* @__PURE__ */ new WeakMap();
-      reverseTransformCache = /* @__PURE__ */ new WeakMap();
-      idbProxyTraps = {
+      function getCursorAdvanceMethods() {
+        return cursorAdvanceMethods || (cursorAdvanceMethods = [
+          IDBCursor.prototype.advance,
+          IDBCursor.prototype.continue,
+          IDBCursor.prototype.continuePrimaryKey
+        ]);
+      }
+      var transactionDoneMap = /* @__PURE__ */ new WeakMap();
+      var transformCache = /* @__PURE__ */ new WeakMap();
+      var reverseTransformCache = /* @__PURE__ */ new WeakMap();
+      function promisifyRequest(request) {
+        const promise = new Promise((resolve, reject) => {
+          const unlisten = () => {
+            request.removeEventListener("success", success);
+            request.removeEventListener("error", error);
+          };
+          const success = () => {
+            resolve(wrap(request.result));
+            unlisten();
+          };
+          const error = () => {
+            reject(request.error);
+            unlisten();
+          };
+          request.addEventListener("success", success);
+          request.addEventListener("error", error);
+        });
+        reverseTransformCache.set(promise, request);
+        return promise;
+      }
+      function cacheDonePromiseForTransaction(tx) {
+        if (transactionDoneMap.has(tx))
+          return;
+        const done = new Promise((resolve, reject) => {
+          const unlisten = () => {
+            tx.removeEventListener("complete", complete);
+            tx.removeEventListener("error", error);
+            tx.removeEventListener("abort", error);
+          };
+          const complete = () => {
+            resolve();
+            unlisten();
+          };
+          const error = () => {
+            reject(tx.error || new DOMException("AbortError", "AbortError"));
+            unlisten();
+          };
+          tx.addEventListener("complete", complete);
+          tx.addEventListener("error", error);
+          tx.addEventListener("abort", error);
+        });
+        transactionDoneMap.set(tx, done);
+      }
+      var idbProxyTraps = {
         get(target, prop, receiver) {
           if (target instanceof IDBTransaction) {
             if (prop === "done")
@@ -11020,20 +7699,115 @@
           return prop in target;
         }
       };
-      unwrap = (value) => reverseTransformCache.get(value);
-      readMethods = ["get", "getKey", "getAll", "getAllKeys", "count"];
-      writeMethods = ["put", "add", "delete", "clear"];
-      cachedMethods = /* @__PURE__ */ new Map();
+      function replaceTraps(callback) {
+        idbProxyTraps = callback(idbProxyTraps);
+      }
+      function wrapFunction(func) {
+        if (getCursorAdvanceMethods().includes(func)) {
+          return function(...args) {
+            func.apply(unwrap(this), args);
+            return wrap(this.request);
+          };
+        }
+        return function(...args) {
+          return wrap(func.apply(unwrap(this), args));
+        };
+      }
+      function transformCachableValue(value) {
+        if (typeof value === "function")
+          return wrapFunction(value);
+        if (value instanceof IDBTransaction)
+          cacheDonePromiseForTransaction(value);
+        if (instanceOfAny(value, getIdbProxyableTypes()))
+          return new Proxy(value, idbProxyTraps);
+        return value;
+      }
+      function wrap(value) {
+        if (value instanceof IDBRequest)
+          return promisifyRequest(value);
+        if (transformCache.has(value))
+          return transformCache.get(value);
+        const newValue = transformCachableValue(value);
+        if (newValue !== value) {
+          transformCache.set(value, newValue);
+          reverseTransformCache.set(newValue, value);
+        }
+        return newValue;
+      }
+      var unwrap = (value) => reverseTransformCache.get(value);
+      function openDB2(name, version, { blocked, upgrade, blocking, terminated } = {}) {
+        const request = indexedDB.open(name, version);
+        const openPromise = wrap(request);
+        if (upgrade) {
+          request.addEventListener("upgradeneeded", (event) => {
+            upgrade(wrap(request.result), event.oldVersion, event.newVersion, wrap(request.transaction), event);
+          });
+        }
+        if (blocked) {
+          request.addEventListener("blocked", (event) => blocked(
+            event.oldVersion,
+            event.newVersion,
+            event
+          ));
+        }
+        openPromise.then((db) => {
+          if (terminated)
+            db.addEventListener("close", () => terminated());
+          if (blocking) {
+            db.addEventListener("versionchange", (event) => blocking(event.oldVersion, event.newVersion, event));
+          }
+        }).catch(() => {
+        });
+        return openPromise;
+      }
+      function deleteDB(name, { blocked } = {}) {
+        const request = indexedDB.deleteDatabase(name);
+        if (blocked) {
+          request.addEventListener("blocked", (event) => blocked(
+            event.oldVersion,
+            event
+          ));
+        }
+        return wrap(request).then(() => void 0);
+      }
+      var readMethods = ["get", "getKey", "getAll", "getAllKeys", "count"];
+      var writeMethods = ["put", "add", "delete", "clear"];
+      var cachedMethods = /* @__PURE__ */ new Map();
+      function getMethod(target, prop) {
+        if (!(target instanceof IDBDatabase && !(prop in target) && typeof prop === "string")) {
+          return;
+        }
+        if (cachedMethods.get(prop))
+          return cachedMethods.get(prop);
+        const targetFuncName = prop.replace(/FromIndex$/, "");
+        const useIndex = prop !== targetFuncName;
+        const isWrite = writeMethods.includes(targetFuncName);
+        if (!(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) || !(isWrite || readMethods.includes(targetFuncName))) {
+          return;
+        }
+        const method = async function(storeName, ...args) {
+          const tx = this.transaction(storeName, isWrite ? "readwrite" : "readonly");
+          let target2 = tx.store;
+          if (useIndex)
+            target2 = target2.index(args.shift());
+          return (await Promise.all([
+            target2[targetFuncName](...args),
+            isWrite && tx.done
+          ]))[0];
+        };
+        cachedMethods.set(prop, method);
+        return method;
+      }
       replaceTraps((oldTraps) => ({
         ...oldTraps,
         get: (target, prop, receiver) => getMethod(target, prop) || oldTraps.get(target, prop, receiver),
         has: (target, prop) => !!getMethod(target, prop) || oldTraps.has(target, prop)
       }));
-      advanceMethodProps = ["continue", "continuePrimaryKey", "advance"];
-      methodMap = {};
-      advanceResults = /* @__PURE__ */ new WeakMap();
-      ittrProxiedCursorToOriginalProxy = /* @__PURE__ */ new WeakMap();
-      cursorIteratorTraps = {
+      var advanceMethodProps = ["continue", "continuePrimaryKey", "advance"];
+      var methodMap = {};
+      var advanceResults = /* @__PURE__ */ new WeakMap();
+      var ittrProxiedCursorToOriginalProxy = /* @__PURE__ */ new WeakMap();
+      var cursorIteratorTraps = {
         get(target, prop) {
           if (!advanceMethodProps.includes(prop))
             return target[prop];
@@ -11046,6 +7820,26 @@
           return cachedFunc;
         }
       };
+      async function* iterate(...args) {
+        let cursor = this;
+        if (!(cursor instanceof IDBCursor)) {
+          cursor = await cursor.openCursor(...args);
+        }
+        if (!cursor)
+          return;
+        cursor = cursor;
+        const proxiedCursor = new Proxy(cursor, cursorIteratorTraps);
+        ittrProxiedCursorToOriginalProxy.set(proxiedCursor, cursor);
+        reverseTransformCache.set(proxiedCursor, unwrap(cursor));
+        while (cursor) {
+          yield proxiedCursor;
+          cursor = await (advanceResults.get(proxiedCursor) || cursor.continue());
+          advanceResults.delete(proxiedCursor);
+        }
+      }
+      function isIteratorProp(target, prop) {
+        return prop === Symbol.asyncIterator && instanceOfAny(target, [IDBIndex, IDBObjectStore, IDBCursor]) || prop === "iterate" && instanceOfAny(target, [IDBIndex, IDBObjectStore]);
+      }
       replaceTraps((oldTraps) => ({
         ...oldTraps,
         get(target, prop, receiver) {
@@ -11057,667 +7851,23 @@
           return isIteratorProp(target, prop) || oldTraps.has(target, prop);
         }
       }));
-    }
-  });
-
-  // src/images/outboundCallIcon.png
-  var require_outboundCallIcon = __commonJS({
-    "src/images/outboundCallIcon.png"(exports, module) {
-      module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAACiFJREFUeF7tnGXMNcUVx/8khABF2+JeSnF3d2tKkULxoMWCBXcJbkGDtIW2BG2wBnd3KO7u7voBAvtLdmGZ5+zumZ29971Pcs+XlveZOXPmv2fm6NyxNKQkBMZKmj2crCGAiUowBHAIYCICidO70MA1JW0saUFJv8vleTP7txey/z5X0sWSvkmU0zN9NkmnSlrJMzhyzE2SdpT0XDgvBcBFJZ0gackGYT6UtK2kyyKFjh1+v6RFYidFjL9P0uJdADiDpGMkrR+xOEMvyr7ghpFzYoZ/nck1XsyEFmNHKFysBh4m6YAWCxdTDpIEj17Q/yXN3wvGJZ6tAUR1uc9+34GAHPl7OuATsuDuO1jSUj3gXbBsBeCfsy/7vwah7szun2vye+55SStIWlXSXsa8RyQt0MNNtmGNYtwhaaqGydEAonl12vKBpF0kXVix8EaSzjf+tkFundtstus5M0u6TdK0DsbRAD4uae4KxifmR+aLhoXRXrS4TC91dB049lw7ZKZc8zzgwSgKwO0lnW4sf4ukLSS97pR+TklPGmP3lHS8k0cvhuGz3l6hea9JwtsIKQpAtKRwjAtGD+eX9LeRO8IAbRrMgQfOL8L2m9gXd940xsJv5Xt8JQVAjMDNBgMWthg3AcDXfNUYhIe/ctPkjv9ed2wL8JD1hxQAD8nvtzIPjMEmCZs5VhLHNiSca5zsftCMueZNZyz2hqRlSh86CcDrcjekvM5Wks5J2OVEufb+OuDxXn6UP03g7ZmK5uFuVR3bpYPTlQTgM/mmyoItLOkhj6Q1Y7bONvAP4+/82zaJvOumo3l31YCH5r0cMEgC8CtJ4wcMJ5eE35dK+JUjgvJMO1bMjhAWvmsCPDTPclXIGqF51v2cBKBrcsudYnnR8JBwi/A5P2/J15oGaFhbjm9IGAxL84pxLgyqkgmuyQkbJSFhJRW4Y7lruyAMBeChgSGheYBX51G4MKgC8EtJvwpWnbhj7eA+JQkbEnEy8XIK1WkeRmsJ484L10sC8Nksvp014MjxsiKKthudQ9JjksYOGPwnu5M2b8s0v+u48yzNeze/81508E8C0HJj1pB0lWPhmCH7SToimPCOpKljmJTG1mkefDm2HvBgmQQgqfrdgk0cKWn/lhurmoalx+KHFJvoZT7gEduG4Sd/49hibanTeCkJQNL1YXRAymd57+rOceNWFJxiAQQ85CM1FVKs5hXzkwDE7IeOJYwnkfSZExzPMOsI4+JwP3ppiiyevrsCPO68ZSWR5I2lJABZDL8sjBm7ilsp/uwr6UBjV0dJAlgvnSFpO2NwCniwC70EMlELhevUHZUz83Jkec6lmSVe17uzinHrSDq5IjIgxTWLJPw0L1kuVyp4rE1kRFJl3txb4P+PyFDVAbhWNvlyYxckAz7x7q40jsud1H9d7XaPvNYcwz780BgMju2IIngMU+/YOgA5ZggzYcCMTDVCx9Ckkp5qKNrEHt1i/d9mCVDyimgKydlVWt55Mfv5aWyTtfunEVoBxFyRq52UF5+saR9nH4qP8t9IngMxvAlAaqx49SGtLgln20tVxSmuiM0kNRWmvOv0fVwTgAhEXDpfINmtee3XK7CVXyRcI2wb1eQBENflAmOXePYkKT1E0R2tLRMuzOGeyYM8xgMg8pNwDMt8OK/eNop9JGEkypQS8w4Mpl4A/5YF+H83pKaihgVsIkIsK4jfOe/pa5o/sH/3AlilhTEW+by8ETPUQhxnK6EwsKCVBYsBkEv/X8au6I05xbHbeXKPPhxKKLaDY/5ADokBkA1Y7gguCEfUU3Cy/Er4/knS1QOJUINQsQAul4VJuDAh0bqBP9dEZHM49mHClCOMQXq0icGg/T0WQOSnafyvxkbIFZKTayIaIW80BpEAoNxplRibeI6xv7cBkOQlmV2SoWXCymIQPERX1u7GQPJ2FHw+cjAhVude5m5FJmJ2XCOazTFYNLf3nNoAiFBVrW+kqXZ1Sn1vFg4uZoyl0IQ2V2V8+HCAT+aGK6GK2mR2nKL/PKwtgHCg5ko0EtLaWeh3hUMStIakJRnlkGgY56iHIJLVIaqxgLeWpNPhL9lH7VnfTQqAlA0xCGELCAlOSqCeu4wYm2TFBMbuKa2SmqJrCqK15NoW/dWUYnH4uWM7pxQAEYaGoLMMqUhAcJd5GjHJ/FZFM2gOXQwkHR7IDNjsLRHgY9Lz2Ka3sXbJVABhjlasZqzy77wV2LNn/MArawaSMwzb4orhGKQH82IXclTdwe/nLXudukpdAMjTgKcrLnRiaJxnD+FjcnfSQuIhHHiOOE+wykQDAKWDsDWFMcyhVNFZF1gXACJY3VsSHGQyNx7ivQbdD2FbiTWXugeGzCIy5pyMqu57muQ5IcnUFYAIQteCld/DqOAge/tqMEqUPKuelNH+xgejC6GOiHaImv5QMei4iodAUaB2CSAL081gPULEAlKNKyyqR0isLik0ntMWhLHhWvBYeOZMln2862ve0HFl0PfdOhvUNYBEB2gG7cAhUWbknZwnyijP5ThPmWkdvmGb2gkRCrUXrL1FT0ji3mz13KJrABHwN/nzMOvoYC3pkPK4Nx4tjRmDNqO9FtGusl5FjF67Ri8AZMHpc7/NijJIOPDFuRv7TTx+PNp6spW1mXwviTd8l8QI1SsAkQFLSLxrRRn8Oz5bl/3Q3n1zp9aFmlHN7r0EkA3hwtBPMo6xOxxaooM2bSJesKrG0VpMAtc6ITRVkSD+zrNIrwFEBjIrRBmWY0u9GBB7Eqc2AICPiK9odVnwro+UWCP1A0CEwIXBnbDST2/nxxlr2G/io5LcDd+t4MxzTzdSvwAs7kSOM/5dSBgU0k43NErc/QBSY9zJZaK9znpPN2L1fgLI4twtgGi9xeXvNEpa2Z3uYfuZI35iaMzwN3nb10j9BhCBCLEAkRdLFlGg4kdu2jjNjRs2BpAADn/ThpJFVQj4CxZjAkAEILOMK4FTbRF5O0JCHO9eEyUE6iplIoNU5XQPBICFEBzXuleavW5AqvodHH6ViQRuI40pDSwLVlWgKsbgL+4U0QnWuOl8AEbLijpwbf7oZTIIACIrlpAWOutVZbEXMj08/qF0mUp025P0COs5OPXUabw/qDFQP8BIyEdZdMsadPgVuLMlnZbQRI7jTF+jlfn2dpv9JOKgaGAZM2JVQCKrU0cU0LlDMUaecJAPRK14b6MpgHVIBlvvVmqFGEQAEZgCEhe8t2uLV/DEtmgWTU50JfC/uCLkE4mEuGurPkrr9y+DCmDx1Xv5o4rFGoBPEb/Vj0QOOoDFJnnddGiL5xVNxoaiFGm1VuDBfLQAWABR/CIcGZxUavuw5xfrjjYAC+H5oUX6q3m3ZyVs68ClMIU2e18YjEojEqNdOL3UiClkUVcuZ1EwJISFFP6pTfM4KOYhY6Mco1UDGzfWrwFDABORHgI4BDARgcTpQw1MBPBHzDW1YMnSNVAAAAAASUVORK5CYII=";
-    }
-  });
-
-  // src/images/inboundCallIcon.png
-  var require_inboundCallIcon = __commonJS({
-    "src/images/inboundCallIcon.png"(exports, module) {
-      module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAACotJREFUeF7tnGXMLUUShl/+ENyDE9wlBHdnkcUhuLtDcF2Cb3Yh2AaH4Bbcg7u7u7s7/GAD85CZy9ym2mbmfN+55NSfm/ud6p7qd6qry3pG04BaITBaq9GDwRoA2FIJBgAOAGyJQHz4vJKe8bF1oYFrStpE0vySZigf9KGk14r/XyDpckk/x+XsO47pJd0saTZJL0laUdJHrpRtAFxY0kmS+DdEn0vaVtL1fQeRX6DpJN0vaeoay0WSNusCwGkl/ad4K+tnAnJJqamZw6LsLPZUSUtJelLSbpKei47yM7CL7nXAq7jHlPRLfWiuBh4p6ZAWwv1LEnN0SbdLWqE2IdttzoYPYNuieVMZ4y+UtHlTDVyktGczNxSsPmxxSQ91ME81xReSJnbmy1UMhqPJ90maxpDtA0mLSXq/CYD/lHRjZMG8NQzu1eXhsZyklSTtZ4x7urCH83UI4DeSxnfmG1fSDxnPiIG3dKF9b1nzxd7UohFt4YDYQ9KlHmE3lnSx8duG5emcsUYv67eSxmsBYAg8vAlsqwkez4wB+HJ5jFvSnyDpMEnfR1C4TtIaDs+bkmbqAj1JbQBkuz4Y2LaA93ZIzhCAu0j6nzH4LklbSXovEQAM+gsG776SjkucI8RmAThWgu+Ji4LN4+Bw6dPS5nk1rxoQAvAdSbgsdcJNWMI9yhNAwKF2fSjcAZzUdxPGh1i+k4TNq9PYhf39KTAI8LDbbF8LPNb4RopcPgDxum8zJsBHCqq056G8CF6IS3eUHn6KrD6eXA2MaV4yeAjkA/AISYc6EnMYbNpipTjfbFuXNio08bIW8+YAiM1j21qa93F5YCRpXiWvD8BbJK3sLGobSee2WCgnJdo7kTMH9oatjDvShFK3MJpHhFHF6/VnIcOSRaT0eq4APgBflDSHM9mCkp7IfYDDT0x8ljEHf9u+4dwpAMbA47Ql+ZFNPgCtbTGpJPy+tkQUgn/p0vLFFuKEzyXcqHGcQfVDJHRgfFJqXta2rT/LB+BvxipiPmPqwtmu+Jcu4RbNLQmNyiHrZVdBP+DdI2lGY0K2bWPNq+YbDgB5NgkJK6mAjcXW5pAPwAlLJ9ny89A8wMu2ea5gPgAtu0K8masdISCwpyRhXSJOJl5OJQtAQMMNs5IfJB9IaDSyeakAkhKa3WFme1kRRepCXT5fhHJeGemkzmu9bHxOy1UBPE7bV1Inj/H5NJDsC1mYOq2ekJWJPc/9/SBJRzt/xB+bMmMiKxtjDf9MElmVzsDjIT4Ajy+2616OFMdIOjhjYSmsxKw/Gow5B5alge6UaB42zzq8UuT08vgE3cCIDjjNlm31tL8OHsMT9OcAGNPAnmhetRSfoKSarBOKaCKWvsrB2NrCbDHX/obmtA6RHBlCvIR9u0p63scUetP4ZW56u23cWsmBn3agEW/z+7GSADaVYhqYOo+Pj6hsriYAni5pB2fgVcVJvF5LidYpy6H1kmE1JSkuXA9qEKlk1URSx6byeRUtpIFrSbrGeALJgK9Tn1zjI4gn9b9QYOw+RW6PAyyHsM2crr0iTNksTTQQA48BdpOVO0s6LVNaqmbYkSkC43K3bjUVTjGuUC9AfLic+6YmADLmbCO0CtoEz4NOLItP1s9fSdqpyP5ckflS+oI95i6QnSX17dIqkm7NWAGdAkQyLmEituj4ZM8Qqz1rDECeQFxKh1Kd7i4yu9R+U8mq7m1ZFHTOT52gX/lSAMR1oa/FJWLKBxIXRtEdra0TJYOjEsf3LVsKgAhvVeiop7LFU+iA0r+r8+bGvCnPGXKeVAC3KwL8Mw3pqN5RWYsRCU0r67t70ddySmxwP/+eCqBPC3NOZPrraMR0tRDH2Uoo9DNuI2TLAZDWLsvo0xtzcsJq55H0rMGHT4lvOUpSDoAsEAAAok4kF9iiKQUny69krtUkeZ3VfkY2F0C8fUInl2jdwJ+L0QSS2PZuwpQtzIHkbeaOTTxcv+cCiJw0jVvtveQKLXDdtdFNSlepSxR6KHdaLSDDhU/0uU0AJItCzo7aa504ZVM7WOnK2tuQjkIPnaBfRiWXSInhjGNSkImYHdfo0aJ1jgOLLE3PqQmACEXsSmO3S3Tt75koNYE6rcMuYWfR5lDGh6wN5QVMgo+aZHYSRf+TrSmAzEA4t4zxxLWL0O/aBEnQGkqbkxm8tNHhY7ogonVERaTaUujOMn/ZtO8m+ow2AFI25ECgMFQnepNJHKTYMmJskhVuawbzYSb+UWvsprWEF2O1hYQWSimWl4GN7ZzaAIgwNASdYUhFAgJbNtKdCo/09MT4ohk0hy4G/M/HMmsl9cfxMkl+NOltDILeFkAmt1rh+HtOgRw/8IaApOQM3ba4ip0D6fGyV5qWPJ8NJjnMzYFOXaUuACTLTCeDZdCJoXGeUwh7yhZ1ryz4xuLAs8UfcRhoAKB04HoJsDEG+9mkC8yUowsAmZgufLrxLcJBJnOTQpRT6YqYNYEZp56yo0VU0UihWZdm4KdJnh3SmroCEEFwK6z8HocKhj+1r4ZDiZKn70oZnQi8MLpNQ8TOwGH3Xfv6r+ciUBaoXQLIg9k6XKJxiRMQny+nI59Tl87V+h0TAOHgSjnhkYEWNzSaA80iblbR9934Om7XAFLJQzOs0uWrZVtZSpRRXyzbefICyKca1k7wHSlYcVBZRMcs2fJGrXtdA4iAHCYYdsuOcVrS5JPi3mRtpQRmEsIcahaxM8hVptrqEXP0AkAmJ9sCWFabGgkHTsqcy4AJ+CSxcPnx356utP+X5ufKpJlKpl4ByPQYbzTRijKIg/HZGm2bnAUavHyiIBRqZjW79xJAZMeFIR4d3VgIDi3RQZM2kZYY/tFaTALXisNpqiJB/GvKQ3oNIDKQWSHKsBxb6sWA2JM4NQIAyQyiKKvzint9pMSiNBQAIgSnMp0MuBUu8SUMtrO3By+6iuYMvFRcIzdBgeuDnY7SUAGIILxphMUlcYkDZV3PBcfoIloy4J9ik+tEe50vihmJcSgB5MHYFjIvVgc9v+/oye60xCg4nEy2e5gRM7u34M1JhhpAhCDE4mDxtfFSoKKttstW4hCCJICJSOoU7AmsMw4HgDwfW4grgVNtEXk7Gt3xJXtNVqmWDJLP6R7WLeyCQVGdbeujXjcg+b6Dw9eYSOBGabg0sC6Yr0BV8eAv8jWi1E6w6KJLBg4tK+rAtVk1dZJ+ABBZeeNkcqyLgdVauNXO5R9Kl21pgTLp4dZzcOqp06R+UCP62ZO2guaMJ+SjLLp1YBBpp3PKr4mQ3WlCuFNos5X5Tu02G/HcftHAOhDk/wBpkgg6FNApaHEYpYSDvCBqxfsXCQXSbi6RDHa/ExF9Qf0IIEJTQMLAp3ZtkdMjtkWzaHKiK4F/uZ5AWo1ICFvrfmOrAqjx/Zd+BbBaGLfbacCsf50tqhWZDIDP/I2y0v0OYIUFt5sOD125ygStYqcoRRzeCDwmGVUArBZcfREu54aAD9umF3tGmm9UA7ASntYRXBru7VkJ25BCEoujzZ34laMqgHWAcHqpEfNdG+rK9SwKBwlhIYV/6h2k1HIuMkYtw98BwOgie8kwALAlugMABwC2RKDl8IEGtgTwdwa8ymDGTyWsAAAAAElFTkSuQmCC";
-    }
-  });
-
-  // src/images/conflictLogIcon.png
-  var require_conflictLogIcon = __commonJS({
-    "src/images/conflictLogIcon.png"(exports, module) {
-      module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAx3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBbDsMgDPvnFDsCeQDhOHTtpN1gx5+BtGqrWsIkcWRCwvb7fsKrg0mDpmK55hwBrVq5IbA40QZT1MED6hLySz0cAqMkuGWmlr1/r9NhMK+GKJ2M7O3CchWqv8B2M/KHpE/ECFY3qm4kPAVygza/FXO1cv7CssUrbJ7QScrwPkzuuRZsb00oCvMmJBEsYnMA6UeDNAQZTFLQSGhokiA1RNUnwUKe9rQj/AHmL1km7dMctQAAAYVpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAHMVfU2tFKiJ2EHHIUJ0siIo4lioWwUJpK7TqYHLph9CkIUlxcRRcCw5+LFYdXJx1dXAVBMEPEGcHJ0UXKfF/SaFFjAfH/Xh373H3DhAaFaaaXTFA1SwjnYiLufyKGHxFNwYQwASiEjP1ZGYhC8/xdQ8fX++iPMv73J+jTymYDPCJxDGmGxbxOvHMpqVz3icOs7KkEJ8Tjxt0QeJHrssuv3EuOSzwzLCRTc8Rh4nFUgfLHczKhko8TRxRVI3yhZzLCuctzmqlxlr35C8MFbTlDNdpjiCBRSSRgggZNWygAgtRWjVSTKRpP+7hH3b8KXLJ5NoAI8c8qlAhOX7wP/jdrVmcmnSTQnEg8GLbH6NAcBdo1m37+9i2myeA/xm40tr+agOY/SS93tYiR0D/NnBx3dbkPeByBxh60iVDciQ/TaFYBN7P6JvywOAt0Lvq9tbax+kDkKWulm6Ag0NgrETZax7v7uns7d8zrf5+AOvbctfpJuqpAAAOVWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDo0NjhiZjQ2My0yNmQwLTRjYTMtYTg3Ny0yYjRkNDZkMjY3NGIiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ZjU3NzA1YzEtMjlkYy00MDkwLTlkMWItZmZmNTI4MzE0MDhkIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6YmUwOTA5ODYtMTNjMi00MjAzLTk1MjUtYjQ5Y2ViODA3YThlIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iV2luZG93cyIKICAgR0lNUDpUaW1lU3RhbXA9IjE3MTg2MDM1NTk1ODgwNDUiCiAgIEdJTVA6VmVyc2lvbj0iMi4xMC4zOCIKICAgdGlmZjpPcmllbnRhdGlvbj0iMSIKICAgeG1wOkNyZWF0b3JUb29sPSJHSU1QIDIuMTAiCiAgIHhtcDpNZXRhZGF0YURhdGU9IjIwMjQ6MDY6MTdUMTM6NTI6MzkrMDg6MDAiCiAgIHhtcDpNb2RpZnlEYXRlPSIyMDI0OjA2OjE3VDEzOjUyOjM5KzA4OjAwIj4KICAgPHhtcE1NOkhpc3Rvcnk+CiAgICA8cmRmOlNlcT4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MjY3M2Q1NTgtZmQwZi00ZjA4LWFlN2MtNjZhNjMwN2IwMWNkIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKFdpbmRvd3MpIgogICAgICBzdEV2dDp3aGVuPSIyMDI0LTA2LTE3VDEzOjQ3OjI5Ii8+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOmVkZmYzNmYxLWEzMTAtNGQ3OC04Njg3LTZlNzEzOGEwMjYwNiIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChXaW5kb3dzKSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNC0wNi0xN1QxMzo1MjozOSIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz6juvO/AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6AYRBTQnSc1yYgAAApVJREFUeNrtmkFr1EAUx3/rCiob3FOXQF3wsAfxG4i0xx56Lv0GetKD4uKpaMGDsIIHvfkRehC/Qosr9KzSQxEhFUJKSwkJ6kkPzmFZkmw2eZNk3fc/ziQz8/8l80LmPVCpVCqVSrWsatkYtOf2HwBvhId9GPjeW+m1thfEPMBmx+mexVF42FgAFs1bg9BeIPNWILSFzD8BXlcYu8QgtATMPwVepnT/AO4BPwsOfw14B6ym9A8D33tVGwDz5Ecp3SfAWuB730vOcRP4BLg2vg5tS+Z94G5Z8wBxFF50nO4HYBtwUrZDHEfhuDIAOcyvBb73TWrDx1F4PgPCRlEIbUvmj6Wjni0IrTrM99z+baA31RwEvvc1x70D4CAjJswVGFtzmH8OPJN48j23vwdsTTXvBb63nfP+ATAGVspCuJRzwpGUeQmZudaB05RLRuZtLQ/AmE8b7LRq8xMQjiQg5HkDssyv12F+HggiWyDD/FHd//MTEM6L3F8UwOMmmJ+C8KhKAL8beLjzq0oA/40UgAJQAApAASiAJdblmub9nPAr+2VpAAS+twvs6hZQAApgYQFcaaCXQmuaeSjac/t/EppLHYiUPRRNGO8WsJ/wZSHwvZaNN2AF2DcT16os81JbYGcGhEGDze+UBhD43gtgmAHhoA4IZs4s80Oz9vJB0CQZ0iC4VUOYyA6VToxoaqwA/VkQ7kikxaswDwWyw3EUjjtONwY2ErodYKvjdN/HUXjRdPOFAOSAcF0agi3zhQFUCcGUyHy0Yb5QDEhYYFaRlAfcp2DSArjKvyKpGzbMiwDIERhtSaR0VqRO0GyHM2BzkcyLATAQDiuCIFo0LVorXAEE8Ypx8WpxixCslMurVCqVSqVaXv0FpN1eC6+TpHwAAAAASUVORK5CYII=";
-    }
-  });
-
-  // src/components/logPage.js
-  var require_logPage = __commonJS({
-    "src/components/logPage.js"(exports) {
-      var outboundCallIcon = require_outboundCallIcon();
-      var inboundCallIcon = require_inboundCallIcon();
-      var conflictLogIcon = require_conflictLogIcon();
-      function getLogPageRender({ id, manifest: manifest2, logType, triggerType, platformName: platformName2, direction, contactInfo, subject, note, loggedContactId, isUnresolved }) {
-        const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
-        const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
-        const additionalInputFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "inputField") ?? [];
-        const contactList = contactInfo.map((c) => {
-          return { const: c.id, title: c.name, type: c.type, description: c.type ? `${c.type} - ${c.id}` : "", additionalInfo: c.additionalInfo, isNewContact: !!c.isNewContact };
-        });
-        const defaultActivityTitle = direction === "Inbound" ? `Inbound ${logType} from ${contactList[0]?.title ?? ""}` : `Outbound ${logType} to ${contactList[0]?.title ?? ""}`;
-        let callSchemas = {};
-        let callUISchemas = {};
-        let callFormData = {};
-        if (logType === "Call") {
-          callSchemas = {
-            activityTitle: {
-              title: "Activity title",
-              type: "string",
-              manuallyEdited: false
-            },
-            note: {
-              title: "Note",
-              type: "string"
-            }
-          };
-          callUISchemas = {
-            activityTitle: {
-              "ui:placeholder": "Enter title..."
-            },
-            note: {
-              "ui:placeholder": "Enter note...",
-              "ui:widget": "textarea"
-            }
-          };
-          callFormData = {
-            activityTitle: !!subject & subject !== "" ? subject : defaultActivityTitle,
-            note: note ?? ""
-          };
-        }
-        let page = {};
-        switch (triggerType) {
-          case "createLog":
-          case "manual":
-          case "auto":
-            let additionalFields = {};
-            let additionalFieldsValue = {};
-            for (const f of additionalChoiceFields) {
-              if (!contactList[0]?.additionalInfo?.hasOwnProperty(f.const)) {
-                continue;
-              }
-              additionalFields[f.const] = {
-                title: f.title,
-                type: "string",
-                oneOf: [...contactList[0].additionalInfo[f.const], { const: "none", title: "None" }],
-                associationField: !!f.contactDependent
-              };
-              additionalFieldsValue[f.const] = contactList[0].additionalInfo[f.const][0].const;
-            }
-            for (const f of additionalCheckBoxFields) {
-              if (!contactList[0]?.additionalInfo?.hasOwnProperty(f.const)) {
-                continue;
-              }
-              additionalFields[f.const] = {
-                title: f.title,
-                type: "boolean",
-                associationField: !!f.contactDependent
-              };
-              additionalFieldsValue[f.const] = f.defaultValue ?? false;
-            }
-            for (const f of additionalInputFields) {
-              if (!contactList[0]?.additionalInfo?.hasOwnProperty(f.const)) {
-                continue;
-              }
-              additionalFields[f.const] = {
-                title: f.title,
-                type: "string",
-                associationField: !!f.contactDependent
-              };
-              additionalFieldsValue[f.const] = f.defaultValue ?? "";
-            }
-            let warningField = {};
-            if (contactList.length > 2) {
-              warningField = {
-                warning: {
-                  type: "string",
-                  description: "Multiple contacts found. Please select the contact to associate this activity with."
-                }
-              };
-            } else if (contactList.length === 1) {
-              warningMessage = {
-                warning: {
-                  type: "string",
-                  description: "No contact found. Enter a name to have a placeholder contact made for you."
-                }
-              };
-            }
-            let requiredFieldNames = [];
-            if (contactList.length === 1) {
-              requiredFieldNames = ["newContactName"];
-            }
-            ;
-            let newContactWidget = {
-              newContactName: {
-                "ui:widget": "hidden"
-              },
-              newContactType: {
-                "ui:widget": "hidden"
-              }
-            };
-            if (contactList[0].isNewContact) {
-              if (!!manifest2.platforms[platformName2].contactTypes) {
-                newContactWidget.newContactType = {};
-              }
-              newContactWidget.newContactName = {
-                "ui:placeholder": "Enter name..."
-              };
-            }
-            page = {
-              title: `Save to ${platformName2}`,
-              // optional
-              schema: {
-                type: "object",
-                required: requiredFieldNames,
-                properties: {
-                  ...warningField,
-                  id: {
-                    type: "string"
-                  },
-                  contact: {
-                    title: "Contact",
-                    type: "string",
-                    oneOf: contactList
-                  },
-                  newContactName: {
-                    title: "New contact name",
-                    type: "string"
-                  },
-                  contactType: {
-                    title: "",
-                    type: "string"
-                  },
-                  contactName: {
-                    title: "",
-                    type: "string"
-                  },
-                  triggerType: {
-                    title: "",
-                    type: "string"
-                  },
-                  isUnresolved: {
-                    title: "",
-                    type: "boolean"
-                  },
-                  logType: {
-                    title: "",
-                    type: "string"
-                  },
-                  newContactType: {
-                    title: "Contact type",
-                    type: "string",
-                    oneOf: manifest2.platforms[platformName2].contactTypes?.map((t) => {
-                      return { const: t, title: t };
-                    }) ?? []
-                  },
-                  ...callSchemas,
-                  ...additionalFields,
-                  removeUnresolveButton: {
-                    "type": "string",
-                    "title": "Remove from unresolved list"
-                  }
-                }
-              },
-              uiSchema: {
-                id: {
-                  "ui:widget": "hidden"
-                },
-                warning: {
-                  "ui:field": "admonition",
-                  // or typography to show raw text
-                  "ui:severity": "warning"
-                  // "warning", "info", "error", "success"
-                },
-                contactType: {
-                  "ui:widget": "hidden"
-                },
-                contactName: {
-                  "ui:widget": "hidden"
-                },
-                triggerType: {
-                  "ui:widget": "hidden"
-                },
-                logType: {
-                  "ui:widget": "hidden"
-                },
-                isUnresolved: {
-                  "ui:widget": "hidden"
-                },
-                submitButtonOptions: {
-                  submitText: "Save"
-                },
-                removeUnresolveButton: {
-                  "ui:field": "button",
-                  "ui:variant": "contained",
-                  // "text", "outlined", "contained", "plain"
-                  "ui:fullWidth": true,
-                  "ui:color": "danger.b03",
-                  "ui:widget": isUnresolved ? "show" : "hidden"
-                },
-                ...callUISchemas,
-                ...newContactWidget
-              },
-              formData: {
-                id,
-                contact: contactList[0].const,
-                newContactType: manifest2.platforms[platformName2].contactTypes ? manifest2.platforms[platformName2].contactTypes[0] : "",
-                newContactName: "",
-                contactType: contactList[0]?.type ?? "",
-                contactName: contactList[0]?.title ?? "",
-                triggerType,
-                logType,
-                isUnresolved: !!isUnresolved,
-                ...callFormData,
-                ...additionalFieldsValue
-              }
-            };
-            break;
-          case "editLog":
-            page = {
-              title: `Edit log`,
-              // optional
-              schema: {
-                type: "object",
-                required: ["activityTitle"],
-                properties: {
-                  id: {
-                    type: "string"
-                  },
-                  contact: {
-                    title: "Contact",
-                    type: "string",
-                    oneOf: contactList,
-                    readOnly: true
-                  },
-                  activityTitle: {
-                    title: "Activity title",
-                    type: "string"
-                  },
-                  note: {
-                    title: "Note",
-                    type: "string"
-                  }
-                }
-              },
-              uiSchema: {
-                id: {
-                  "ui:widget": "hidden"
-                },
-                note: {
-                  "ui:placeholder": "Enter note...",
-                  "ui:widget": "textarea"
-                },
-                submitButtonOptions: {
-                  submitText: "Update"
-                }
-              },
-              formData: {
-                id,
-                contact: loggedContactId ?? contactList[0].const,
-                activityTitle: subject ?? "",
-                triggerType,
-                note: note ?? ""
-              }
-            };
-            break;
-        }
-        return page;
-      }
-      function getUpdatedLogPageRender({ manifest: manifest2, logType, platformName: platformName2, updateData }) {
-        const updatedFieldKey = updateData.keys[0];
-        let page = updateData.page;
-        page.formData = updateData.formData;
-        const additionalChoiceFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "selection") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "selection") ?? [];
-        const additionalCheckBoxFields = logType === "Call" ? manifest2.platforms[platformName2].page?.callLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [] : manifest2.platforms[platformName2].page?.messageLog?.additionalFields?.filter((f) => f.type === "checkbox") ?? [];
-        switch (updatedFieldKey) {
-          case "contact":
-            const contact = page.schema.properties.contact.oneOf.find((c) => c.const === page.formData.contact);
-            if (contact.isNewContact) {
-              if (!!manifest2.platforms[platformName2].contactTypes) {
-                page.uiSchema.newContactType = {};
-              }
-              page.uiSchema.newContactName = {
-                "ui:placeholder": "Enter name..."
-              };
-              page.schema.required = ["newContactName"];
-              if (!!page.schema.properties.activityTitle && !page.schema.properties.activityTitle?.manuallyEdited) {
-                page.formData.activityTitle = page.formData.activityTitle.startsWith("Inbound") ? "Inbound call from " : "Outbound call to ";
-              }
-            } else {
-              page.formData.newContactName = "";
-              page.formData.newContactType = "";
-              page.uiSchema.newContactType = {
-                "ui:widget": "hidden"
-              };
-              page.uiSchema.newContactName = {
-                "ui:widget": "hidden"
-              };
-              page.schema.required = [];
-              if (!!page.schema.properties.activityTitle && !page.schema.properties.activityTitle?.manuallyEdited) {
-                page.formData.activityTitle = page.formData.activityTitle.startsWith("Inbound") ? `Inbound call from ${contact.title}` : `Outbound call to ${contact.title}`;
-              }
-            }
-            page.formData.contactType = contact.type;
-            page.formData.contactName = contact.title;
-            const allAssociationFields = Object.keys(page.schema.properties);
-            for (const af of allAssociationFields) {
-              if (!!page.schema.properties[af].associationField) {
-                delete page.schema.properties[af];
-                delete page.formData[af];
-              }
-            }
-            let additionalFields = {};
-            let additionalFieldsValue = {};
-            for (const f of additionalChoiceFields) {
-              if (f.contactDependent && !contact?.additionalInfo?.hasOwnProperty(f.const)) {
-                continue;
-              }
-              additionalFields[f.const] = {
-                title: f.title,
-                type: "string",
-                oneOf: [...contact.additionalInfo[f.const], { const: "none", title: "None" }],
-                associationField: f.contactDependent
-              };
-              additionalFieldsValue[f.const] = f.contactDependent ? contact.additionalInfo[f.const][0].const : page.formData[f.const];
-            }
-            for (const f of additionalCheckBoxFields) {
-              if (f.contactDependent && !contact?.additionalInfo?.hasOwnProperty(f.const)) {
-                continue;
-              }
-              additionalFields[f.const] = {
-                title: f.title,
-                type: "boolean",
-                associationField: f.contactDependent
-              };
-              additionalFieldsValue[f.const] = f.contactDependent ? f.defaultValue : page.formData[f.const];
-            }
-            page.schema.properties = {
-              ...page.schema.properties,
-              ...additionalFields
-            };
-            page.formData = {
-              ...page.formData,
-              ...additionalFieldsValue
-            };
-            break;
-          case "newContactName":
-            if (!!page.schema.properties.activityTitle && !page.schema.properties.activityTitle.manuallyEdited) {
-              page.formData.activityTitle = page.formData.activityTitle.startsWith("Inbound") ? `Inbound call from ${page.formData.newContactName}` : `Outbound call to ${page.formData.newContactName}`;
-            }
-            break;
-          case "activityTitle":
-            page.schema.properties.activityTitle.manuallyEdited = true;
-            break;
-        }
-        return page;
-      }
-      function getUnresolvedLogsPageRender({ unresolvedLogs }) {
-        const logsList = [];
-        for (const cacheId of Object.keys(unresolvedLogs)) {
-          const isMultipleContactConflit = unresolvedLogs[cacheId].contactInfo.length > 1;
-          const isNoContact = unresolvedLogs[cacheId].contactInfo.length === 1;
-          const contactName = isMultipleContactConflit ? "Multiple contacts" : unresolvedLogs[cacheId].contactInfo[0].name;
-          logsList.push({
-            const: cacheId,
-            title: `${contactName} ${unresolvedLogs[cacheId]?.phoneNumber ? `(${unresolvedLogs[cacheId]?.phoneNumber})` : ""}`,
-            description: isNoContact ? "Missing: No matched contact" : isMultipleContactConflit ? "Conflict: Multiple matched contacts" : "Conflict: Multiple associations",
-            meta: unresolvedLogs[cacheId].date,
-            icon: unresolvedLogs[cacheId].direction === "Inbound" ? inboundCallIcon : outboundCallIcon
-          });
-        }
-        return {
-          id: "unresolve",
-          // tab id, required
-          title: "Unresolve",
-          type: "tab",
-          // tab type
-          hidden: Object.keys(unresolvedLogs).length === 0,
-          iconUri: conflictLogIcon,
-          // icon for tab, 24x24
-          activeIconUri: conflictLogIcon,
-          // icon for tab in active status, 24x24
-          priority: 9,
-          unreadCount: Object.keys(unresolvedLogs).length,
-          // schema and uiSchema are used to customize page, api is the same as [react-jsonschema-form](https://rjsf-team.github.io/react-jsonschema-form)
-          schema: {
-            type: "object",
-            required: [],
-            properties: {
-              "warning": {
-                "type": "string",
-                "description": "Unresolved call logs are listed below. They cannot be auto logged because of conflicts like multiple matched contacts, multiple associations etc."
-              },
-              "record": {
-                "type": "string",
-                "oneOf": logsList
-              }
-            }
-          },
-          uiSchema: {
-            warning: {
-              "ui:field": "admonition",
-              "ui:severity": "warning"
-              // "warning", "info", "error", "success"
-            },
-            record: {
-              "ui:field": "list",
-              "ui:showIconAsAvatar": false
-            }
-          },
-          formData: {
-            record: ""
-          }
-        };
-      }
-      exports.getLogPageRender = getLogPageRender;
-      exports.getUpdatedLogPageRender = getUpdatedLogPageRender;
-      exports.getUnresolvedLogsPageRender = getUnresolvedLogsPageRender;
-    }
-  });
-
-  // src/components/authPage.js
-  var require_authPage = __commonJS({
-    "src/components/authPage.js"(exports) {
-      function getAuthPageRender({ manifest: manifest2, platformName: platformName2 }) {
-        const authPage2 = manifest2.platforms[platformName2].auth.apiKey.page;
-        const pageTitle = authPage2.title;
-        const required = authPage2.content.filter((c) => c.required).map((c) => {
-          return c.const;
-        });
-        const warning = authPage2.warning ? {
-          warning: {
-            type: "string",
-            description: authPage2.warning
-          }
-        } : {};
-        let content = {};
-        for (const c of authPage2.content) {
-          content[c.const] = {
-            title: c.title,
-            type: c.type
-          };
-        }
-        let uiSchema = {
-          submitButtonOptions: {
-            // optional if you don't want to show submit button
-            submitText: "Connect"
-          },
-          warning: {
-            "ui:field": "admonition",
-            "ui:severity": "warning"
-            // "warning", "info", "error", "success"
-          }
-        };
-        for (const c of authPage2.content) {
-          if (!!c.uiSchema) {
-            uiSchema[c.const] = c.uiSchema;
-          }
-        }
-        let formData = {};
-        for (const c of authPage2.content) {
-          if (!!c.defaultValue) {
-            formData[c.const] = c.defaultValue;
-          }
-        }
-        const page = {
-          id: "authPage",
-          title: pageTitle,
-          schema: {
-            type: "object",
-            required,
-            properties: {
-              ...warning,
-              ...content
-            }
-          },
-          uiSchema,
-          formData
-        };
-        return page;
-      }
-      exports.getAuthPageRender = getAuthPageRender;
-    }
-  });
-
-  // src/components/feedbackPage.js
-  var require_feedbackPage = __commonJS({
-    "src/components/feedbackPage.js"(exports) {
-      function getFeedbackPageRender({ pageConfig }) {
-        let properties = {};
-        let uiSchema = {
-          submitButtonOptions: {
-            submitText: "Submit"
-          }
-        };
-        let required = [];
-        for (const e of pageConfig.elements) {
-          if (!!e.required) {
-            required.push(e.const);
-          }
-          switch (e.type) {
-            case "string":
-              properties[e.const] = {
-                type: "string",
-                description: e.title
-              };
-              uiSchema[e.const] = {
-                "ui:field": "typography",
-                "ui:variant": e.bold ? "body2" : "body1"
-                // "caption1", "caption2", "body1", "body2", "subheading2", "subheading1", "title2", "title1"
-              };
-              break;
-            case "inputField":
-              properties[e.const] = {
-                type: "string",
-                title: e.title
-              };
-              uiSchema[e.const] = {
-                "ui:placeholder": e.placeholder ?? "",
-                "ui:widget": "textarea"
-              };
-              break;
-            case "selection":
-              properties[e.const] = {
-                title: e.title,
-                type: "string",
-                oneOf: e.selections
-              };
-              break;
-          }
-        }
-        return {
-          id: "feedbackPage",
-          title: "Feedback",
-          schema: {
-            type: "object",
-            required,
-            properties
-          },
-          uiSchema,
-          formData: {}
-        };
-      }
-      exports.getFeedbackPageRender = getFeedbackPageRender;
-    }
-  });
-
-  // src/components/releaseNotesPage.js
-  var require_releaseNotesPage = __commonJS({
-    "src/components/releaseNotesPage.js"(exports) {
-      init_axios2();
-      async function getReleaseNotesPageRender({ manifest: manifest2, platformName: platformName2, registeredVersion }) {
-        const releaseNotesResponse = await axios_default2.get(`${manifest2.serverUrl}/releaseNotes`);
-        const releaseNotes = releaseNotesResponse.data;
-        const registeredVersionNumbers = registeredVersion.split(".").map((v) => parseInt(v));
-        const currentVersionNumbers = manifest2.version.split(".").map((v) => parseInt(v));
-        if (!!releaseNotes[manifest2.version] && (currentVersionNumbers[0] > registeredVersionNumbers[0] || currentVersionNumbers[0] === registeredVersionNumbers[0] && currentVersionNumbers[1] > registeredVersionNumbers[1] || currentVersionNumbers[0] === registeredVersionNumbers[0] && currentVersionNumbers[1] === registeredVersionNumbers[1] && currentVersionNumbers[2] > registeredVersionNumbers[2])) {
-          const globalNotes = releaseNotes[manifest2.version].global ?? [];
-          const platformNotes = releaseNotes[manifest2.version][platformName2] ?? [];
-          const allNotes = globalNotes.concat(platformNotes);
-          const allTypes = allNotes.map((n) => {
-            return n.type;
-          }).filter((value, index, array) => {
-            return array.indexOf(value) === index;
-          });
-          let notesRender = [];
-          let notesUiSchema = [];
-          for (const t of allTypes) {
-            const targetNotes = allNotes.filter((n) => {
-              return n.type === t;
-            });
-            notesRender.push({
-              type: "string",
-              description: t
-            });
-            notesUiSchema.push({
-              "ui:field": "typography",
-              "ui:variant": "body2"
-              // "caption1", "caption2", "body1", "body2", "subheading2", "subheading1", "title2", "title1"
-            });
-            for (const n of targetNotes) {
-              notesRender.push({
-                type: "string",
-                description: n.description
-              });
-              notesUiSchema.push({
-                "ui:field": "typography",
-                "ui:variant": "body1",
-                // "caption1", "caption2", "body1", "body2", "subheading2", "subheading1", "title2", "title1"
-                "ui:style": { margin: "-15px 0px 0px 20px" }
-              });
-            }
-          }
-          return {
-            id: "releaseNotesPage",
-            title: `Release Notes (v${manifest2.version})`,
-            schema: {
-              type: "object",
-              properties: notesRender
-            },
-            uiSchema: notesUiSchema,
-            formData: {}
-          };
-        } else {
-          return null;
-        }
-      }
-      exports.getReleaseNotesPageRender = getReleaseNotesPageRender;
+      exports.deleteDB = deleteDB;
+      exports.openDB = openDB2;
+      exports.unwrap = unwrap;
+      exports.wrap = wrap;
     }
   });
 
   // src/popup.js
   init_axios2();
   var auth = require_auth();
-  var { getLog, openLog, addLog, updateLog, getCachedNote, cacheCallNote, cacheUnresolvedLog, getLogCache, getAllUnresolvedLogs, resolveCachedLog } = require_log();
-  var { getContact, createContact, openContactPage } = require_contact();
+  var { checkLog, openLog, updateLog } = require_log();
+  var { getContact, openContactPage } = require_contact();
+  var config = require_config();
   var { responseMessage, isObjectEmpty, showNotification } = require_util();
   var { getUserInfo } = require_rcAPI();
   var { apiKeyLogin } = require_auth();
-  var { openDB: openDB2 } = (init_build(), __toCommonJS(build_exports));
-  var logPage = require_logPage();
-  var authPage = require_authPage();
-  var feedbackPage = require_feedbackPage();
-  var releaseNotesPage = require_releaseNotesPage();
-  var moment = require_moment();
+  var { openDB } = require_build();
   var {
     identify,
     reset,
@@ -11735,9 +7885,7 @@
     trackOpenFeedback
   } = require_analytics();
   window.__ON_RC_POPUP_WINDOW = 1;
-  var manifest = {};
   var registered = false;
-  var crmAuthed = false;
   var platform = null;
   var platformName = "";
   var platformHostname = "";
@@ -11746,57 +7894,31 @@
   var leadingSMSCallReady = false;
   var trailingSMSLogInfo = [];
   var firstTimeLogoutAbsorbed = false;
-  var autoPopupMainConverastionId = null;
-  axios_default2.defaults.timeout = 3e4;
   async function checkC2DCollision() {
-    try {
-      const { rcForGoogleCollisionChecked } = await chrome.storage.local.get({ rcForGoogleCollisionChecked: false });
-      const collidingC2DResponse = await fetch("chrome-extension://fddhonoimfhgiopglkiokmofecgdiedb/redirect.html");
-      if (!rcForGoogleCollisionChecked && collidingC2DResponse.status === 200) {
-        chrome.notifications.create({
-          type: "basic",
-          iconUrl: "/images/logo32.png",
-          title: `Click-to-dial may not work`,
-          message: "The RingCentral for Google Chrome extension has been detected. You may wish to customize your click-to-dial preferences for your desired behavior",
-          priority: 1,
-          buttons: [
-            {
-              title: "Configure"
-            }
-          ]
-        });
-        chrome.notifications.onButtonClicked.addListener(
-          (notificationId, buttonIndex) => {
-            window.open("https://youtu.be/tbCOM27GUbc");
+    const { rcForGoogleCollisionChecked } = await chrome.storage.local.get({ rcForGoogleCollisionChecked: false });
+    const collidingC2DResponse = await fetch("chrome-extension://fddhonoimfhgiopglkiokmofecgdiedb/redirect.html");
+    if (!rcForGoogleCollisionChecked && collidingC2DResponse.status === 200) {
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/images/logo32.png",
+        title: `Click-to-dial may not work`,
+        message: "The RingCentral for Google Chrome extension has been detected. You may wish to customize your click-to-dial preferences for your desired behavior",
+        priority: 1,
+        buttons: [
+          {
+            title: "Configure"
           }
-        );
-        await chrome.storage.local.set({ rcForGoogleCollisionChecked: true });
-      }
-    } catch (e) {
+        ]
+      });
+      chrome.notifications.onButtonClicked.addListener(
+        (notificationId, buttonIndex) => {
+          window.open("https://youtu.be/tbCOM27GUbc");
+        }
+      );
+      await chrome.storage.local.set({ rcForGoogleCollisionChecked: true });
     }
   }
   checkC2DCollision();
-  async function getCustomManifest() {
-    const { customCrmManifest } = await chrome.storage.local.get({ customCrmManifest: null });
-    if (!!customCrmManifest) {
-      manifest = customCrmManifest;
-    }
-  }
-  getCustomManifest();
-  async function showUnresolvedTabPage(path) {
-    const unresolvedLogs = await getAllUnresolvedLogs();
-    const unresolvedLogsPage = logPage.getUnresolvedLogsPageRender({ unresolvedLogs });
-    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-      type: "rc-adapter-register-customized-page",
-      page: unresolvedLogsPage
-    }, "*");
-    if (unresolvedLogsPage.hidden && !!path && (path == "/customizedTabs/unresolve" || path == "/messageLogger" || path == "/callLogger")) {
-      document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-        type: "rc-adapter-navigate-to",
-        path: "goBack"
-      }, "*");
-    }
-  }
   window.addEventListener("message", async (e) => {
     const data = e.data;
     let noShowNotification = false;
@@ -11831,7 +7953,6 @@
                     type: "rc-adapter-new-sms",
                     phoneNumber: cachedClickToXRequest.phoneNumber,
                     conversation: true
-                    // will go to conversation page if conversation existed
                   }, "*");
                 }
               }
@@ -11841,15 +7962,13 @@
               await auth.checkAuth();
               RCAdapter.showFeedback({
                 onFeedback: function() {
-                  const feedbackPageRender = feedbackPage.getFeedbackPageRender({ pageConfig: manifest.platforms[platformName].page.feedback });
-                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                    type: "rc-adapter-register-customized-page",
-                    page: feedbackPageRender
-                  });
-                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                    type: "rc-adapter-navigate-to",
-                    path: `/customized/${feedbackPageRender.id}`
-                    // '/meeting', '/dialer', '//history', '/settings'
+                  window.postMessage({
+                    type: "rc-feedback-open",
+                    props: {
+                      userName: rcUserInfo.rcUserName,
+                      userEmail: rcUserInfo.rcUserEmail,
+                      platformName
+                    }
                   }, "*");
                   trackOpenFeedback();
                 }
@@ -11862,11 +7981,11 @@
               const platformInfo2 = await chrome.storage.local.get("platform-info");
               platformName = platformInfo2["platform-info"].platformName;
               platformHostname = platformInfo2["platform-info"].hostname;
-              platform = manifest.platforms[platformName];
+              platform = config.platforms[platformName];
               registered = true;
               document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                 type: "rc-adapter-register-third-party-service",
-                service: getServiceManifest(platform.name)
+                service: getServiceConfig(platformName)
               }, "*");
             }
             break;
@@ -11878,7 +7997,6 @@
             if (data.loggedIn) {
               document.getElementById("rc-widget").style.zIndex = 0;
               const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
-              crmAuthed = !!rcUnifiedCrmExtJwt;
               if (platformName === "pipedrive" && !await auth.checkAuth()) {
                 chrome.runtime.sendMessage(
                   {
@@ -11886,20 +8004,20 @@
                   }
                 );
               } else if (!rcUnifiedCrmExtJwt) {
-                showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 1e4 });
+                showNotification({ level: "warning", message: "Please authorize CRM platform account via More Menu (right most on top bar) -> Settings.", ttl: 1e4 });
               }
               try {
                 const extId = JSON.parse(localStorage.getItem("sdk-rc-widgetplatform")).owner_id;
-                const indexDB = await openDB2(`rc-widget-storage-${extId}`, 2);
+                const indexDB = await openDB(`rc-widget-storage-${extId}`, 2);
                 const rcInfo = await indexDB.get("keyvaluepairs", "dataFetcherV2-storageData");
                 const userInfoResponse = await getUserInfo({
-                  serverUrl: manifest.serverUrl,
                   extensionId: rcInfo.value.cachedData.extensionInfo.id,
                   accountId: rcInfo.value.cachedData.extensionInfo.account.id
                 });
                 rcUserInfo = {
                   rcUserName: rcInfo.value.cachedData.extensionInfo.name,
                   rcUserEmail: rcInfo.value.cachedData.extensionInfo.contact.email,
+                  rcUserNumber: data.loginNumber,
                   rcAccountId: userInfoResponse.accountId,
                   rcExtensionId: userInfoResponse.extensionId
                 };
@@ -11907,9 +8025,6 @@
                 reset();
                 identify({ extensionId: rcUserInfo?.rcExtensionId, rcAccountId: rcUserInfo?.rcAccountId, platformName });
                 group({ rcAccountId: rcUserInfo?.rcAccountId });
-                axios_default2.defaults.headers.common["rc-extension-id"] = rcUserInfo?.rcExtensionId;
-                axios_default2.defaults.headers.common["rc-account-id"] = rcUserInfo?.rcAccountId;
-                await showUnresolvedTabPage();
               } catch (e2) {
                 reset();
                 console.error(e2);
@@ -11938,24 +8053,9 @@
                 }
               }
             }
-            const registeredVersionInfo = await chrome.storage.local.get("rc-crm-extension-version");
-            if (!!registeredVersionInfo[["rc-crm-extension-version"]]) {
-              const releaseNotesPageRender = await releaseNotesPage.getReleaseNotesPageRender({ manifest, platformName, registeredVersion: registeredVersionInfo["rc-crm-extension-version"] });
-              if (!!releaseNotesPageRender) {
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-adapter-register-customized-page",
-                  page: releaseNotesPageRender
-                });
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-adapter-navigate-to",
-                  path: `/customized/${releaseNotesPageRender.id}`
-                  // '/meeting', '/dialer', '//history', '/settings'
-                }, "*");
-              }
-            }
-            await chrome.storage.local.set({
-              ["rc-crm-extension-version"]: manifest.version
-            });
+            window.postMessage({
+              type: "rc-check-version"
+            }, "*");
             break;
           case "rc-login-popup-notify":
             handleRCOAuthWindow(data.oAuthUri);
@@ -11982,9 +8082,6 @@
             }
             break;
           case "rc-active-call-notify":
-            if (data.call.telephonyStatus === "CallConnected") {
-              window.postMessage({ type: "rc-expandable-call-note-open", sessionId: data.call.sessionId }, "*");
-            }
             if (data.call.telephonyStatus === "NoCall" && data.call.terminationType === "final") {
               window.postMessage({ type: "rc-expandable-call-note-terminate" }, "*");
             }
@@ -11993,8 +8090,11 @@
                 type: "openPopupWindow"
               });
               if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page from incoming call")?.value) {
-                await openContactPage({ manifest, platformName, phoneNumber: data.call.direction === "Inbound" ? data.call.from.phoneNumber : data.call.to.phoneNumber });
+                openContactPage({ phoneNumber: data.call.direction === "Inbound" ? data.call.from.phoneNumber : data.call.to.phoneNumber });
               }
+            }
+            if (data.call.telephonyStatus === "CallConnected") {
+              window.postMessage({ type: "rc-expandable-call-note-open", sessionId: data.call.sessionId }, "*");
             }
             break;
           case "rc-analytics-track":
@@ -12016,14 +8116,8 @@
             trackEditSettings({ changedItem: "auto-message-log", status: data.autoLog });
             break;
           case "rc-route-changed-notify":
-            if (!data.path.startsWith("/log/message") && !data.path.startsWith("/conversations/")) {
-              autoPopupMainConverastionId = null;
-            }
             if (data.path !== "/") {
               trackPage(data.path);
-              if (data.path === "/customizedTabs/unresolve") {
-                await showUnresolvedTabPage(data.path);
-              }
             }
             if (!!data.path) {
               if (data.path.startsWith("/conversations/") || data.path.startsWith("/composeText")) {
@@ -12032,59 +8126,39 @@
             }
             break;
           case "rc-post-message-request":
-            if (!crmAuthed && (data.path === "/callLogger" || data.path === "/messageLogger")) {
-              showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 1e4 });
-              break;
-            }
             switch (data.path) {
               case "/authorize":
                 const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
-                crmAuthed = !!rcUnifiedCrmExtJwt;
                 if (!rcUnifiedCrmExtJwt) {
-                  switch (platform.auth.type) {
+                  switch (platform.authType) {
                     case "oauth":
                       let authUri;
-                      let customState = "";
-                      if (!!platform.auth.oauth.customState) {
-                        customState = platform.auth.oauth.customState;
-                      }
                       if (platformName === "pipedrive") {
-                        authUri = manifest.platforms.pipedrive.redirectUri;
+                        authUri = config.platforms.pipedrive.redirectUri;
                       } else if (platformName === "bullhorn") {
                         let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
                         if (crm_extension_bullhorn_user_urls?.oauthUrl) {
-                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.auth.oauth.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                          authUri = `${crm_extension_bullhorn_user_urls.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                         } else {
                           const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
-                          showNotification({ level: "warning", message: "Bullhorn authorize error. Please refresh Bullhorn webpage and try again.", ttl: 3e4 });
-                          const { data: crm_extension_bullhorn_user_urls2 } = await axios_default2.get(`https://rest.bullhornstaffing.com/rest-services/loginInfo?username=${crm_extension_bullhornUsername}`);
+                          showNotification({ level: "warning", message: "Bullhorn authorize error. Please try again in 30 seconds", ttl: 3e4 });
+                          const { data: crm_extension_bullhorn_user_urls2 } = await axios_default.get(`https://rest.bullhornstaffing.com/rest-services/loginInfo?username=${crm_extension_bullhornUsername}`);
                           await chrome.storage.local.set({ crm_extension_bullhorn_user_urls: crm_extension_bullhorn_user_urls2 });
                           if (crm_extension_bullhorn_user_urls2?.oauthUrl) {
-                            authUri = `${crm_extension_bullhorn_user_urls2.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.auth.oauth.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                            authUri = `${crm_extension_bullhorn_user_urls2.oauthUrl}/authorize?response_type=code&action=Login&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                           }
                         }
                       } else {
-                        authUri = `${platform.auth.oauth.authUrl}?response_type=code&client_id=${platform.auth.oauth.clientId}${!!platform.auth.oauth.scope && platform.auth.oauth.scope != "" ? `&${platform.auth.oauth.scope}` : ""}&state=${customState === "" ? `platform=${platform.name}` : customState}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
+                        authUri = `${platform.authUrl}?response_type=code&client_id=${platform.clientId}&state=platform=${platform.name}&redirect_uri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html`;
                       }
                       handleThirdPartyOAuthWindow(authUri);
                       break;
                     case "apiKey":
-                      const authPageRender = authPage.getAuthPageRender({ manifest, platformName });
-                      document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                        type: "rc-adapter-register-customized-page",
-                        page: authPageRender
-                      });
-                      document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                        type: "rc-adapter-navigate-to",
-                        path: `/customized/${authPageRender.id}`
-                        // '/meeting', '/dialer', '//history', '/settings'
-                      }, "*");
+                      window.postMessage({ type: "rc-apiKey-input-modal", platform: platform.name }, "*");
                       break;
                   }
                 } else {
-                  window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                  auth.unAuthorize({ serverUrl: manifest.serverUrl, platformName, rcUnifiedCrmExtJwt });
-                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                  await auth.unAuthorize(rcUnifiedCrmExtJwt);
                 }
                 responseMessage(
                   data.requestId,
@@ -12093,60 +8167,14 @@
                   }
                 );
                 break;
-              case "/customizedPage/inputChanged":
-                if (data.body.page.id === "unresolve") {
-                  const unresolvedRecordId = data.body.formData.record;
-                  const unresolvedLog = await getLogCache({ cacheId: unresolvedRecordId });
-                  const pageId = unresolvedRecordId.split("-")[1];
-                  const logPageRender = logPage.getLogPageRender({
-                    id: pageId,
-                    manifest,
-                    logType: unresolvedLog.type,
-                    triggerType: "createLog",
-                    platformName,
-                    direction: unresolvedLog.direction ?? "",
-                    contactInfo: unresolvedLog.contactInfo,
-                    subject: unresolvedLog.subject ?? "",
-                    note: unresolvedLog.note ?? "",
-                    isUnresolved: true
-                  });
-                  if (unresolvedLog.type === "Call") {
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-update-call-log-page",
-                      page: logPageRender
-                    }, "*");
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-navigate-to",
-                      path: `/log/call/${pageId}`
-                    }, "*");
-                  } else {
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-update-messages-log-page",
-                      page: logPageRender
-                    }, "*");
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-navigate-to",
-                      path: `/log/messages/${pageId}`
-                    }, "*");
-                  }
-                }
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-post-message-response",
-                  responseId: data.requestId,
-                  response: { data: "ok" }
-                }, "*");
-                break;
               case "/contacts/match":
                 noShowNotification = true;
                 let matchedContacts = {};
                 const { tempContactMatchTask } = await chrome.storage.local.get({ tempContactMatchTask: null });
-                if (data.body.phoneNumbers.length === 1 && !!tempContactMatchTask && tempContactMatchTask.phoneNumber === data.body.phoneNumbers[0]) {
-                  const cachedMatching = document.querySelector("#rc-widget-adapter-frame").contentWindow.phone.contactMatcher.data[tempContactMatchTask.phoneNumber];
-                  const platformContactMatching = !!cachedMatching ? cachedMatching[platformName]?.data : [];
+                if (data.body.phoneNumbers.length === 1 && !!tempContactMatchTask) {
                   matchedContacts[tempContactMatchTask.phoneNumber] = [
-                    ...platformContactMatching,
                     {
-                      id: tempContactMatchTask.contactId,
+                      id: tempContactMatchTask.id,
                       type: platformName,
                       name: tempContactMatchTask.contactName,
                       phoneNumbers: [
@@ -12154,9 +8182,7 @@
                           phoneNumber: tempContactMatchTask.phoneNumber,
                           phoneType: "direct"
                         }
-                      ],
-                      entityType: platformName,
-                      contactType: tempContactMatchTask.contactType
+                      ]
                     }
                   ];
                   await chrome.storage.local.remove("tempContactMatchTask");
@@ -12165,15 +8191,10 @@
                     if (!contactPhoneNumber2.startsWith("+")) {
                       continue;
                     }
-                    const { matched: contactMatched, contactInfo } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber2 });
+                    const { matched: contactMatched, contactInfo } = await getContact({ phoneNumber: contactPhoneNumber2 });
                     if (contactMatched) {
-                      if (!!!matchedContacts[contactPhoneNumber2]) {
-                        matchedContacts[contactPhoneNumber2] = [];
-                      }
+                      matchedContacts[contactPhoneNumber2] = [];
                       for (var contactInfoItem of contactInfo) {
-                        if (contactInfoItem.isNewContact) {
-                          continue;
-                        }
                         matchedContacts[contactPhoneNumber2].push({
                           id: contactInfoItem.id,
                           type: platformName,
@@ -12184,9 +8205,7 @@
                               phoneType: "direct"
                             }
                           ],
-                          entityType: platformName,
-                          contactType: contactInfoItem.type,
-                          additionalInfo: contactInfoItem.additionalInfo
+                          entityType: platformName
                         });
                       }
                     }
@@ -12199,202 +8218,59 @@
                   }
                 );
                 break;
-              case "/contacts/view":
-                window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                await openContactPage({ manifest, platformName, phoneNumber: data.body.phoneNumbers[0].phoneNumber, contactId: data.body.id, contactType: data.body.contactType });
-                window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                responseMessage(
-                  data.requestId,
-                  {
-                    data: "ok"
-                  }
-                );
-                break;
               case "/callLogger":
-                let isAutoLog = false;
-                const callAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto log call - only pop up log page")?.value;
-                if (data.body.call.direction === "Inbound") {
-                  if (!!data?.body?.call?.from?.extensionNumber) {
-                    showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
+                if (data.body.triggerType && data.body.call?.to?.phoneNumber?.length > 4) {
+                  if (data.body.triggerType === "callLogSync") {
+                    if (!!data.body.call?.recording?.link) {
+                      console.log("call recording updating...");
+                      await chrome.storage.local.set({ ["rec-link-" + data.body.call.sessionId]: { recordingLink: data.body.call.recording.link } });
+                      await updateLog(
+                        {
+                          logType: "Call",
+                          sessionId: data.body.call.sessionId,
+                          recordingLink: data.body.call.recording.link
+                        }
+                      );
+                    }
                     break;
                   }
-                } else {
-                  if (!!data?.body?.call?.to?.extensionNumber) {
-                    showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
-                    break;
-                  }
-                }
-                if (data.body.triggerType === "callLogSync") {
-                  if (!!data.body.call?.recording?.link) {
-                    console.log("call recording updating...");
-                    await chrome.storage.local.set({ ["rec-link-" + data.body.call.sessionId]: { recordingLink: data.body.call.recording.link } });
-                    await updateLog(
-                      {
-                        serverUrl: manifest.serverUrl,
-                        logType: "Call",
-                        sessionId: data.body.call.sessionId,
-                        recordingLink: data.body.call.recording.link
-                      }
-                    );
-                  }
-                  break;
-                }
-                if (data.body.triggerType === "presenceUpdate") {
-                  if (data.body.call.result === "Disconnected") {
-                    data.body.triggerType = "createLog";
-                    isAutoLog = true;
-                  } else {
+                  if (data.body.triggerType === "presenceUpdate" && data.body.call.result !== "Disconnected") {
                     break;
                   }
                 }
                 window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
                 const contactPhoneNumber = data.body.call.direction === "Inbound" ? data.body.call.from.phoneNumber : data.body.call.to.phoneNumber;
-                if (data.body.triggerType === "logForm") {
-                  let additionalSubmission = {};
-                  const additionalFields = manifest.platforms[platformName].page?.callLog?.additionalFields ?? [];
-                  for (const f of additionalFields) {
-                    if (data.body.formData[f.const] != "none") {
-                      additionalSubmission[f.const] = data.body.formData[f.const];
+                const { callLogs: singleCallLog } = await checkLog({
+                  logType: "Call",
+                  sessionIds: data.body.call.sessionId
+                });
+                const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ phoneNumber: contactPhoneNumber });
+                if (singleCallLog[data.body.call.sessionId]?.matched || singleCallLog.find((c) => c.sessionId == data.body.call.sessionId)?.matched) {
+                  if (config.platforms[platformName].canOpenLogPage) {
+                    for (const c of callMatchedContact) {
+                      openLog({ platform: platformName, hostname: platformHostname, logId: singleCallLog[data.body.call.sessionId]?.logId ?? singleCallLog.find((c2) => c2.sessionId == data.body.call.sessionId)?.logId, contactType: c.type });
                     }
-                  }
-                  switch (data.body.formData.triggerType) {
-                    case "createLog":
-                      let newContactInfo = {};
-                      if (data.body.formData.contact === "createNewContact") {
-                        const createContactResult = await createContact({
-                          serverUrl: manifest.serverUrl,
-                          phoneNumber: contactPhoneNumber,
-                          newContactName: data.body.formData.newContactName,
-                          newContactType: data.body.formData.newContactType
-                        });
-                        newContactInfo = createContactResult.contactInfo;
-                        const newContactReturnMessage = createContactResult.returnMessage;
-                        showNotification({ level: newContactReturnMessage?.messageType, message: newContactReturnMessage?.message, ttl: newContactReturnMessage?.ttl });
-                        if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
-                          await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
-                        }
-                      }
-                      await addLog(
-                        {
-                          serverUrl: manifest.serverUrl,
-                          logType: "Call",
-                          logInfo: data.body.call,
-                          isMain: true,
-                          note: data.body.formData.note ?? "",
-                          subject: data.body.formData.activityTitle ?? "",
-                          additionalSubmission,
-                          contactId: newContactInfo?.id ?? data.body.formData.contact,
-                          contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
-                          contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
-                        }
-                      );
-                      if (!!data.body.formData.isUnresolved) {
-                        await showUnresolvedTabPage(data.path);
-                      }
-                      break;
-                    case "editLog":
-                      await updateLog({
-                        serverUrl: manifest.serverUrl,
-                        logType: "Call",
-                        sessionId: data.body.call.sessionId,
-                        subject: data.body.formData.activityTitle ?? "",
-                        note: data.body.formData.note ?? ""
-                      });
-                      break;
+                  } else {
+                    openContactPage({ phoneNumber: contactPhoneNumber });
                   }
                 } else {
-                  const { callLogs: fetchedCallLogs } = await getLog({
-                    serverUrl: manifest.serverUrl,
-                    logType: "Call",
-                    sessionIds: data.body.call.sessionId,
-                    requireDetails: data.body.triggerType === "editLog"
-                  });
-                  const { matched: callContactMatched, returnMessage: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ serverUrl: manifest.serverUrl, phoneNumber: contactPhoneNumber });
-                  showNotification({ level: callLogContactMatchMessage?.messageType, message: callLogContactMatchMessage?.message, ttl: callLogContactMatchMessage?.ttl });
-                  if (!callContactMatched) {
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                    break;
-                  }
-                  let note = "";
-                  let callLogSubject = "";
-                  switch (data.body.triggerType) {
-                    case "createLog":
-                      note = await getCachedNote({ sessionId: data.body.call.sessionId });
-                    case "editLog":
-                      if (!!fetchedCallLogs) {
-                        if (!!fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logData?.note) {
-                          note = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.note;
-                        }
-                        if (fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logData?.subject) {
-                          callLogSubject = fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId).logData.subject;
-                        }
-                      }
-                      const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ isAutoLog, contactInfo: callMatchedContact });
-                      if (isAutoLog && !callAutoPopup) {
-                        if (hasConflict) {
-                          window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                          await cacheUnresolvedLog({
-                            type: "Call",
-                            id: data.body.call.sessionId,
-                            phoneNumber: contactPhoneNumber,
-                            direction: data.body.call.direction,
-                            contactInfo: callMatchedContact ?? [],
-                            subject: callLogSubject,
-                            note,
-                            date: moment(data.body.call.startTime).format("MM/DD/YYYY")
-                          });
-                          await showUnresolvedTabPage();
-                          showNotification({ level: "warning", message: "Unable to log call with unresolved conflict.", ttl: 3e3 });
-                        } else {
-                          callLogSubject = data.body.call.direction === "Inbound" ? `Inbound Call from ${callMatchedContact[0]?.name ?? ""}` : `Outbound Call to ${callMatchedContact[0]?.name ?? ""}`;
-                          await addLog(
-                            {
-                              serverUrl: manifest.serverUrl,
-                              logType: "Call",
-                              logInfo: data.body.call,
-                              isMain: true,
-                              note,
-                              subject: callLogSubject,
-                              additionalSubmission: autoSelectAdditionalSubmission,
-                              contactId: callMatchedContact[0]?.id,
-                              contactType: callMatchedContact[0]?.type,
-                              contactName: callMatchedContact[0]?.name
-                            }
-                          );
-                        }
-                      } else {
-                        let loggedContactId = null;
-                        const existingCallLogRecord = await chrome.storage.local.get(`rc-crm-call-log-${data.body.call.sessionId}`);
-                        if (!!existingCallLogRecord[`rc-crm-call-log-${data.body.call.sessionId}`]) {
-                          loggedContactId = existingCallLogRecord[`rc-crm-call-log-${data.body.call.sessionId}`].contact.id;
-                        }
-                        const callPage = logPage.getLogPageRender({ id: data.body.call.sessionId, manifest, logType: "Call", triggerType: data.body.triggerType, platformName, direction: data.body.call.direction, contactInfo: callMatchedContact ?? [], subject: callLogSubject, note, loggedContactId });
-                        if (platformName === "bullhorn") {
-                          const { bullhornDefaultActionCode } = await chrome.storage.local.get({ bullhornDefaultActionCode: null });
-                          if (!!bullhornDefaultActionCode && callPage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
-                            callPage.formData.noteActions = bullhornDefaultActionCode;
-                          }
-                        }
-                        document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                          type: "rc-adapter-update-call-log-page",
-                          page: callPage
-                        }, "*");
-                        document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                          type: "rc-adapter-navigate-to",
-                          path: `/log/call/${data.body.call.sessionId}`
-                        }, "*");
-                      }
-                      break;
-                    case "viewLog":
-                      window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                      const matchedEntity = data.body.call.direction === "Inbound" ? data.body.fromEntity : data.body.toEntity;
-                      if (manifest.platforms[platformName].canOpenLogPage) {
-                        openLog({ manifest, platformName, hostname: platformHostname, logId: fetchedCallLogs.find((l) => l.sessionId == data.body.call.sessionId)?.logId, contactType: matchedEntity.contactType });
-                      } else {
-                        await openContactPage({ manifest, platformName, phoneNumber: contactPhoneNumber, contactId: matchedEntity.id, contactType: matchedEntity.contactType });
-                      }
-                      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                      break;
+                  if (!callContactMatched && !!data.body.triggerType) {
+                    showNotification({ level: "warning", message: callLogContactMatchMessage, ttl: 3e3 });
+                  } else {
+                    const { crmUserInfo } = await chrome.storage.local.get({ crmUserInfo: null });
+                    window.postMessage({
+                      type: "rc-log-modal",
+                      platform: platformName,
+                      isAccumulative: false,
+                      logProps: {
+                        logType: "Call",
+                        logInfo: data.body.call,
+                        contacts: callMatchedContact ?? [],
+                        crmUserInfo,
+                        autoLog: !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto log with countdown")?.value
+                      },
+                      triggerType: data.body.triggerType
+                    }, "*");
                   }
                 }
                 responseMessage(
@@ -12405,38 +8281,19 @@
                 );
                 window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 break;
-              case "/callLogger/inputChanged":
-                await cacheCallNote({
-                  sessionId: data.body.call.sessionId,
-                  note: data.body.formData.note ?? ""
-                });
-                const page = logPage.getUpdatedLogPageRender({ manifest, platformName, updateData: data.body });
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-adapter-update-call-log-page",
-                  page
-                }, "*");
-                responseMessage(
-                  data.requestId,
-                  {
-                    data: "ok"
-                  }
-                );
-                break;
               case "/callLogger/match":
                 let callLogMatchData = {};
-                const { successful, callLogs } = await getLog({ serverUrl: manifest.serverUrl, logType: "Call", sessionIds: data.body.sessionIds.toString(), requireDetails: false });
+                const { successful, callLogs, message: checkLogMessage } = await checkLog({ logType: "Call", sessionIds: data.body.sessionIds.toString() });
                 if (successful) {
                   for (const sessionId of data.body.sessionIds) {
-                    const correspondingLog = callLogs.find((l) => l.sessionId === sessionId);
-                    if (!!correspondingLog?.matched) {
-                      const existingCallLogRecord = await chrome.storage.local.get(`rc-crm-call-log-${sessionId}`);
-                      if (!!existingCallLogRecord[`rc-crm-call-log-${sessionId}`]) {
-                        callLogMatchData[sessionId] = [{ id: sessionId, note: "", contact: { id: existingCallLogRecord[`rc-crm-call-log-${sessionId}`].contact?.id } }];
-                      } else {
-                        callLogMatchData[sessionId] = [{ id: sessionId, note: "" }];
-                      }
+                    const correspondingLog = callLogs[sessionId] ?? callLogs.find((c) => c.sessionId == sessionId);
+                    if (correspondingLog.matched) {
+                      callLogMatchData[sessionId] = [{ id: sessionId, note: "" }];
                     }
                   }
+                } else {
+                  showNotification({ level: "warning", message: checkLogMessage, ttl: 3e3 });
+                  break;
                 }
                 responseMessage(
                   data.requestId,
@@ -12446,167 +8303,50 @@
                 );
                 break;
               case "/messageLogger":
-                if (!!!autoPopupMainConverastionId) {
-                  autoPopupMainConverastionId = data.body.conversation.conversationId;
-                }
-                if (!!data?.body?.conversation?.correspondents[0]?.extensionNumber) {
-                  showNotification({ level: "warning", message: "Extension numbers cannot be logged", ttl: 3e3 });
+                const { rc_messageLogger_auto_log_notify: messageAutoLogOn } = await chrome.storage.local.get({ rc_messageLogger_auto_log_notify: false });
+                if (!messageAutoLogOn && data.body.triggerType === "auto") {
                   break;
                 }
-                const { rc_messageLogger_auto_log_notify: messageAutoLogOn } = await chrome.storage.local.get({ rc_messageLogger_auto_log_notify: false });
-                const messageAutoPopup = !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto log SMS - only pop up log page")?.value;
-                const messageLogPrefId = `rc-crm-conversation-pref-${data.body.conversation.conversationId}`;
-                const existingConversationLogPref = await chrome.storage.local.get(messageLogPrefId);
-                let getContactMatchResult = null;
-                window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                if (messageAutoLogOn && data.body.triggerType === "auto" && !messageAutoPopup) {
-                  if (!!existingConversationLogPref[messageLogPrefId]) {
-                    await addLog({
-                      serverUrl: manifest.serverUrl,
-                      logType: "Message",
-                      logInfo: data.body.conversation,
-                      isMain: true,
-                      note: "",
-                      additionalSubmission: existingConversationLogPref[messageLogPrefId].additionalSubmission,
-                      contactId: existingConversationLogPref[messageLogPrefId].contact.id,
-                      contactType: existingConversationLogPref[messageLogPrefId].contact.type,
-                      contactName: existingConversationLogPref[messageLogPrefId].contact.name
-                    });
-                  } else {
-                    getContactMatchResult = (await getContact({
-                      serverUrl: manifest.serverUrl,
-                      phoneNumber: data.body.conversation.correspondents[0].phoneNumber
-                    })).contactInfo;
-                    const { hasConflict, autoSelectAdditionalSubmission } = getLogConflictInfo({ isAutoLog: messageAutoLogOn, contactInfo: getContactMatchResult });
-                    if (hasConflict) {
-                      await cacheUnresolvedLog({
-                        type: "Message",
-                        id: data.body.conversation.conversationId,
-                        direction: "",
-                        contactInfo: getContactMatchResult ?? [],
-                        date: moment(data.body.conversation.messages[0].creationTime).format("MM/DD/YYYY")
-                      });
-                      await showUnresolvedTabPage();
-                      showNotification({ level: "warning", message: "Unable to log message with unresolved conflict.", ttl: 3e3 });
-                    } else {
-                      await addLog({
-                        serverUrl: manifest.serverUrl,
-                        logType: "Message",
-                        logInfo: data.body.conversation,
-                        isMain: true,
-                        note: "",
-                        additionalSubmission: autoSelectAdditionalSubmission,
-                        contactId: getContactMatchResult[0]?.id,
-                        contactType: getContactMatchResult[0]?.type,
-                        contactName: getContactMatchResult[0]?.name
-                      });
-                    }
-                  }
-                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                } else if (data.body.triggerType === "logForm") {
-                  if (data.body.redirect) {
-                    let additionalSubmission = {};
-                    const additionalFields = manifest.platforms[platformName].page?.messageLog?.additionalFields ?? [];
-                    for (const f of additionalFields) {
-                      if (data.body.formData[f.const] != "none") {
-                        additionalSubmission[f.const] = data.body.formData[f.const];
-                      }
-                    }
-                    let newContactInfo = {};
-                    if (data.body.formData.contact === "createNewContact") {
-                      const newContactResp = await createContact({
-                        serverUrl: manifest.serverUrl,
-                        phoneNumber: data.body.conversation.correspondents[0].phoneNumber,
-                        newContactName: data.body.formData.newContactName,
-                        newContactType: data.body.formData.newContactType
-                      });
-                      newContactInfo = newContactResp.contactInfo;
-                      if (!!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Open contact web page after creating it")?.value) {
-                        await openContactPage({ manifest, platformName, phoneNumber: data.body.conversation.correspondents[0].phoneNumber, contactId: newContactInfo.id, contactType: data.body.formData.newContactType });
-                      }
-                    }
-                    await addLog({
-                      serverUrl: manifest.serverUrl,
-                      logType: "Message",
-                      logInfo: data.body.conversation,
-                      isMain: true,
-                      note: "",
-                      additionalSubmission,
-                      contactId: newContactInfo?.id ?? data.body.formData.contact,
-                      contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
-                      contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
-                    });
-                    for (const trailingConversations of trailingSMSLogInfo) {
-                      await addLog({
-                        serverUrl: manifest.serverUrl,
-                        logType: "Message",
-                        logInfo: trailingConversations,
-                        isMain: false,
-                        note: "",
-                        additionalSubmission,
-                        contactId: newContactInfo?.id ?? data.body.formData.contact,
-                        contactType: data.body.formData.newContactName === "" ? data.body.formData.contactType : data.body.formData.newContactType,
-                        contactName: data.body.formData.newContactName === "" ? data.body.formData.contactName : data.body.formData.newContactName
-                      });
-                    }
-                    if (!!data.body.formData.isUnresolved) {
-                      await showUnresolvedTabPage(data.path);
-                    }
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
+                const isTrailing = !data.body.redirect && data.body.triggerType !== "auto";
+                if (isTrailing) {
+                  if (!leadingSMSCallReady) {
+                    trailingSMSLogInfo.push(data.body.conversation);
+                    break;
                   }
                 } else {
-                  if (!messageAutoLogOn && data.body.triggerType === "auto" || data.body.redirect != void 0 && data.body.prefill != void 0 && !data.body.redirect && !data.body.prefill) {
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                    break;
-                  }
-                  const isTrailing = !data.body.redirect && data.body.triggerType !== "auto";
-                  if (isTrailing) {
-                    if (!leadingSMSCallReady) {
-                      trailingSMSLogInfo.push(data.body.conversation);
-                      break;
-                    }
-                  } else {
-                    leadingSMSCallReady = false;
-                    trailingSMSLogInfo = [];
-                  }
-                  if (!isTrailing) {
-                    getContactMatchResult = await getContact({
-                      serverUrl: manifest.serverUrl,
-                      phoneNumber: data.body.conversation.correspondents[0].phoneNumber
-                    });
-                  }
-                  const messagePage = logPage.getLogPageRender({
-                    id: data.body.conversation.conversationId,
-                    manifest,
-                    logType: "Message",
-                    triggerType: data.body.triggerType,
-                    platformName,
-                    direction: "",
-                    contactInfo: getContactMatchResult.contactInfo ?? []
+                  leadingSMSCallReady = false;
+                  trailingSMSLogInfo = [];
+                }
+                window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
+                let getContactMatchResult = null;
+                if (!isTrailing) {
+                  getContactMatchResult = await getContact({
+                    phoneNumber: data.body.conversation.correspondents[0].phoneNumber
                   });
-                  if (platformName === "bullhorn") {
-                    const { bullhornDefaultActionCode } = await chrome.storage.local.get({ bullhornDefaultActionCode: null });
-                    if (!!bullhornDefaultActionCode && messagePage.schema.properties.noteActions?.oneOf.some((o) => o.const === bullhornDefaultActionCode)) {
-                      messagePage.formData.noteActions = bullhornDefaultActionCode;
-                    }
-                  }
-                  if (messageAutoLogOn && data.body.triggerType === "auto" && messageAutoPopup && data.body.conversation.conversationId != autoPopupMainConverastionId) {
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                    break;
-                  }
-                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                    type: "rc-adapter-update-messages-log-page",
-                    page: messagePage
-                  }, "*");
-                  document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                    type: "rc-adapter-navigate-to",
-                    path: `/log/messages/${data.body.conversation.conversationId}`
-                    // conversation id that you received from message logger event
+                }
+                if (!isTrailing && !getContactMatchResult.matched) {
+                  showNotification({ level: "warning", message: getContactMatchResult.message, ttl: 3e3 });
+                } else {
+                  const { crmUserInfo } = await chrome.storage.local.get({ crmUserInfo: null });
+                  window.postMessage({
+                    type: "rc-log-modal",
+                    platform: platformName,
+                    isTrailing,
+                    trailingSMSLogInfo,
+                    logProps: {
+                      logType: "Message",
+                      logInfo: data.body.conversation,
+                      contactName: getContactMatchResult.contactInfo.name,
+                      contacts: getContactMatchResult.contactInfo ?? [],
+                      crmUserInfo,
+                      autoLog: !!extensionUserSettings && extensionUserSettings.find((e2) => e2.name === "Auto log with countdown")?.value
+                    },
+                    additionalLogInfo: getContactMatchResult.additionalLogInfo,
+                    triggerType: data.body.triggerType === "auto"
                   }, "*");
                   if (!isTrailing) {
                     leadingSMSCallReady = true;
                   }
-                  window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 }
                 responseMessage(
                   data.requestId,
@@ -12614,19 +8354,7 @@
                     data: "ok"
                   }
                 );
-                break;
-              case "/messageLogger/inputChanged":
-                const updatedPage = logPage.getUpdatedLogPageRender({ manifest, logType: "Message", platformName, updateData: data.body });
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-adapter-update-messages-log-page",
-                  page: updatedPage
-                }, "*");
-                responseMessage(
-                  data.requestId,
-                  {
-                    data: "ok"
-                  }
-                );
+                window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
                 break;
               case "/messageLogger/match":
                 let localMessageLogs = {};
@@ -12649,15 +8377,13 @@
                   responseId: data.requestId,
                   response: { data: "ok" }
                 }, "*");
-                const feedbackPageRender = feedbackPage.getFeedbackPageRender({ pageConfig: manifest.platforms[platformName].page.feedback });
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-adapter-register-customized-page",
-                  page: feedbackPageRender
-                });
-                document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                  type: "rc-adapter-navigate-to",
-                  path: `/customized/${feedbackPageRender.id}`
-                  // '/meeting', '/dialer', '//history', '/settings'
+                window.postMessage({
+                  type: "rc-feedback-open",
+                  props: {
+                    userName: rcUserInfo.rcUserName,
+                    userEmail: rcUserInfo.rcUserEmail,
+                    platformName
+                  }
                 }, "*");
                 trackOpenFeedback();
                 break;
@@ -12668,45 +8394,10 @@
                   trackEditSettings({ changedItem: setting.name.replaceAll(" ", "-"), status: setting.value });
                 }
                 break;
-              case "/custom-button-click":
-                switch (data.body.button.id) {
-                  case "sms-template-button":
-                    window.postMessage({
-                      type: "rc-select-sms-template"
-                    }, "*");
-                    break;
-                  case "insightlyGetApiKey":
-                    const platformInfo2 = await chrome.storage.local.get("platform-info");
-                    const hostname = platformInfo2["platform-info"].hostname;
-                    window.open(`https://${hostname}/Users/UserSettings`);
-                    break;
-                  case "authPage":
-                    window.postMessage({ type: "rc-log-modal-loading-on" }, "*");
-                    const returnedToken = await auth.apiKeyLogin({ serverUrl: manifest.serverUrl, apiKey: data.body.button.formData.apiKey, apiUrl: data.body.button.formData.apiUrl, username: data.body.button.formData.username, password: data.body.button.formData.password });
-                    crmAuthed = !!returnedToken;
-                    window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
-                    break;
-                  case "feedbackPage":
-                    let formUrl = manifest.platforms[platformName].page.feedback.url;
-                    for (const formKey of Object.keys(data.body.button.formData)) {
-                      formUrl = formUrl.replace(`{${formKey}}`, encodeURIComponent(data.body.button.formData[formKey]));
-                    }
-                    formUrl = formUrl.replace("{crmName}", manifest.platforms[platformName].displayName).replace("{userName}", rcUserInfo.rcUserName).replace("{userEmail}", rcUserInfo.rcUserEmail);
-                    window.open(formUrl, "_blank");
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-navigate-to",
-                      path: "goBack"
-                    }, "*");
-                    break;
-                  case "removeUnresolveButton":
-                    await resolveCachedLog({ type: data.body.button.formData.logType, id: data.body.button.formData.id });
-                    document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-                      type: "rc-adapter-navigate-to",
-                      path: "goBack"
-                    }, "*");
-                    await showUnresolvedTabPage();
-                    break;
-                }
+              case "/sms-template-button-click":
+                window.postMessage({
+                  type: "rc-select-sms-template"
+                }, "*");
                 break;
               default:
                 break;
@@ -12717,41 +8408,15 @@
         }
       }
     } catch (e2) {
-      window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
       console.log(e2);
       if (e2.response && e2.response.data && !noShowNotification && typeof e2.response.data === "string") {
         showNotification({ level: "warning", message: e2.response.data, ttl: 5e3 });
-      } else if (e2.message.includes("timeout")) {
-        showNotification({ level: "warning", message: "Timeout", ttl: 5e3 });
       } else {
         console.error(e2);
       }
       window.postMessage({ type: "rc-log-modal-loading-off" }, "*");
     }
   });
-  function getLogConflictInfo({ isAutoLog, contactInfo }) {
-    if (!isAutoLog) {
-      return { hasConflict: false, autoSelectAdditionalSubmission: {} };
-    }
-    let hasConflict = false;
-    let autoSelectAdditionalSubmission = {};
-    if (contactInfo.length > 1) {
-      hasConflict = true;
-    } else if (!!contactInfo[0]?.additionalInfo) {
-      const additionalFieldsKeys = Object.keys(contactInfo[0].additionalInfo);
-      for (const key of additionalFieldsKeys) {
-        const field = contactInfo[0].additionalInfo[key];
-        if (Array.isArray(field)) {
-          if (field.length > 1) {
-            hasConflict = true;
-          } else {
-            autoSelectAdditionalSubmission[key] = field[0].const;
-          }
-        }
-      }
-    }
-    return { hasConflict, autoSelectAdditionalSubmission };
-  }
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if (request.type === "oauthCallBack") {
       if (request.platform === "rc") {
@@ -12759,14 +8424,12 @@
           type: "rc-adapter-authorization-code",
           callbackUri: request.callbackUri
         }, "*");
-        await chrome.storage.local.remove("rcUnifiedCrmExtJwt");
       } else if (request.platform === "thirdParty") {
-        const returnedToken = await auth.onAuthCallback({ serverUrl: manifest.serverUrl, callbackUri: request.callbackUri });
-        crmAuthed = !!returnedToken;
+        await auth.onAuthCallback(request.callbackUri);
       }
       sendResponse({ result: "ok" });
     } else if (request.type === "pipedriveCallbackUri" && !await auth.checkAuth()) {
-      await auth.onAuthCallback({ serverUrl: manifest.serverUrl, callbackUri: `${request.pipedriveCallbackUri}&state=platform=pipedrive` });
+      await auth.onAuthCallback(`${request.pipedriveCallbackUri}&state=platform=pipedrive`);
       console.log("pipedriveAltAuthDone");
       chrome.runtime.sendMessage(
         {
@@ -12778,7 +8441,6 @@
         type: "rc-adapter-new-sms",
         phoneNumber: request.phoneNumber,
         conversation: true
-        // will go to conversation page if conversation existed
       }, "*");
       sendResponse({ result: "ok" });
     } else if (request.type === "c2d") {
@@ -12790,32 +8452,27 @@
       sendResponse({ result: "ok" });
     } else if (request.type === "navigate") {
       if (request.path === "/feedback") {
-        const feedbackPageRender = feedbackPage.getFeedbackPageRender({ pageConfig: manifest.platforms[platformName].page.feedback });
-        document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-          type: "rc-adapter-register-customized-page",
-          page: feedbackPageRender
-        });
-        document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-          type: "rc-adapter-navigate-to",
-          path: `/customized/${feedbackPageRender.id}`
-          // '/meeting', '/dialer', '//history', '/settings'
+        window.postMessage({
+          type: "rc-feedback-open",
+          props: {
+            userName: rcUserInfo?.rcUserName,
+            userEmail: rcUserInfo?.rcUserEmail,
+            platformName
+          }
         }, "*");
         trackOpenFeedback();
       } else {
         document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
           type: "rc-adapter-navigate-to",
           path: request.path
-          // '/meeting', '/dialer', '//history', '/settings'
         }, "*");
       }
       sendResponse({ result: "ok" });
     } else if (request.type === "insightlyAuth") {
-      const returnedToken = await apiKeyLogin({
-        serverUrl: manifest.serverUrl,
+      await apiKeyLogin({
         apiKey: request.apiKey,
         apiUrl: request.apiUrl
       });
-      crmAuthed = !!returnedToken;
       window.postMessage({ type: "rc-apiKey-input-modal-close", platform: platform.name }, "*");
       chrome.runtime.sendMessage({
         type: "openPopupWindow"
@@ -12834,43 +8491,30 @@
       oAuthUri
     });
   }
-  function getServiceManifest(serviceName) {
+  function getServiceConfig(serviceName) {
     const services = {
       name: serviceName,
-      customizedPageInputChangedEventPath: "/customizedPage/inputChanged",
-      // buttonEventPath: '/button-click',
       contactMatchPath: "/contacts/match",
-      viewMatchedContactPath: "/contacts/view",
       contactMatchTtl: 7 * 24 * 60 * 60 * 1e3,
-      // contact match cache time in seconds, set as 7 days
       contactNoMatchTtl: 7 * 24 * 60 * 60 * 1e3,
-      // contact no match cache time in seconds, default is 5 minutes, from v1.10.2
-      // show auth/unauth button in ringcentral widgets
       authorizationPath: "/authorize",
       authorizedTitle: "Logout",
       unauthorizedTitle: "Connect",
       showAuthRedDot: true,
       authorized: false,
       authorizedAccount: "",
-      // Enable call log sync feature
       callLoggerPath: "/callLogger",
-      callLogPageInputChangedEventPath: "/callLogger/inputChanged",
       callLogEntityMatcherPath: "/callLogger/match",
-      callLoggerAutoSettingLabel: "Auto log call",
+      callLoggerAutoSettingLabel: "Auto pop up call logging page after call",
       messageLoggerPath: "/messageLogger",
-      messagesLogPageInputChangedEventPath: "/messageLogger/inputChanged",
       messageLogEntityMatcherPath: "/messageLogger/match",
-      messageLoggerAutoSettingLabel: "Auto log SMS",
+      messageLoggerAutoSettingLabel: "Auto pop up SMS logging page",
       feedbackPath: "/feedback",
       settingsPath: "/settings",
       settings: [
         {
-          name: "Auto log call - only pop up log page",
-          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto log call - only pop up log page")?.value ?? false)
-        },
-        {
-          name: "Auto log SMS - only pop up log page",
-          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto log SMS - only pop up log page")?.value ?? false)
+          name: "Auto log with countdown",
+          value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Auto log with countdown")?.value ?? false)
         },
         {
           name: "Open contact web page from incoming call",
@@ -12881,8 +8525,7 @@
           value: !!extensionUserSettings && (extensionUserSettings.find((e) => e.name === "Open contact web page after creating it")?.value ?? true)
         }
       ],
-      // SMS template button
-      buttonEventPath: "/custom-button-click",
+      buttonEventPath: "/sms-template-button-click",
       buttons: [{
         fill: "rgba(102, 102, 102, 0.88)",
         id: "sms-template-button",
@@ -12894,12 +8537,3 @@
     return services;
   }
 })();
-/*! Bundled license information:
-
-moment/moment.js:
-  (*! moment.js *)
-  (*! version : 2.29.4 *)
-  (*! authors : Tim Wood, Iskren Chernev, Moment.js contributors *)
-  (*! license : MIT *)
-  (*! momentjs.com *)
-*/
