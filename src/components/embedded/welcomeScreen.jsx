@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RcButton, RcIcon, RcTypography, RcLink, RcIconButton } from '@ringcentral/juno';
 import { PlayCircleBorder, Close } from '@ringcentral/juno-icon';
+import config from '../../config.json';
 import rcLogo from '../../images/logo.png';
 import { isObjectEmpty } from '../../lib/util';
 import { trackFirstTimeSetup } from '../../lib/analytics';
@@ -33,27 +34,36 @@ const logoContainerStyle = {
     columnGap: '6px'
 }
 
-let manifest = null;
-
 export default () => {
     useEffect(() => {
+        let platformName = '';
+        const hostname = window.location.hostname;
+        if (hostname.includes('pipedrive')) {
+            platformName = 'pipedrive';
+        }
+        else if (hostname.includes('insightly')) {
+            platformName = 'insightly';
+        }
+        else if (hostname.includes('clio')) {
+            platformName = 'clio';
+        }
+        else if (hostname.includes('bullhorn')) {
+            platformName = 'bullhorn';
+        }
+        else if (hostname.includes('redtailtechnology')) {
+            platformName = 'redtail';
+        }
+
         checkFirstTime();
         async function checkFirstTime() {
-            manifest = (await chrome.storage.local.get('customCrmManifest')).customCrmManifest;
-            let platformName = '';
-            const hostname = window.location.hostname;
-            const platforms = Object.keys(manifest.platforms);
-            for (const p of platforms) {
-                if (hostname.includes(manifest.platforms[p].urlIdentifier)) {
-                    platformName = p;
-                    break;
-                }
-            }
             const isFirstTime = await chrome.storage.local.get('isFirstTime');
             if (isObjectEmpty(isFirstTime) && platformName !== '') {
                 setIsOpen(true);
-                setDocLink(manifest.platforms[platformName].embeddedOnCrmPage.welcomePage.docLink);
-                setVideoLink(manifest.platforms[platformName].embeddedOnCrmPage.welcomePage.videoLink);
+                setDocLink(config.welcomeMessage[platformName].docLink);
+                setVideoLink(config.welcomeMessage[platformName].VideoLink);
+                console.log(platformName);
+                console.log(config.welcomeMessage[platformName].docLink);
+                console.log(config.welcomeMessage[platformName].VideoLink);
                 await chrome.storage.local.set({ isFirstTime: false });
                 trackFirstTimeSetup();
             }
@@ -128,12 +138,6 @@ export default () => {
                                 X
                             </RcIconButton>
                             <br />
-                            <br />
-                            <RcTypography
-                                variant='body1'
-                            >
-                                By {manifest.author}
-                            </RcTypography>
                             <br />
                             <div style={logoContainerStyle}>
                                 <p style={{ fontFamily: 'Lato ,Helvetica,Arial,sans-serif', fontSize: '9px' }}>Powered by</p>

@@ -1,8 +1,9 @@
 import axios from 'axios';
+import config from '../config.json';
 
-async function getUserInfo({serverUrl, extensionId, accountId}) {
+async function getUserInfo({extensionId, accountId}) {
     const userInfoHashResponse = await axios.get(
-        `${serverUrl}/userInfoHash?extensionId=${extensionId}&accountId=${accountId}`
+        `${config.serverUrl}/userInfoHash?extensionId=${extensionId}&accountId=${accountId}`
         );
     return userInfoHashResponse.data;
 }

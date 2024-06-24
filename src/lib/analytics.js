@@ -1,10 +1,8 @@
-import manifest from '../manifest.json';
+import manifest from '../../public/manifest.json';
+import config from '../config.json';
 import mixpanel from 'mixpanel-browser';
 
-const useAnalytics = !!manifest.mixpanelToken;
-if (useAnalytics) {
-    mixpanel.init(manifest.mixpanelToken);
-}
+mixpanel.init(config.mixpanelToken);
 
 const appName = 'RingCentral CRM Extension';
 const version = manifest.version;
@@ -14,9 +12,6 @@ exports.reset = function reset() {
 }
 
 exports.identify = function identify({ platformName, rcAccountId, extensionId }) {
-    if (!useAnalytics) {
-        return;
-    }
     mixpanel.identify(extensionId);
     mixpanel.people.set({
         crmPlatform: platformName,
@@ -26,24 +21,15 @@ exports.identify = function identify({ platformName, rcAccountId, extensionId })
 }
 
 exports.group = function group({ rcAccountId }) {
-    if (!useAnalytics) {
-        return;
-    }
     mixpanel.add_group('rcAccountId', rcAccountId);
     mixpanel.set_group('rcAccountId', rcAccountId);
 }
 
 function track(event, properties = {}) {
-    if (!useAnalytics) {
-        return;
-    }
-    mixpanel.track(event, { appName, version, collectedFrom: 'client', ...properties });
+    mixpanel.track(event, { appName, version, ...properties });
 }
 
 exports.trackPage = function page(name, properties = {}) {
-    if (!useAnalytics) {
-        return;
-    }
     try {
         const pathSegments = name.split('/');
         const rootPath = `/${pathSegments[1]}`;

@@ -1,6 +1,12 @@
 import axios from 'axios';
+import config from '../config.json';
 import { showNotification } from '../lib/util';
-import { trackCrmLogin, trackCrmLogout } from '../lib/analytics';
+import { trackCrmLogin, trackCrmLogout } from '../lib/analytics'
+import pipedriveModule from '../platformModules/pipedrive.js';
+import insightlyModule from '../platformModules/insightly.js';
+import clioModule from '../platformModules/clio.js';
+import redtailModule from '../platformModules/redtail';
+import bullhornModule from '../platformModules/bullhorn';
 
 async function submitPlatformSelection(platform) {
     await chrome.storage.local.set({
@@ -10,15 +16,18 @@ async function submitPlatformSelection(platform) {
 
 // apiUrl: Insightly
 // username, password: Redtail
-async function apiKeyLogin({ serverUrl, apiKey, apiUrl, username, password }) {
+async function apiKeyLogin({ apiKey, apiUrl, username, password }) {
     try {
         const platformInfo = await chrome.storage.local.get('platform-info');
         const platformName = platformInfo['platform-info'].platformName;
         const hostname = platformInfo['platform-info'].hostname;
-        const res = await axios.post(`${serverUrl}/apiKeyLogin?state=platform=${platformName}`, {
-            apiKey: apiKey ?? 'apiKey',
+        const { rcUserInfo } = await chrome.storage.local.get('rcUserInfo');
+        const rcUserNumber = rcUserInfo.rcUserNumber;
+        const res = await axios.post(`${config.serverUrl}/apiKeyLoginV2?state=platform=${platformName}`, {
+            apiKey,
             platform: platformName,
             hostname,
+            rcUserNumber,
             additionalInfo: {
                 apiUrl,
                 username,
@@ -26,7 +35,7 @@ async function apiKeyLogin({ serverUrl, apiKey, apiUrl, username, password }) {
             }
         });
         setAuth(true);
-        showNotification({ level: res.data.returnMessage?.messageType ?? 'success', message: res.data.returnMessage?.message ?? 'Successfully authorized.', ttl: res.data.returnMessage?.ttl ?? 3000 });
+        showNotification({ level: 'success', message: 'Successfully authorized.', ttl: 3000 });
         await chrome.storage.local.set({
             ['rcUnifiedCrmExtJwt']: res.data.jwtToken
         });
@@ -34,10 +43,6 @@ async function apiKeyLogin({ serverUrl, apiKey, apiUrl, username, password }) {
         await chrome.storage.local.set({ crmUserInfo });
         setAuth(true, crmUserInfo.name);
         trackCrmLogin();
-        document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
-            type: 'rc-adapter-navigate-to',
-            path: 'goBack',
-        }, '*');
         return res.data.jwtToken;
     }
     catch (e) {
@@ -46,24 +51,46 @@ async function apiKeyLogin({ serverUrl, apiKey, apiUrl, username, password }) {
     }
 }
 
-async function onAuthCallback({ serverUrl, callbackUri }) {
+function sendMessageAsync(tabId, message) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tabId, message, response => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+async function onAuthCallback(callbackUri) {
+    const { rcUserInfo } = await chrome.storage.local.get('rcUserInfo');
+    const rcUserNumber = rcUserInfo.rcUserNumber;
     const platformInfo = await chrome.storage.local.get('platform-info');
     const hostname = platformInfo['platform-info'].hostname;
     let oauthCallbackUrl = '';
-    // Unique: Bullhorn
     if (platformInfo['platform-info'].platformName === 'bullhorn') {
-        const { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
-        const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
-        oauthCallbackUrl = `${serverUrl}/oauth-callback?callbackUri=${callbackUri}&hostname=${hostname}&tokenUrl=${crm_extension_bullhorn_user_urls.oauthUrl}/token&apiUrl=${crm_extension_bullhorn_user_urls.restUrl}&username=${crm_extension_bullhornUsername}`;
+        let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
+        let { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
+        if (crm_extension_bullhornUsername == null) {
+            const activeTab = await new Promise(resolve => chrome.tabs.query({ active: true }, tabs => resolve(tabs.find(t => t.url.includes('https://app.bullhornstaffing.com/')))));
+            const bullhornUsernameResponse = await sendMessageAsync(activeTab.id, { action: "fetchBullhornUsername" });
+            const { data: crm_extension_bullhorn_user_urls } = await axios.get(`https://rest.bullhornstaffing.com/rest-services/loginInfo?username=${bullhornUsernameResponse.bullhornUsername}`);
+            await chrome.storage.local.set({ crm_extension_bullhorn_user_urls });
+            oauthCallbackUrl = `${config.serverUrl}/oauth-callbackV2?callbackUri=${callbackUri}&rcUserNumber=${rcUserNumber}&hostname=${hostname}&tokenUrl=${crm_extension_bullhorn_user_urls.oauthUrl}/token&apiUrl=${crm_extension_bullhorn_user_urls.restUrl}&username=${bullhornUsernameResponse.bullhornUsername}`;
+        }
+        else {
+            oauthCallbackUrl = `${config.serverUrl}/oauth-callbackV2?callbackUri=${callbackUri}&rcUserNumber=${rcUserNumber}&hostname=${hostname}&tokenUrl=${crm_extension_bullhorn_user_urls.oauthUrl}/token&apiUrl=${crm_extension_bullhorn_user_urls.restUrl}&username=${crm_extension_bullhornUsername}`;
+        }
     }
     else {
-        oauthCallbackUrl = `${serverUrl}/oauth-callback?callbackUri=${callbackUri}&hostname=${hostname}`;
+        oauthCallbackUrl = `${config.serverUrl}/oauth-callbackV2?callbackUri=${callbackUri}&rcUserNumber=${rcUserNumber}&hostname=${hostname}`;
     }
     const res = await axios.get(oauthCallbackUrl);
     const crmUserInfo = { name: res.data.name };
     await chrome.storage.local.set({ crmUserInfo });
     setAuth(true, crmUserInfo.name);
-    showNotification({ level: res.data.returnMessage?.messageType ?? 'success', message: res.data.returnMessage?.message ?? 'Successfully authorized.', ttl: res.data.returnMessage?.ttl ?? 3000 });
+    showNotification({ level: 'success', message: 'Successfully authorized.', ttl: 3000 });
     await chrome.storage.local.set({
         ['rcUnifiedCrmExtJwt']: res.data.jwtToken
     });
@@ -71,15 +98,11 @@ async function onAuthCallback({ serverUrl, callbackUri }) {
     return res.data.jwtToken;
 }
 
-async function unAuthorize({ serverUrl, platformName, rcUnifiedCrmExtJwt }) {
+async function unAuthorize(rcUnifiedCrmExtJwt) {
     try {
-        const res = await axios.post(`${serverUrl}/unAuthorize?jwtToken=${rcUnifiedCrmExtJwt}`);
-        // Unique: Bullhorn
-        if (platformName === 'bullhorn') {
-            await chrome.storage.local.remove('crm_extension_bullhornUsername');
-            await chrome.storage.local.remove('crm_extension_bullhorn_user_urls');
-        }
-        showNotification({ level: res.data.returnMessage?.messageType ?? 'success', message: res.data.returnMessage?.message ?? 'Successfully unauthorized.', ttl: res.data.returnMessage?.ttl ?? 3000 });
+        await axios.post(`${config.serverUrl}/unAuthorize?jwtToken=${rcUnifiedCrmExtJwt}`);
+        const platformModule = await getModule();
+        await platformModule.onUnauthorize();
         trackCrmLogout()
     }
     catch (e) {
@@ -103,6 +126,22 @@ function setAuth(auth, accountName) {
         authorized: auth,
         authorizedAccount: accountName ?? ''
     });
+}
+
+async function getModule() {
+    const platformInfo = await chrome.storage.local.get('platform-info');
+    switch (platformInfo['platform-info'].platformName) {
+        case 'pipedrive':
+            return pipedriveModule;
+        case 'insightly':
+            return insightlyModule;
+        case 'clio':
+            return clioModule;
+        case 'redtail':
+            return redtailModule;
+        case 'bullhorn':
+            return bullhornModule;
+    }
 }
 
 exports.submitPlatformSelection = submitPlatformSelection;

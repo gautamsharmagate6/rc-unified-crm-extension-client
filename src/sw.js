@@ -1,12 +1,10 @@
 const { isObjectEmpty } = require('./lib/util');
-const baseManifest = require('./manifest.json');
+const config = require('./config.json');
 const packageJson = require('../package.json');
 
-let manifest;
 let pipedriveInstallationTabId;
 let pipedriveCallbackUri;
 let cachedClickToXRequest;
-
 async function openPopupWindow() {
   console.log('open popup');
   const { popupWindowId } = await chrome.storage.local.get('popupWindowId');
@@ -18,29 +16,14 @@ async function openPopupWindow() {
       // ignore
     }
   }
-  const { extensionWindowStatus } = await chrome.storage.local.get({ extensionWindowStatus: null });
   // const redirectUri = chrome.identity.getRedirectURL('redirect.html'); //  set this when oauth with chrome.identity.launchWebAuthFlow
-  const popupUri = `popup.html?multipleTabsSupport=1&disableLoginPopup=1&appServer=https://platform.ringcentral.com&redirectUri=https://ringcentral.github.io/ringcentral-embeddable/redirect.html&enableAnalytics=1&showSignUpButton=1&clientId=3rJq9BxcTCm-I7CFcY19ew&appVersion=${packageJson.version}&userAgent=RingCentral CRM Extension&disableNoiseReduction=false`;
-  let popup;
-  if (!!extensionWindowStatus?.state && (extensionWindowStatus.state === 'maximized' || extensionWindowStatus.state === 'fullscreen')) {
-    popup = await chrome.windows.create({
-      url: popupUri,
-      type: 'popup',
-      focused: true,
-      state: extensionWindowStatus.state
-    });
-  }
-  else {
-    popup = await chrome.windows.create({
-      url: popupUri,
-      type: 'popup',
-      focused: true,
-      width: extensionWindowStatus?.width ?? 315,
-      height: extensionWindowStatus?.height ?? 566,
-      left: extensionWindowStatus?.left ?? 50,
-      top: extensionWindowStatus?.top ?? 50
-    });
-  }
+  const popupUri = `popup.html?multipleTabsSupport=1&disableLoginPopup=1&appServer=${config.rcServer}&redirectUri=${config.redirectUri}&enableAnalytics=1&showSignUpButton=1&clientId=${config.clientId}&appVersion=${packageJson.version}&userAgent=RingCentral CRM Extension&disableNoiseReduction=false`;
+  const popup = await chrome.windows.create({
+    url: popupUri,
+    type: 'popup',
+    width: 315,
+    height: 566,
+  });
   await chrome.storage.local.set({
     popupWindowId: popup.id,
   });
@@ -49,31 +32,30 @@ async function openPopupWindow() {
 
 async function registerPlatform(tabUrl) {
   const url = new URL(tabUrl);
-  let hostname = url.hostname;
-  const { customCrmManifest } = await chrome.storage.local.get({ customCrmManifest: null });
-  if (!!customCrmManifest) {
-    manifest = customCrmManifest;
-  }
   let platformName = '';
-  const platforms = Object.keys(manifest.platforms);
-  for (const p of platforms) {
-    // identify crm website
-    const urlRegex = new RegExp(manifest.platforms[p].urlIdentifier.replace('*', '.*'));
-    if (urlRegex.test(url.href)) {
-      platformName = p;
-      break;
-    }
+  let hostname = url.hostname;
+  if (hostname.includes('pipedrive')) {
+    platformName = 'pipedrive';
   }
-  if (platformName === '') {
-    // Unique: Pipedrive
-    if ((hostname.includes('ngrok') || hostname.includes('labs.ringcentral')) && url.pathname === '/pipedrive-redirect') {
-      platformName = 'pipedrive';
-      hostname = 'temp';
-      chrome.tabs.sendMessage(tab.id, { action: 'needCallbackUri' })
-    }
-    else {
-      return false;
-    }
+  else if (hostname.includes('insightly')) {
+    platformName = 'insightly';
+  }
+  else if (hostname.includes('clio')) {
+    platformName = 'clio';
+  }
+  else if (hostname.includes('bullhorn')) {
+    platformName = 'bullhorn';
+  }
+  else if (hostname.includes('redtailtechnology')) {
+    platformName = 'redtail';
+  }
+  else if ((hostname.includes('ngrok') || hostname.includes('labs.ringcentral')) && url.pathname === '/pipedrive-redirect') {
+    platformName = 'pipedrive';
+    hostname = 'temp';
+    chrome.tabs.sendMessage(tab.id, { action: 'needCallbackUri' })
+  }
+  else {
+    return false;
   }
   await chrome.storage.local.set({
     ['platform-info']: { platformName, hostname }
@@ -86,7 +68,7 @@ chrome.action.onClicked.addListener(async function (tab) {
   if (isObjectEmpty(platformInfo)) {
     const registered = await registerPlatform(tab.url);
     if (registered) {
-      await openPopupWindow();
+      openPopupWindow();
     }
     else {
       chrome.notifications.create({
@@ -111,17 +93,7 @@ chrome.windows.onRemoved.addListener(async (windowId) => {
   }
 });
 
-chrome.windows.onBoundsChanged.addListener(async (window) => {
-  const { popupWindowId } = await chrome.storage.local.get('popupWindowId');
-  if (popupWindowId === window.id) {
-    const extensionWindowStatus = window;
-    await chrome.storage.local.set({ extensionWindowStatus });
-  }
-});
-
 chrome.alarms.onAlarm.addListener(async () => {
-  const { customCrmManifest } = await chrome.storage.local.get({ customCrmManifest: null });
-  manifest = customCrmManifest;
   const { loginWindowInfo } = await chrome.storage.local.get('loginWindowInfo');
   if (!loginWindowInfo) {
     return;
@@ -132,8 +104,7 @@ chrome.alarms.onAlarm.addListener(async () => {
   }
   const loginWindowUrl = tabs[0].url
   console.log('loginWindowUrl', loginWindowUrl);
-  const platformInfo = await chrome.storage.local.get('platform-info');
-  if (loginWindowUrl.indexOf(manifest.platforms[platformInfo['platform-info'].platformName].auth.oauth.redirectUri) !== 0) {
+  if (loginWindowUrl.indexOf(config.redirectUri) !== 0) {
     chrome.alarms.create('oauthCheck', { when: Date.now() + 3000 });
     return;
   }
@@ -146,25 +117,6 @@ chrome.alarms.onAlarm.addListener(async () => {
   await chrome.windows.remove(loginWindowInfo.id);
   await chrome.storage.local.remove('loginWindowInfo');
 });
-
-chrome.runtime.onInstalled.addListener(async () => {
-  try {
-    let { customCrmManifestUrl } = await chrome.storage.local.get({ customCrmManifestUrl: null });
-    if (!!!customCrmManifestUrl || customCrmManifestUrl === '') {
-      customCrmManifestUrl = baseManifest.defaultCrmManifestUrl;
-      await chrome.storage.local.set({ customCrmManifestUrl });
-    }
-    const customCrmManifestJson = await (await fetch(customCrmManifestUrl)).json();
-    if (customCrmManifestJson) {
-      await chrome.storage.local.set({ customCrmManifest: customCrmManifestJson });
-    }
-  }
-  catch (e) {
-    console.error(e)
-    // ignore
-  }
-}
-)
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   console.log(sender.tab ?
@@ -182,7 +134,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     sendResponse({ result: 'ok' });
     return;
   }
-  // Unique: Pipedrive
   if (request.type === "openPopupWindowOnPipedriveDirectPage") {
     await openPopupWindow();
     chrome.tabs.sendMessage(sender.tab.id, { action: 'needCallbackUri' })
@@ -193,14 +144,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     sendResponse({ result: 'ok' });
     return;
   }
-  // Unique: Pipedrive
   if (request.type === "popupWindowRequestPipedriveCallbackUri") {
     chrome.runtime.sendMessage({
       type: 'pipedriveCallbackUri',
       pipedriveCallbackUri
     });
   }
-  // Unique: Pipedrive
   if (request.type === 'pipedriveAltAuthDone') {
     chrome.tabs.sendMessage(pipedriveInstallationTabId, { action: 'pipedriveAltAuthDone' });
     console.log('pipedriveAltAuthDone')
@@ -254,7 +203,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     sendResponse(cachedClickToXRequest);
     cachedClickToXRequest = null;
   }
-  // Unique: Pipedrive
   if (request.type === 'pipedriveCallbackUri') {
     pipedriveCallbackUri = request.callbackUri;
     console.log('pipedrive callback uri: ', request.callbackUri);
@@ -264,13 +212,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       pipedriveCallbackUri
     });
   }
-  // if (request.type === 'notifyToReconnectCRM') {
-  //   chrome.notifications.create({
-  //     type: 'basic',
-  //     iconUrl: '/images/logo32.png',
-  //     title: `Please re-login with your CRM account`,
-  //     message: "There might be a change to your CRM login, please go to setting page and Logout then Connect your CRM account again. Sorry for the inconvenience.",
-  //     priority: 1
-  //   });
-  // }
+  if (request.type === 'notifyToReconnectCRM') {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: '/images/logo32.png',
+      title: `Please re-login with your CRM account`,
+      message: "There might be a change to your CRM login, please go to setting page and Logout then Connect your CRM account again. Sorry for the inconvenience.",
+      priority: 1
+    });
+  }
 });

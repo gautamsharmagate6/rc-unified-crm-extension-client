@@ -65,20 +65,17 @@ chrome.runtime.onMessage.addListener(
         minimized: false,
       }, '*');
     }
-    // Unique: Pipedrive
     if (request.action === 'needCallbackUri') {
       chrome.runtime.sendMessage({
         type: 'pipedriveCallbackUri',
         callbackUri: window.location.href
       });
     }
-    // Unique: Pipedrive
     if (request.action === 'pipedriveAltAuthDone') {
       console.log('pipedriveAltAuthDone')
       const rcStepper = window.document.querySelector('#rc-stepper');
       rcStepper.innerHTML = '(3/3) Setup finished. You can close this page now.';
     }
-    // Unique: Bullhorn
     if (request.action === 'fetchBullhornUsername') {
       const decodedCookie = decodeURIComponent(window.document.cookie);
       const bullhornUsername = decodedCookie.split('"username":"')[1].split('","masterUserId')[0];
@@ -90,6 +87,9 @@ chrome.runtime.onMessage.addListener(
 );
 
 function Root() {
+  if (window.location.href.startsWith('https://app.bullhornstaffing.com/content')) {
+    return;
+  }
   return (
     <RcThemeProvider>
       <App />
@@ -98,7 +98,7 @@ function Root() {
 }
 
 async function RenderQuickAccessButton() {
-  if (window.location.hostname.includes('labs.ringcentral.com') || !window.location.hostname.includes('login.ringcentral')) {
+  if (!window.location.hostname.includes('ringcentral.')) {
     const rootElement = window.document.createElement('root');
     rootElement.id = 'rc-crm-extension-quick-access-button';
     window.document.body.appendChild(rootElement);
@@ -108,7 +108,6 @@ async function RenderQuickAccessButton() {
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-// Unique: Bullhorn
 async function fetchBullhornUserinfo() {
   const { crm_extension_bullhornUsername } = await chrome.storage.local.get({ crm_extension_bullhornUsername: null });
   let { crm_extension_bullhorn_user_urls } = await chrome.storage.local.get({ crm_extension_bullhorn_user_urls: null });
@@ -123,7 +122,6 @@ async function fetchBullhornUserinfo() {
 }
 
 async function Initialize() {
-  // Unique: Pipedrive
   if (window.location.hostname.includes('pipedrive.com')) {
     let { c2dDelay } = await chrome.storage.local.get(
       { c2dDelay: '3' }
@@ -134,7 +132,6 @@ async function Initialize() {
     const delayInMilliSec = Number(c2dDelay) * 1000;
     await delay(delayInMilliSec);
   }
-  // Unique: Bullhorn
   if (window.location.hostname.includes('bullhornstaffing.com')) {
     await fetchBullhornUserinfo();
   }
@@ -142,21 +139,17 @@ async function Initialize() {
   if (window.self === window.top && renderQuickAccessButton) {
     await RenderQuickAccessButton();
   }
-  // Case: C2D renders extra elements inside Bullhorn note section
-  if (!window.location.href.startsWith('https://app.bullhornstaffing.com/content')) {
-    await initializeC2D();
-  }
+  await initializeC2D();
 }
 
 Initialize();
-// Unique: Pipedrive
+
 if (window.location.pathname === '/pipedrive-redirect') {
   chrome.runtime.sendMessage({ type: "openPopupWindowOnPipedriveDirectPage", platform: 'pipedrive', hostname: 'temp' });
   const rcStepper = window.document.querySelector('#rc-stepper');
   rcStepper.innerHTML = '(2/3) Please sign in on the extension with your RingCentral account. If nothing happens, please try refreshing this page and wait for a few seconds.';
 }
 
-// Unique: Insightly
 if (document.readyState !== 'loading') {
   registerInsightlyApiKey();
 } else {
@@ -165,7 +158,6 @@ if (document.readyState !== 'loading') {
   });
 }
 
-// Unique: Insightly
 function registerInsightlyApiKey() {
   if (window.location.pathname === '/Users/UserSettings' && window.location.hostname.includes('insightly.com')) {
     const insightlyApiKey = document.querySelector('#apikey').innerHTML;
