@@ -7995,6 +7995,31 @@
             platformName = platformInfo["platform-info"].platformName;
             rcUserInfo = (await chrome.storage.local.get("rcUserInfo")).rcUserInfo;
             if (data.loggedIn) {
+              try {
+                const versionRes = await axios_default.get(`${config.serverUrl}/serverVersionInfo`);
+                if (versionRes.data.version === "1.0.0") {
+                  const createdNotificationId = await chrome.notifications.create({
+                    type: "basic",
+                    iconUrl: "/images/logo32.png",
+                    title: `Please upgrade RingCentral CRM Extension to the latest version`,
+                    message: "You are using a legacy version. Please go to chrome://extensions/ and click 'Update' to upgrade to the latest version.",
+                    priority: 1,
+                    buttons: [
+                      {
+                        title: "Go to update"
+                      }
+                    ]
+                  });
+                  chrome.notifications.onButtonClicked.addListener(
+                    (notificationId, buttonIndex) => {
+                      if (notificationId === createdNotificationId) {
+                        window.open("https://chrome.google.com/webstore/detail/ringcentral-crm-extension/kkhkjhafgdlihndcbnebljipgkandkhh");
+                      }
+                    }
+                  );
+                }
+              } catch (e2) {
+              }
               document.getElementById("rc-widget").style.zIndex = 0;
               const { rcUnifiedCrmExtJwt } = await chrome.storage.local.get("rcUnifiedCrmExtJwt");
               if (platformName === "pipedrive" && !await auth.checkAuth()) {
