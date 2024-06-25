@@ -10527,8 +10527,10 @@
                   await updateLog2({ logType: "Call", sessionId: logInfo.sessionId, recordingLink: existingCallRecording[recordingSessionId].recordingLink });
                 }
                 await resolveCachedLog2({ type: "Call", id: logInfo.sessionId });
+                (0, import_util.showNotification)({ level: addCallLogRes.data.returnMessage?.messageType ?? "success", message: addCallLogRes.data.returnMessage?.message ?? "Call log added", ttl: addCallLogRes.data.returnMessage?.ttl ?? 3e3 });
+              } else {
+                (0, import_util.showNotification)({ level: addCallLogRes.data.returnMessage?.messageType ?? "warning", message: addCallLogRes.data.returnMessage?.message ?? "Failed to save call log", ttl: addCallLogRes.data.returnMessage?.ttl ?? 3e3 });
               }
-              (0, import_util.showNotification)({ level: addCallLogRes.data.returnMessage?.messageType ?? "success", message: addCallLogRes.data.returnMessage?.message ?? "Call log added", ttl: addCallLogRes.data.returnMessage?.ttl ?? 3e3 });
               await chrome.storage.local.set({ [`rc-crm-call-log-${logInfo.sessionId}`]: { contact: { id: contactId } } });
               break;
             case "Message":
@@ -11246,7 +11248,7 @@
                     title: "Contact type",
                     type: "string",
                     oneOf: manifest2.platforms[platformName2].contactTypes?.map((t) => {
-                      return { const: t, title: t };
+                      return { const: t.value, title: t.display };
                     }) ?? []
                   },
                   ...callSchemas,
@@ -11299,7 +11301,7 @@
               formData: {
                 id,
                 contact: contactList[0].const,
-                newContactType: manifest2.platforms[platformName2].contactTypes ? manifest2.platforms[platformName2].contactTypes[0] : "",
+                newContactType: manifest2.platforms[platformName2].contactTypes ? manifest2.platforms[platformName2].contactTypes[0].value : "",
                 newContactName: "",
                 contactType: contactList[0]?.type ?? "",
                 contactName: contactList[0]?.title ?? "",
@@ -12738,7 +12740,10 @@
     }
     let hasConflict = false;
     let autoSelectAdditionalSubmission = {};
-    if (contactInfo.length > 1) {
+    contactInfo = contactInfo.filter((c) => !c.isNewContact);
+    if (contactInfo.length === 0) {
+      hasConflict = true;
+    } else if (contactInfo.length > 1) {
       hasConflict = true;
     } else if (!!contactInfo[0]?.additionalInfo) {
       const additionalFieldsKeys = Object.keys(contactInfo[0].additionalInfo);
