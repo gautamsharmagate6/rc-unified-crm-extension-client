@@ -1,5 +1,5 @@
 {
-    "serverUrl": "https://unified-crm-extension-test.labs.ringcentral.com",
+    "serverUrl": "https://unified-crm-extension.labs.ringcentral.com",
     "platforms": {
         "pipedrive": {
             "name": "pipedrive",

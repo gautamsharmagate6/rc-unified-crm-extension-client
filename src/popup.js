@@ -469,7 +469,7 @@ window.addEventListener('message', async (e) => {
                 sessionIds: data.body.call.sessionId
               });
               const { matched: callContactMatched, message: callLogContactMatchMessage, contactInfo: callMatchedContact } = await getContact({ phoneNumber: contactPhoneNumber });
-              if (singleCallLog[data.body.call.sessionId]?.matched || singleCallLog.find(c => c.sessionId == data.body.call.sessionId)?.matched) {
+              if (singleCallLog[data.body.call.sessionId]?.matched || (Array.isArray(singleCallLog) && singleCallLog.find(c => c.sessionId == data.body.call.sessionId)?.matched)) {
                 if (config.platforms[platformName].canOpenLogPage) {
                   for (const c of callMatchedContact) {
                     openLog({ platform: platformName, hostname: platformHostname, logId: singleCallLog[data.body.call.sessionId]?.logId ?? singleCallLog.find(c => c.sessionId == data.body.call.sessionId)?.logId, contactType: c.type });

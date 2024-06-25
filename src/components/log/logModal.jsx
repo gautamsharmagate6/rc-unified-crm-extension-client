@@ -232,7 +232,9 @@ export default () => {
                 for (const c of contactOptions) {
                     if (!!c.additionalFormInfo?.matters) {
                         for (const m of c.additionalFormInfo.matters) {
-                            m.id = m.const;
+                            if (!!m.const) {
+                                m.id = m.const;
+                            }
                         }
                     }
                 }
@@ -242,32 +244,34 @@ export default () => {
                     if (!!!c.additionalFormInfo) {
                         continue;
                     }
-                    c.additionalFormInfo['links'] = [];
-                    if (!!c.additionalFormInfo?.organisation) {
-                        for (const l of c.additionalFormInfo.organisation) {
-                            c.additionalFormInfo.links.push({
-                                label: 'Organisation',
-                                id: l.const,
-                                name: l.title
-                            });
+                    if (!!!c.additionalFormInfo.links) {
+                        c.additionalFormInfo['links'] = [];
+                        if (!!c.additionalFormInfo?.organisation) {
+                            for (const l of c.additionalFormInfo.organisation) {
+                                c.additionalFormInfo.links.push({
+                                    label: 'Organisation',
+                                    id: l.const,
+                                    name: l.title
+                                });
+                            }
                         }
-                    }
-                    if (!!c.additionalFormInfo?.opportunity) {
-                        for (const l of c.additionalFormInfo.opportunity) {
-                            c.additionalFormInfo.links.push({
-                                label: 'Opportunity',
-                                id: l.const,
-                                name: l.title
-                            });
+                        if (!!c.additionalFormInfo?.opportunity) {
+                            for (const l of c.additionalFormInfo.opportunity) {
+                                c.additionalFormInfo.links.push({
+                                    label: 'Opportunity',
+                                    id: l.const,
+                                    name: l.title
+                                });
+                            }
                         }
-                    }
-                    if (!!c.additionalFormInfo?.project) {
-                        for (const l of c.additionalFormInfo.project) {
-                            c.additionalFormInfo.links.push({
-                                label: 'Project',
-                                id: l.const,
-                                name: l.title
-                            });
+                        if (!!c.additionalFormInfo?.project) {
+                            for (const l of c.additionalFormInfo.project) {
+                                c.additionalFormInfo.links.push({
+                                    label: 'Project',
+                                    id: l.const,
+                                    name: l.title
+                                });
+                            }
                         }
                     }
                 }
@@ -277,8 +281,8 @@ export default () => {
                     if (!!!c.additionalFormInfo) {
                         continue;
                     }
-                    c.additionalFormInfo['actions'] = [];
                     if (!!c.additionalFormInfo?.noteActions) {
+                        c.additionalFormInfo['actions'] = [];
                         for (const m of c.additionalFormInfo.noteActions) {
                             c.additionalFormInfo.actions.push({
                                 id: m.const,
@@ -295,7 +299,9 @@ export default () => {
                     }
                     if (!!c.additionalFormInfo?.deals) {
                         for (const m of c.additionalFormInfo.deals) {
-                            m.id = m.const;
+                            if (!!m.const) {
+                                m.id = m.const;
+                            }
                         }
                     }
                 }
