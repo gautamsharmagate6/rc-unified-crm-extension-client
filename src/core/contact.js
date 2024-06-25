@@ -19,9 +19,11 @@ async function getContact({ phoneNumber }) {
     if (!!rcUnifiedCrmExtJwt) {
         const contactRes = await axios.get(`${config.serverUrl}/contactV2?jwtToken=${rcUnifiedCrmExtJwt}&phoneNumber=${phoneNumber}&overridingFormat=${overridingFormats.toString()}`);
         let contactInfo = contactRes.data.contact;
-        for (let c of contactInfo) {
-            if (!!c.additionalInfo && isObjectEmpty(c.additionalInfo)) {
-                c.additionalInfo = null;
+        if (!!contactInfo) {
+            for (let c of contactInfo) {
+                if (!!c.additionalInfo && isObjectEmpty(c.additionalInfo)) {
+                    c.additionalInfo = null;
+                }
             }
         }
         return { matched: contactRes.data.successful, message: contactRes.data.message, contactInfo };
