@@ -11914,6 +11914,7 @@
                 group({ rcAccountId: rcUserInfo?.rcAccountId });
                 axios_default2.defaults.headers.common["rc-extension-id"] = rcUserInfo?.rcExtensionId;
                 axios_default2.defaults.headers.common["rc-account-id"] = rcUserInfo?.rcAccountId;
+                axios_default2.defaults.headers.common["developer-author-name"] = manifest?.author?.name ?? "";
                 await showUnresolvedTabPage();
               } catch (e2) {
                 reset();
