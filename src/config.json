@@ -158,7 +158,7 @@
     "redirectUri": "https://ringcentral.github.io/ringcentral-embeddable/redirect.html",
     "version": "0.9.0",
     "releaseNote": {
-        "all": "",
+        "all": "- Upcoming: There will soon be a new upgradation to this extension with new looks and new advanced feature. :) ",
         "pipedrive": "",
         "insightly": "",
         "clio": "",
