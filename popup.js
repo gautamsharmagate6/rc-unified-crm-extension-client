@@ -11891,7 +11891,7 @@
                   }
                 );
               } else if (!rcUnifiedCrmExtJwt) {
-                showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 1e4 });
+                showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: -1 });
               }
               try {
                 const extId = JSON.parse(localStorage.getItem("sdk-rc-widgetplatform")).owner_id;
@@ -12039,7 +12039,7 @@
             break;
           case "rc-post-message-request":
             if (!crmAuthed && (data.path === "/callLogger" || data.path === "/messageLogger")) {
-              showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: 1e4 });
+              showNotification({ level: "warning", message: "Please go to Settings and connect to CRM platform", ttl: -1 });
               break;
             }
             switch (data.path) {
