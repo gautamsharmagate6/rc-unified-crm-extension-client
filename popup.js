@@ -6522,10 +6522,13 @@
           oauthCallbackUrl = `${serverUrl}/oauth-callback?callbackUri=${callbackUri}&hostname=${hostname}`;
         }
         const res = await axios_default2.get(oauthCallbackUrl);
+        (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully authorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
+        if (!!!res.data.jwtToken) {
+          return;
+        }
         const crmUserInfo = { name: res.data.name };
         await chrome.storage.local.set({ crmUserInfo });
         setAuth(true, crmUserInfo.name);
-        (0, import_util.showNotification)({ level: res.data.returnMessage?.messageType ?? "success", message: res.data.returnMessage?.message ?? "Successfully authorized.", ttl: res.data.returnMessage?.ttl ?? 3e3 });
         await chrome.storage.local.set({
           ["rcUnifiedCrmExtJwt"]: res.data.jwtToken
         });
