@@ -65,6 +65,27 @@ function getLogPageRender({ id, manifest, logType, triggerType, platformName, di
                     associationField: !!f.contactDependent
                 }
                 additionalFieldsValue[f.const] = contactList[0].additionalInfo[f.const][0].const;
+                // sub fields
+                if (!contactList[0]?.additionalInfo?.hasOwnProperty(f.const)) {
+                    continue;
+                }
+                for (const s of f?.subFields ?? []) {
+                    if (!contactList[0].additionalInfo[f.const][0]?.hasOwnProperty(s.const)) {
+                        continue;
+                    }
+                    switch (s.type) {
+                        case 'selection':
+                            additionalFields[s.const] = {
+                                title: s.title,
+                                type: 'string',
+                                oneOf: [...contactList[0].additionalInfo[f.const][0][s.const], { const: 'none', title: 'None' }],
+                                dependentField: f.const,
+                                associationField: !!f.contactDependent
+                            }
+                            additionalFieldsValue[s.const] = contactList[0].additionalInfo[f.const][0][s.const][0].const;
+                            break;
+                    }
+                }
             }
             for (const f of additionalCheckBoxFields) {
                 if (!contactList[0]?.additionalInfo?.hasOwnProperty(f.const)) {
@@ -282,6 +303,7 @@ function getUpdatedLogPageRender({ manifest, logType, platformName, updateData }
     let page = updateData.page;
     // update target field value
     page.formData = updateData.formData;
+    const contact = page.schema.properties.contact.oneOf.find(c => c.const === page.formData.contact);
     const additionalChoiceFields = logType === 'Call' ?
         manifest.platforms[platformName].page?.callLog?.additionalFields?.filter(f => f.type === 'selection') ?? [] :
         manifest.platforms[platformName].page?.messageLog?.additionalFields?.filter(f => f.type === 'selection') ?? [];
@@ -290,7 +312,6 @@ function getUpdatedLogPageRender({ manifest, logType, platformName, updateData }
         manifest.platforms[platformName].page?.messageLog?.additionalFields?.filter(f => f.type === 'checkbox') ?? [];
     switch (updatedFieldKey) {
         case 'contact':
-            const contact = page.schema.properties.contact.oneOf.find(c => c.const === page.formData.contact);
             // New contact fields
             if (contact.isNewContact) {
                 if (!!manifest.platforms[platformName].contactTypes) {
@@ -362,6 +383,29 @@ function getUpdatedLogPageRender({ manifest, logType, platformName, updateData }
                     f.defaultValue :
                     page.formData[f.const];
             }
+            // sub fields
+            for (const f of [...additionalChoiceFields]) {
+                if (f.contactDependent && !contact?.additionalInfo?.hasOwnProperty(f.const)) {
+                    continue;
+                }
+                for (const s of f?.subFields ?? []) {
+                    if (!contact.additionalInfo[f.const][0]?.hasOwnProperty(s.const)) {
+                        continue;
+                    }
+                    switch (s.type) {
+                        case 'selection':
+                            additionalFields[s.const] = {
+                                title: s.title,
+                                type: 'string',
+                                oneOf: [...contact.additionalInfo[f.const][0][s.const], { const: 'none', title: 'None' }],
+                                dependentField: f.const,
+                                associationField: !!f.contactDependent
+                            }
+                            additionalFieldsValue[s.const] = contact.additionalInfo[f.const][0][s.const][0].const;
+                            break;
+                    }
+                }
+            }
             page.schema.properties = {
                 ...page.schema.properties,
                 ...additionalFields
@@ -380,6 +424,40 @@ function getUpdatedLogPageRender({ manifest, logType, platformName, updateData }
             break;
         case 'activityTitle':
             page.schema.properties.activityTitle.manuallyEdited = true;
+            break;
+        default:
+            const updatedDependentField = additionalChoiceFields.find(f => f.const === updatedFieldKey);
+            if (!!updatedDependentField && !!updatedDependentField.subFields) {
+                for (const s of updatedDependentField.subFields ?? []) {
+                    if (!contact.additionalInfo[updatedDependentField.const][0]?.hasOwnProperty(s.const)) {
+                        continue;
+                    }
+                    switch (s.type) {
+                        case 'selection':
+                            if (updateData.formData[updatedDependentField.const] === 'none') {
+                                page.schema.properties[s.const] = {
+                                    title: s.title,
+                                    type: 'string',
+                                    oneOf: [{ const: 'none', title: 'None' }],
+                                    dependentField: updatedDependentField.const,
+                                    associationField: !!updatedDependentField.contactDependent
+                                }
+                                page.formData[s.const] = 'none';
+                            }
+                            else {
+                                page.schema.properties[s.const] = {
+                                    title: s.title,
+                                    type: 'string',
+                                    oneOf: [...contact.additionalInfo[updatedDependentField.const].find(sc => sc.const === page.formData[updatedDependentField.const])[s.const], { const: 'none', title: 'None' }],
+                                    dependentField: updatedDependentField.const,
+                                    associationField: !!updatedDependentField.contactDependent
+                                }
+                                page.formData[s.const] = contact.additionalInfo[updatedDependentField.const].find(sc => sc.const === page.formData[updatedDependentField.const])[s.const][0].const;
+                            }
+                            break;
+                    }
+                }
+            }
             break;
     }
     return page;

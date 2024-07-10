@@ -623,6 +623,11 @@ window.addEventListener('message', async (e) => {
                 for (const f of additionalFields) {
                   if (data.body.formData[f.const] != "none") {
                     additionalSubmission[f.const] = data.body.formData[f.const];
+                    if (!!f.subFields) {
+                      for (const sb of f.subFields) {
+                        additionalSubmission[sb.const] = data.body.formData[sb.const];
+                      }
+                    }
                   }
                 }
                 switch (data.body.formData.triggerType) {
@@ -803,7 +808,7 @@ window.addEventListener('message', async (e) => {
                 sessionId: data.body.call.sessionId,
                 note: data.body.formData.note ?? ''
               });
-              const page = logPage.getUpdatedLogPageRender({ manifest, platformName, updateData: data.body });
+              const page = logPage.getUpdatedLogPageRender({ manifest, platformName, logType: 'Call', updateData: data.body });
               document.querySelector("#rc-widget-adapter-frame").contentWindow.postMessage({
                 type: 'rc-adapter-update-call-log-page',
                 page
@@ -913,6 +918,16 @@ window.addEventListener('message', async (e) => {
                   for (const f of additionalFields) {
                     if (data.body.formData[f.const] != "none") {
                       additionalSubmission[f.const] = data.body.formData[f.const];
+                      for (const f of additionalFields) {
+                        if (data.body.formData[f.const] != "none") {
+                          additionalSubmission[f.const] = data.body.formData[f.const];
+                          if (!!f.subFields) {
+                            for (const sb of f.subFields) {
+                              additionalSubmission[sb.const] = data.body.formData[sb.const];
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                   let newContactInfo = {};
