@@ -1,5 +1,0 @@
-{
-    "defaultCrmManifestUrl": "{serverUrl}/crmManifest?platformName={crmPlatformName}",
-    "mixpanelToken": "",
-    "version": ""
-  }
